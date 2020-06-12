@@ -88,7 +88,7 @@ if end == "pair":
         benchmark:
             intermediate_path + "/benchmarks/{sample}.hisat2.benchmark.txt"
         shell:
-            "hisat2 -p {config[NCORE]} --known-splicesite-infile {input.splicesites} -x {params.index} -1 {input.forward} -2 {input.reverse} | samtools sort -O BAM | tee {output.sort}"
+            "hisat2 -p {config[NCORE]} --known-splicesite-infile {input.splicesites} -x {params.index} -1 {input.forward} -2 {input.reverse} | samtools sort -O BAM > {output.sort}"
 else:
     rule alignment:
         input:
@@ -104,7 +104,7 @@ else:
         benchmark:
             intermediate_path + "/benchmarks/{sample}.hisat2.benchmark.txt"
         shell:
-            "hisat2 -p {config[NCORE]} --known-splicesite-infile {input.splicesites} -x {params.index} -U {input.forward} | samtools sort -O BAM | tee {output.sort}"
+            "hisat2 -p {config[NCORE]} --known-splicesite-infile {input.splicesites} -x {params.index} -U {input.forward} | samtools sort -O BAM > {output.sort}"
 
 
 rule BamIndex:
