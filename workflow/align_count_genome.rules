@@ -1,0 +1,254 @@
+import pandas as pd
+configfile: "configs/config_main.yaml"
+
+samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
+trimmed = config["TRIMMED"]
+if trimmed == "yes": 
+    input_path = config["OUTPUTPATH"] + "/" + config["PROJECT"] + "/trim"
+else:
+    input_path = config["READSPATH"]
+key = config["KEY"]
+end = config["END"]
+intermediate_path = config["OUTPUTPATH"] + "/" + config["PROJECT"] + "/genome"
+index_path = config["INDEXPATH"]
+index_base = config["INDEXBASE"]
+final_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome"
+alignmentQC = config["alignmentQC"]
+counter = config["COUNTER"]
+bwStranded = config["BWSTRANDED"]
+
+
+if bwStranded == "no":
+    rule end:
+        input:
+            report = final_path + "/report_align_count.html",
+            bw = expand(final_path + "/bw/{sample}.bw", sample = samples),
+            pca = final_path + "/countFile/PCA.pdf"
+
+if bwStranded == "yes" :
+    rule end:
+        input:
+            pca = final_path + "/countFile/PCA.pdf",
+            report = final_path + "/report_align_count.html",
+            bw_forward = expand(final_path + "/bw_str/{sample}_forward.bw", sample=samples),
+            bw_reverse = expand(final_path + "/bw_str/{sample}_reverse.bw", sample=samples)
+
+if bwStranded == "both":
+    rule end:
+        input:
+            pca = final_path + "/countFile/PCA.pdf",
+            report = final_path + "/report_align_count.html",
+            bw_forward = expand(final_path + "/bw_str/{sample}_forward.bw", sample=samples),
+            bw_reverse = expand(final_path + "/bw_str/{sample}_reverse.bw", sample=samples),
+            bw = expand(final_path + "/bw/{sample}.bw", sample = samples)
+
+
+if end == "pair":
+    rule getReads:
+        output:
+            forward = temp(intermediate_path + "/reads/{sample}_forward.fastq.gz"),
+            reverse = temp(intermediate_path + "/reads/{sample}_reverse.fastq.gz")
+        params:
+            key = key,
+            input_path = input_path
+        run:
+            shell("ln -s {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.forward}"),
+            shell("ln -s {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.reverse}")
+
+else:
+    rule getReads:
+        output:
+            read = temp(intermediate_path + "/reads/{sample}.fastq.gz")
+        params:
+            key = key,
+            input_path = input_path
+        run:
+            shell("ln -s {params.input_path}/{wildcards.sample}*.f*q.gz {output.read}")
+
+rule spliceSites:
+    output:
+        splicesites = intermediate_path + "/splicesites.txt"
+    conda:
+        "env.yaml"
+    shell:
+         "hisat2_extract_splice_sites.py {config[ANNOTATION]} > {output.splicesites}"
+
+if end == "pair":
+    rule alignment:
+        input:
+            splicesites = intermediate_path + "/splicesites.txt",
+            forward = intermediate_path + "/reads/{sample}_forward.fastq.gz",
+            reverse = intermediate_path + "/reads/{sample}_reverse.fastq.gz"
+        output:
+            sort = intermediate_path + "/bamFileSort/{sample}.sort.bam"
+        conda:
+            "env.yaml"
+        params:
+            index = index_path +"/" + index_base
+        benchmark:
+            intermediate_path + "/benchmarks/{sample}.hisat2.benchmark.txt"
+        shell:
+            "hisat2 -p {config[NCORE]} --known-splicesite-infile {input.splicesites} -x {params.index} -1 {input.forward} -2 {input.reverse} | samtools sort -O BAM | tee {output.sort}"
+else:
+    rule alignment:
+        input:
+            indexes = directory(intermediate_path + "/indexes"),
+            splicesites = intermediate_path + "/splicesites.txt",
+            forward = intermediate_path + "/reads/{sample}.fastq.gz"
+        output:
+            sort = intermediate_path + "/bamFileSort/{sample}.sort.bam"
+        conda:
+            "env.yaml"
+        params:
+            index = intermediate_path + "/indexes/index"
+        benchmark:
+            intermediate_path + "/benchmarks/{sample}.hisat2.benchmark.txt"
+        shell:
+            "hisat2 -p {config[NCORE]} --known-splicesite-infile {input.splicesites} -x {params.index} -U {input.forward} | samtools sort -O BAM | tee {output.sort}"
+
+
+rule BamIndex:
+    input:
+        sort = intermediate_path + "/bamFileSort/{sample}.sort.bam"
+    output:
+        bai = intermediate_path + "/bamFileSort/{sample}.sort.bam.bai"
+    conda:
+        "env.yaml"
+    shell:
+        "samtools index {input.sort}"
+
+
+if bwStranded == "yes" or bwStranded == "both":
+    rule BigWigF:
+        input:
+            sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
+            bai = intermediate_path + "/bamFileSort/{sample}.sort.bam.bai"
+        output:
+            bw_forward = final_path + "/bw_str/{sample}_forward.bw"
+        conda:
+            "env.yaml"
+        shell:
+            "bamCoverage -b {input.sort} --filterRNAstrand forward -o {output.bw_forward} -p max"
+            
+    rule BigWigR:
+        input:
+            sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
+            bai = intermediate_path + "/bamFileSort/{sample}.sort.bam.bai"
+        output:
+            bw_reverse = final_path + "/bw_str/{sample}_reverse.bw"
+        conda:
+            "env.yaml"
+        shell:
+            "bamCoverage -b {input.sort} --filterRNAstrand reverse -o {output.bw_reverse} -p max"
+
+    
+
+if bwStranded == "no" or bwStranded == "both" :
+    rule BigWig:
+        input:
+            sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
+            bai = intermediate_path + "/bamFileSort/{sample}.sort.bam.bai"
+        output:
+            bw = final_path + "/bw/{sample}.bw"
+        conda:
+            "env.yaml"
+        shell:
+            "bamCoverage -b {input.sort} -o {output.bw} -p max"
+
+
+if counter == "featureCounts": 
+    if end == "pair":
+        rule featureCount:
+            input:
+                sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
+                annotation = config["ANNOTATION"]
+            output:
+                count = final_path + "/countFile/{sample}_count.tsv",
+                count_summary = final_path + "/countFile/{sample}_count.tsv.summary"
+            conda:
+                "env.yaml"
+            shell:
+                "featureCounts -p -T {config[NCORE]} -t exon -g {config[ATTRIBUTE]} -a {input.annotation} -o {output.count} {input.sort} && tail -n +3 {output.count} | cut -f1,7 > temp.{wildcards.sample} && mv temp.{wildcards.sample} {output.count_summary}"
+    else :
+        rule featureCount:
+            input:
+                sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
+                annotation = config["ANNOTATION"]
+            output:
+                count_summary = final_path + "/countFile/{sample}_count.tsv.summary",
+                count = final_path + "/countFile/{sample}_count.tsv"
+            conda:
+                "env.yaml"
+            shell:
+                "featureCounts -T {config[NCORE]} -t exon -g {config[ATTRIBUTE]} -a {input.annotation} -o {output.count} {input.sort} && tail -n +3 {output.count} | cut -f1,7 > temp.{wildcards.sample} && mv temp.{wildcards.sample} {output.count_summary}"
+
+elif counter == "htseq-count":
+    if end == "pair":
+        rule featureCount:
+            input:
+                sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
+                annotation = config["ANNOTATION"]
+            output:
+                count = final_path + "/countFile/{sample}_count.tsv",
+                count_summary = final_path + "/countFile/{sample}_count.tsv.summary"
+            conda:
+                "env.yaml"
+            shell:
+                "htseq-count -r pos -f bam -i {config[ATTRIBUTE]} -s {config[STRAND]} -t {config[FEATURE]} -c {output.count} {input.sort} {input.annotation} && sed '/^__/ d' {output.count} > {output.count_summary}"
+    else: 
+        rule featureCount:
+            input:
+                sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
+                annotation = config["ANNOTATION"]
+            output:
+                count = final_path + "/countFile/{sample}_count.tsv",
+                count_summary = final_path + "/countFile/{sample}_count.tsv.summary"
+            conda:
+                "env.yaml"
+            shell:
+                "htseq-count -f bam -i {config[ATTRIBUTE]} -s {config[STRAND]} -t {config[FEATURE]} -c {output.count} {input.sort} {input.annotation} && sed '/^__/ d' {output.count} > {output.count_summary}"
+
+
+rule PCA:
+    input:
+        count = expand(final_path + "/countFile/{sample}_count.tsv", sample=samples)
+    output:
+        pca = final_path + "/countFile/PCA.pdf"
+    conda:
+        "env.yaml"
+    params:
+        count_path = final_path + "/countFile"
+    shell:
+        "Rscript scripts/pca.R {params.count_path}"
+
+
+if alignmentQC:
+    rule alignmentQC:
+        input:
+            sort = intermediate_path + "/bamFileSort/{sample}.sort.bam"
+        output:
+            bamqc = directory(final_path + "/alignmentQC/{sample}_BAMqc")
+        conda:
+            "env.yaml"
+        shell:
+            "qualimap bamqc -bam {input.sort} -nt {config[NCORE]} --java-mem-size=6G -outdir {output.bamqc}"
+
+    rule summaryReport:
+        input:
+            bamqc = expand(final_path + "/alignmentQC/{sample}_BAMqc", sample = samples),
+        output:
+            report = final_path + "/report_align_count.html"
+        conda:
+            "env.yaml"
+        shell:
+            "multiqc {input.bamqc} --filename {output.report}"
+else:
+    rule summaryReport:
+        input:
+            count_summary = expand(final_path + "/countFile/{sample}_count.tsv.summary", sample = samples)
+        output:
+            report = final_path + "/report_align_count.html"
+        conda:
+            "env.yaml"
+        shell:
+            "multiqc {input.count_summary} --filename {output.report}"

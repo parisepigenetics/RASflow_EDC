@@ -1,0 +1,43 @@
+import pandas as pd
+import numpy as np
+
+configfile: "configs/config_main.yaml"
+
+input_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/countFile"
+output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea"
+samples = np.array(pd.read_table(config["METAFILE"], header = 0)['sample'])
+groups = np.unique(np.array(pd.read_table(config["METAFILE"], header = 0)['group']))
+control = config["CONTROL"][0]
+treat = config["TREAT"][0]
+
+rule all:
+    input:
+        normControl = output_path + "/countGroup/" + control + "_gene_norm.tsv",
+        dea = output_path + "/DEA/" + "dea_" + control + "_" + treat + ".tsv"
+
+rule combineSamples:
+    input:
+        sampleCount = expand(input_path + "/{sample}_count.tsv", sample = samples),
+        metafile = config["METAFILE"]
+    output:
+        groupCount = expand(output_path + "/countGroup/{group}_gene_count.tsv", group = groups)
+    conda:
+        "env.yaml"
+    params:
+        path = output_path + "countFile"
+    shell:
+        "python scripts/combine2group_genome.py"
+
+rule DEA:
+    input:
+        groupCount = expand(output_path + "/countGroup/{group}_gene_count.tsv", group = groups)
+    output:
+        normControl = output_path + "/countGroup/" + control + "_gene_norm.tsv",
+        normTreat = output_path + "/countGroup/" + treat + "_gene_norm.tsv",
+        dea = output_path + "/DEA/" + "dea_" + control + "_" + treat + ".tsv", 
+        deg = output_path + "/DEA/" + "deg_" + control + "_" + treat + ".tsv"
+    conda:
+        "env.yaml"    
+    shell:
+        "Rscript scripts/dea_genome.R"
+

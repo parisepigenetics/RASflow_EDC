@@ -1,0 +1,29 @@
+__default__:
+  mem: 2000
+
+qualityControl:
+  mem: 6000
+
+trim:
+  mem: 6000
+
+alignment:
+  mem: 30000
+
+sortBAM:
+  mem: 40000
+
+alignmentQC:
+  mem: 7000
+
+BigWig:
+  mem: 70000
+
+BigWigR:
+  mem: 70000
+
+BigWigF:
+  mem: 70000
+
+featureCount:
+  mem: 20000
