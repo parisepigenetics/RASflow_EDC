@@ -719,6 +719,8 @@ When this file is fully adapted to your experimental set up and needs, you can s
 [username@clust-slurm-client RASflow_IFB]$ sbatch Workflow.sh
 ```
 
+---
+
 ## Expected outputs
 
 
@@ -766,8 +768,18 @@ Here you have the job ID and name, its starting time, its running time, the maxi
 ```
 [mhennion@clust-slurm-client RASflow]$ sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State -S 0518
 ```
+### Cancelling a job
+If you want to cancel a job: scancel job number
+```
+[username@clust-slurm-client RASflow_IFB]$ scancel 8016984
+```
+Nota: when snakemake is working on a folder, this folder is locked so that you can't start another DAG and create a big mess. If you cancel the main job, snakemake won't be able to unlock the folder (see [below](#error)). 
 
-## Trick make aliases
+---
+
+## Tricks 
+
+### Make aliases
 To save time avoiding typing long commands again and again, you can add aliases to your `.bashrc` file: 
 
 ``` 
@@ -786,8 +798,11 @@ fi
 
 alias qq="squeue -u username"
 alias sa="sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State"
+alias ll="ls -lht --color=always"
 ```
 It will work next time you connect to the server. When you type `sa`, you will get the command `sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State` running. 
+
+---
 
 ## Common errors
 
@@ -834,3 +849,25 @@ featureCount:
   mem: 20000
 ```
 If the rule that failed is not listed here, you can add it respecting the format. And restart your workflow. 
+<a name="error">
+
+### Folder locked
+</a>
+
+When snakemake is working on a folder, this folder is locked so that you can't start another DAG and create a big mess. If you cancel the main job, snakemake won't be able to unlock the folder and next time you run `Workflow.sh`, you will get the following error:
+
+```
+Error: Directory cannot be locked. Please make sure that no other Snakemake process is trying to create the same files in the following directory:
+/shared/mfs/data/projects/lxactko_analyse/RASflow
+If you are sure that no other instances of snakemake are running on this directory, the remaining lock was likely caused by a kill signal or a power loss. It can be removed with the --unlock argument.
+```
+In order to remove the lock, run:
+```
+[username@clust-slurm-client RASflow_IFB]$ sbatch Unlock.sh
+```
+Then you can restart your workflow. 
+
+---
+
+## Good practice
+- Always save **job ID** in your notes when launching `Workflow.sh`. It's easier to find the outputs you're interested in days/weeks/months later.
