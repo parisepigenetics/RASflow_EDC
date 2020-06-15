@@ -11,6 +11,8 @@
     + [3. **env.yaml** (facultative)](#3---envyaml----facultative-)
   * [Running your analysis step by step](#running-your-analysis-step-by-step)
     + [QC](#qc)
+    + [Description of the log files](#description-of-the-log-files)
+    + [FastQC results](#fastqc-results)
     + [Trimming](#trimming)
     + [Mapping and feature count](#mapping-and-feature-count)
     + [Differential expression analysis and visualization](#differential-expression-analysis-and-visualization)
@@ -18,12 +20,15 @@
   * [How to follow your jobs](#how-to-follow-your-jobs)
     + [Running jobs](#running-jobs)
     + [Information about past jobs](#information-about-past-jobs)
-  * [Trick make aliases](#trick-make-aliases)
+    + [Cancelling a job](#cancelling-a-job)
+  * [Tricks](#tricks)
+    + [Make aliases](#make-aliases)
   * [Common errors](#common-errors)
     + [Memory](#memory)
+    + [Folder locked](#folder-locked)
+  * [Good practice](#good-practice)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-
 
 
 # Tutorial RASflow on IFB core cluster
@@ -913,3 +918,4 @@ Then you can restart your workflow.
 
 ## Good practice
 - Always save **job ID** or the **date_time** (ie 20200615_1540) in your notes when launching `Workflow.sh`. It's easier to find the outputs you're interested in days/weeks/months/years later.
+
