@@ -30,30 +30,30 @@ if bwStranded == "yes" :
         input:
             pca = final_path + "/countFile/PCA.pdf",
             report = final_path + "/report_align_count.html",
-            bw_forward = expand(final_path + "/bw_str/{sample}_forward.bw", sample=samples),
-            bw_reverse = expand(final_path + "/bw_str/{sample}_reverse.bw", sample=samples)
+            bw_fw = expand(final_path + "/bw_str/{sample}_fw.bw", sample=samples),
+            bw_rv = expand(final_path + "/bw_str/{sample}_rv.bw", sample=samples)
 
 if bwStranded == "both":
     rule end:
         input:
             pca = final_path + "/countFile/PCA.pdf",
             report = final_path + "/report_align_count.html",
-            bw_forward = expand(final_path + "/bw_str/{sample}_forward.bw", sample=samples),
-            bw_reverse = expand(final_path + "/bw_str/{sample}_reverse.bw", sample=samples),
+            bw_fw = expand(final_path + "/bw_str/{sample}_fw.bw", sample=samples),
+            bw_rv = expand(final_path + "/bw_str/{sample}_rv.bw", sample=samples),
             bw = expand(final_path + "/bw/{sample}.bw", sample = samples)
 
 
 if end == "pair":
     rule getReads:
         output:
-            forward = temp(intermediate_path + "/reads/{sample}_forward.fastq.gz"),
-            reverse = temp(intermediate_path + "/reads/{sample}_reverse.fastq.gz")
+            fw = temp(intermediate_path + "/reads/{sample}_fw.fastq.gz"),
+            rv = temp(intermediate_path + "/reads/{sample}_rv.fastq.gz")
         params:
             key = key,
             input_path = input_path
         run:
-            shell("ln -s {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.forward}"),
-            shell("ln -s {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.reverse}")
+            shell("ln -s {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.fw}"),
+            shell("ln -s {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.rv}")
 
 else:
     rule getReads:
@@ -77,8 +77,8 @@ if end == "pair":
     rule alignment:
         input:
             splicesites = intermediate_path + "/splicesites.txt",
-            forward = intermediate_path + "/reads/{sample}_forward.fastq.gz",
-            reverse = intermediate_path + "/reads/{sample}_reverse.fastq.gz"
+            fw = intermediate_path + "/reads/{sample}_fw.fastq.gz",
+            rv = intermediate_path + "/reads/{sample}_rv.fastq.gz"
         output:
             sort = intermediate_path + "/bamFileSort/{sample}.sort.bam"
         conda:
@@ -88,13 +88,13 @@ if end == "pair":
         benchmark:
             intermediate_path + "/benchmarks/{sample}.hisat2.benchmark.txt"
         shell:
-            "hisat2 -p {config[NCORE]} --known-splicesite-infile {input.splicesites} -x {params.index} -1 {input.forward} -2 {input.reverse} | samtools sort -O BAM | tee {output.sort}"
+            "hisat2 -p {config[NCORE]} --known-splicesite-infile {input.splicesites} -x {params.index} -1 {input.fw} -2 {input.rv} | samtools sort -O BAM > {output.sort}"
 else:
     rule alignment:
         input:
             indexes = directory(intermediate_path + "/indexes"),
             splicesites = intermediate_path + "/splicesites.txt",
-            forward = intermediate_path + "/reads/{sample}.fastq.gz"
+            fw = intermediate_path + "/reads/{sample}.fastq.gz"
         output:
             sort = intermediate_path + "/bamFileSort/{sample}.sort.bam"
         conda:
@@ -104,7 +104,7 @@ else:
         benchmark:
             intermediate_path + "/benchmarks/{sample}.hisat2.benchmark.txt"
         shell:
-            "hisat2 -p {config[NCORE]} --known-splicesite-infile {input.splicesites} -x {params.index} -U {input.forward} | samtools sort -O BAM | tee {output.sort}"
+            "hisat2 -p {config[NCORE]} --known-splicesite-infile {input.splicesites} -x {params.index} -U {input.fw} | samtools sort -O BAM > {output.sort}"
 
 
 rule BamIndex:
@@ -124,22 +124,22 @@ if bwStranded == "yes" or bwStranded == "both":
             sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
             bai = intermediate_path + "/bamFileSort/{sample}.sort.bam.bai"
         output:
-            bw_forward = final_path + "/bw_str/{sample}_forward.bw"
+            bw_fw = final_path + "/bw_str/{sample}_fw.bw"
         conda:
             "env.yaml"
         shell:
-            "bamCoverage -b {input.sort} --filterRNAstrand forward -o {output.bw_forward} -p max"
+            "bamCoverage -b {input.sort} --filterRNAstrand forward -o {output.bw_fw} -p max"
             
     rule BigWigR:
         input:
             sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
             bai = intermediate_path + "/bamFileSort/{sample}.sort.bam.bai"
         output:
-            bw_reverse = final_path + "/bw_str/{sample}_reverse.bw"
+            bw_rv = final_path + "/bw_str/{sample}_rv.bw"
         conda:
             "env.yaml"
         shell:
-            "bamCoverage -b {input.sort} --filterRNAstrand reverse -o {output.bw_reverse} -p max"
+            "bamCoverage -b {input.sort} --filterRNAstrand reverse -o {output.bw_rv} -p max"
 
     
 
@@ -163,12 +163,12 @@ if counter == "featureCounts":
                 sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
                 annotation = config["ANNOTATION"]
             output:
-                count = final_path + "/countFile/{sample}_count.tsv",
+                countF = final_path + "/countFile/{sample}_count.tsv",
                 count_summary = final_path + "/countFile/{sample}_count.tsv.summary"
             conda:
                 "env.yaml"
             shell:
-                "featureCounts -p -T {config[NCORE]} -t exon -g {config[ATTRIBUTE]} -a {input.annotation} -o {output.count} {input.sort} && tail -n +3 {output.count} | cut -f1,7 > temp.{wildcards.sample} && mv temp.{wildcards.sample} {output.count_summary}"
+                "featureCounts -p -T {config[NCORE]} -t exon -g {config[ATTRIBUTE]} -a {input.annotation} -o {output.countF} {input.sort} && tail -n +3 {output.countF} | cut -f1,7 > temp.{wildcards.sample} && mv temp.{wildcards.sample} {output.count_summary}"
     else :
         rule featureCount:
             input:
@@ -176,11 +176,11 @@ if counter == "featureCounts":
                 annotation = config["ANNOTATION"]
             output:
                 count_summary = final_path + "/countFile/{sample}_count.tsv.summary",
-                count = final_path + "/countFile/{sample}_count.tsv"
+                countF = final_path + "/countFile/{sample}_count.tsv"
             conda:
                 "env.yaml"
             shell:
-                "featureCounts -T {config[NCORE]} -t exon -g {config[ATTRIBUTE]} -a {input.annotation} -o {output.count} {input.sort} && tail -n +3 {output.count} | cut -f1,7 > temp.{wildcards.sample} && mv temp.{wildcards.sample} {output.count_summary}"
+                "featureCounts -T {config[NCORE]} -t exon -g {config[ATTRIBUTE]} -a {input.annotation} -o {output.countF} {input.sort} && tail -n +3 {output.countF} | cut -f1,7 > temp.{wildcards.sample} && mv temp.{wildcards.sample} {output.count_summary}"
 
 elif counter == "htseq-count":
     if end == "pair":
@@ -189,29 +189,29 @@ elif counter == "htseq-count":
                 sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
                 annotation = config["ANNOTATION"]
             output:
-                count = final_path + "/countFile/{sample}_count.tsv",
+                countF = final_path + "/countFile/{sample}_count.tsv",
                 count_summary = final_path + "/countFile/{sample}_count.tsv.summary"
             conda:
                 "env.yaml"
             shell:
-                "htseq-count -r pos -f bam -i {config[ATTRIBUTE]} -s {config[STRAND]} -t {config[FEATURE]} -c {output.count} {input.sort} {input.annotation} && sed '/^__/ d' {output.count} > {output.count_summary}"
+                "htseq-count -r pos -f bam -i {config[ATTRIBUTE]} -s {config[STRAND]} -t {config[FEATURE]} -c {output.countF} {input.sort} {input.annotation} && sed '/^__/ d' {output.countF} > {output.count_summary}"
     else: 
         rule featureCount:
             input:
                 sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
                 annotation = config["ANNOTATION"]
             output:
-                count = final_path + "/countFile/{sample}_count.tsv",
+                countF = final_path + "/countFile/{sample}_count.tsv",
                 count_summary = final_path + "/countFile/{sample}_count.tsv.summary"
             conda:
                 "env.yaml"
             shell:
-                "htseq-count -f bam -i {config[ATTRIBUTE]} -s {config[STRAND]} -t {config[FEATURE]} -c {output.count} {input.sort} {input.annotation} && sed '/^__/ d' {output.count} > {output.count_summary}"
+                "htseq-count -f bam -i {config[ATTRIBUTE]} -s {config[STRAND]} -t {config[FEATURE]} -c {output.countF} {input.sort} {input.annotation} && sed '/^__/ d' {output.countF} > {output.count_summary}"
 
 
 rule PCA:
     input:
-        count = expand(final_path + "/countFile/{sample}_count.tsv", sample=samples)
+        countF = expand(final_path + "/countFile/{sample}_count.tsv", sample=samples)
     output:
         pca = final_path + "/countFile/PCA.pdf"
     conda:

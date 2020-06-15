@@ -419,23 +419,69 @@ You can check if your job is running using squeue.
 ```
 [username@clust-slurm-client RASflow_IFB]$ squeue -u username
 ```
-You can also check slurm output files. 
+You should also check slurm output files. 
+### Description of the log files 
 
-The first job is the main script (slurm output is in your working directory (default) or in the specified folder if you modified `Workflow.sh`). This job will launch other jobs, here one fastqc job per sample. Those jobs are also controled by SLURM and you can check them reading `slurm-JOBID.out` (one per job).  
-Typically the main job output looks like  (example not from QC, I split it to explain the different parts).
+The first job is the main script. This job will call one or several snakefiles that define small workflows of the individual tasks. There are slurm outputs at the 3 levels. 
+1. main script
+2. snakefiles
+3. individual tasks
 
-Information about the job:
+Where to find those outputs and what to they contain?
+
+1. main script : slurm output is in your working directory (default) or in the specified folder if you modified `Workflow.sh`. It contains global information about your run. 
+Typically the main job output looks like :
 ```
-[mhennion@clust-slurm-client RASflow]$ cat slurm_output/RASflow-7908073.out 
+[mhennion @ clust-slurm-client 16:17]$ RASflow : cat slurm_output/Logs-9385967.out 
 ########################################
-Date: 2020-05-12T17:48:14+0200
+Date: 2020-06-15T15:40:11+0200
 User: mhennion
-Host: cpu-node-13
-Job Name: RASflow
-Job Id: 7908073
+Host: cpu-node-83
+Job Name: Logs
+Job Id: 9385967
 Directory: /shared/projects/lxactko_analyse/RASflow
 ########################################
+Python 3.7.3
+snakemake
+5.19.2
+conda 4.8.2
+Is quality control required?
+ no
+Is trimming required?
+ yes
+Which mapping reference will be used?
+ genome
+Is DEA required?
+ yes
+Is visualization required?
+ yes
+Start RASflow on project: LXACT_1-test
+Start Trimming!
+Trimming is done!
+Start mapping using  genome  as reference!
+Start doing DEA!
+DEA is done!
+Start visualization of DEA results!
+Visualization is done!
+RASflow is done!
+########################################
+Job finished 2020-06-15T15:50:43+0200
+---- Total runtime 632 s ; 10 min ----
 ```
+2. snakefiles. There are 5 snakefiles (visible in the `workflow` folder) that correspond to the different steps of the analysis:
+  - quality_control.rules (QC)
+  - trim.rules (reads trimming/filtering)
+  - align_count_genome.rules (mapping and feature counting)
+  - dea_genome.rules (differential gene expression)
+  - visualize.rules (plots)
+
+The slurm outputs of those different steps are stored in the `logs` folder and named as the corresponding snakefile plus the date : for instance
+`trim_20200615_1540.txt` or  `align_count_genome_20200615_1540.txt`. 
+
+Here is a description of those files (splitted): 
+
+---
+
 Building the DAG (directed acyclic graph): Define the jobs that will be launched and in which order.
 ```
 Building DAG of jobs...
@@ -460,7 +506,7 @@ rule getReads:
 
 Submitted DRMAA job 4 with external jobid 7908074.
 ```
-You have here the corresponding job ID. You can follow that particular job in `slurm-7908074.out`. 
+You have here the corresponding **job ID**. You can follow that particular job in `slurm-7908074.out`. 
 
 End of that job, start of the next one:
 ```
@@ -491,28 +537,23 @@ And so on... Finally:
 Finished job 0.
 5 of 5 steps (100%) done
 Complete log: /shared/mfs/data/projects/lxactko_analyse/RASflow/.snakemake/log/2020-05-12T174816.622252.snakemake.log
-Is quality control required?
- no
-Is trimming required?
- yes
-Which mapping reference will be used?
- x
-Is DEA required?
- no
-Is visualization required?
- no
-Start RASflow on project: LXACT_1-test
-Start Trimming!
-Trimming is done!
-Start mapping using  x  as reference!
-DEA is not required and RASflow is done!
-########################################
-Job finished 2020-05-12T17:51:21+0200
----- Total runtime 187 s ; 3 min ----
 ```
-Nota: I don't like this output that is sometimes confusing, I will improve it. You have in this file the job ID of every jobs
 
-For the job started by snakemake, slurm output is like this:
+---
+
+An extra log file named `running_time_20200615_1540.txt` stores running times.  
+```
+[mhennion @ clust-slurm-client 15:50]$ RASflow : cat logs/running_time_20200615_1540.txt 
+
+Project name: LXACT_1-test
+Start time: Mon Jun 15 15:40:13 2020
+Time of running trimming:0:00:12
+Time of running genome alignment:0:08:43
+Time of running DEA genome based:0:01:32
+Time of running visualization:0:00:01
+Finish time: Mon Jun 15 15:50:43 2020
+```
+3. individual tasks: every job generate a `slurm-JOBID.out` file in the working directory (I didn't manage to change the default path, I could add a step moving those files if necessary). Slurm output specifies the rule, the sample, and gives outputs specific to the tool:  
 ```
 [mhennion@clust-slurm-client RASflow]$ cat slurm_output/slurm-8080372.out 
 Building DAG of jobs...
@@ -539,6 +580,7 @@ Activating conda environment: /shared/mfs/data/projects/lxactko_analyse/RASflow/
 Finished job 0.
 1 of 1 steps (100%) done
 ```
+### FastQC results
 
 If everything goes fine, fastQC results will be in `output/PROJECTNAME/fastqc/`. For every sample you will have something like:
 ```
@@ -719,6 +761,8 @@ When this file is fully adapted to your experimental set up and needs, you can s
 [username@clust-slurm-client RASflow_IFB]$ sbatch Workflow.sh
 ```
 
+---
+
 ## Expected outputs
 
 
@@ -766,8 +810,18 @@ Here you have the job ID and name, its starting time, its running time, the maxi
 ```
 [mhennion@clust-slurm-client RASflow]$ sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State -S 0518
 ```
+### Cancelling a job
+If you want to cancel a job: scancel job number
+```
+[username@clust-slurm-client RASflow_IFB]$ scancel 8016984
+```
+Nota: when snakemake is working on a folder, this folder is locked so that you can't start another DAG and create a big mess. If you cancel the main job, snakemake won't be able to unlock the folder (see [below](#error)). 
 
-## Trick make aliases
+---
+
+## Tricks 
+
+### Make aliases
 To save time avoiding typing long commands again and again, you can add aliases to your `.bashrc` file: 
 
 ``` 
@@ -786,8 +840,11 @@ fi
 
 alias qq="squeue -u username"
 alias sa="sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State"
+alias ll="ls -lht --color=always"
 ```
 It will work next time you connect to the server. When you type `sa`, you will get the command `sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State` running. 
+
+---
 
 ## Common errors
 
@@ -834,3 +891,25 @@ featureCount:
   mem: 20000
 ```
 If the rule that failed is not listed here, you can add it respecting the format. And restart your workflow. 
+<a name="error">
+
+### Folder locked
+</a>
+
+When snakemake is working on a folder, this folder is locked so that you can't start another DAG and create a big mess. If you cancel the main job, snakemake won't be able to unlock the folder and next time you run `Workflow.sh`, you will get the following error:
+
+```
+Error: Directory cannot be locked. Please make sure that no other Snakemake process is trying to create the same files in the following directory:
+/shared/mfs/data/projects/lxactko_analyse/RASflow
+If you are sure that no other instances of snakemake are running on this directory, the remaining lock was likely caused by a kill signal or a power loss. It can be removed with the --unlock argument.
+```
+In order to remove the lock, run:
+```
+[username@clust-slurm-client RASflow_IFB]$ sbatch Unlock.sh
+```
+Then you can restart your workflow. 
+
+---
+
+## Good practice
+- Always save **job ID** or the **date_time** (ie 20200615_1540) in your notes when launching `Workflow.sh`. It's easier to find the outputs you're interested in days/weeks/months/years later.

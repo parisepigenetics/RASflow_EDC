@@ -8,10 +8,7 @@ trim:
   mem: 6000
 
 alignment:
-  mem: 30000
-
-sortBAM:
-  mem: 40000
+  mem: 7000
 
 alignmentQC:
   mem: 7000
