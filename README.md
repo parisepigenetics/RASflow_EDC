@@ -124,7 +124,7 @@ Check that the transfer went fine using md5sum
 
 Here is a scheme of the workflow as implemented on the IFB cluster. In the green circles are the input files you have to give for the different steps. 
 
-![workflow](RASflow/workflow_chart.pdf.png)
+<img src="RASflow/workflow_chart.pdf.png" alt="drawing" width="500"/>
 
 The first step is to clone RASflow_IFB to your project, and to look at the files. 
 
@@ -152,7 +152,8 @@ There are **3 files** that you have to modify before running your analysis, and 
 ### 1. **Workflow.sh**
 
 RASflow is launched as a python script named `main_cluster.py` which calls the workflow manager named [snakemake](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html). On the cluster this python script is launch via the shell script `Workflow.sh`, which basically contains only one command (+ information about the job). 
-![cluster_chart.pdf.png](RASflow/cluster_chart.pdf.png)
+
+<img src="RASflow/cluster_chart.pdf.png" alt="drawing" width="500"/>
 
 ```
 [...]
@@ -851,12 +852,11 @@ After the trimming, fastQC is automatically run on the new fastq and the results
 - Sample1_R2_val_2_fastqc.html
 - Sample1_R2_val_2_fastqc.zip
 
-As previously MultiQC gives a summary for all the samples. It can be found in 
-[mhennion @ clust-slurm-client 10:06]$ RASflow : ll output/LXACT_1/fastqc_after_trimming/
-total 3,3M
--rw-rw----+ 1 mhennion mhennion 1,4M May 14 13:50 report_quality_control_after_trimming.html
-drwxrwx---+ 2 mhennion mhennion 2,0M May 14 13:50 report_quality_control_after_trimming_data
+As previously MultiQC gives a summary for all the samples. It can be found in `output/PROJECTNAME/fastqc_after_trimming/. 
+
 Nota: I will modify to have all the fastQC results in this folder.
+
+
 
 ### Mapped reads
 
