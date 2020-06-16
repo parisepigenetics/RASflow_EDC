@@ -11,8 +11,6 @@
     + [3. **env.yaml** (facultative)](#3---envyaml----facultative-)
   * [Running your analysis step by step](#running-your-analysis-step-by-step)
     + [QC](#qc)
-    + [Description of the log files](#description-of-the-log-files)
-    + [FastQC results](#fastqc-results)
     + [Trimming](#trimming)
     + [Mapping and feature count](#mapping-and-feature-count)
     + [Differential expression analysis and visualization](#differential-expression-analysis-and-visualization)
@@ -20,15 +18,12 @@
   * [How to follow your jobs](#how-to-follow-your-jobs)
     + [Running jobs](#running-jobs)
     + [Information about past jobs](#information-about-past-jobs)
-    + [Cancelling a job](#cancelling-a-job)
-  * [Tricks](#tricks)
-    + [Make aliases](#make-aliases)
+  * [Trick make aliases](#trick-make-aliases)
   * [Common errors](#common-errors)
     + [Memory](#memory)
-    + [Folder locked](#folder-locked)
-  * [Good practice](#good-practice)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
 
 
 # Tutorial RASflow on IFB core cluster
@@ -770,9 +765,107 @@ When this file is fully adapted to your experimental set up and needs, you can s
 
 ## Expected outputs
 
+### Trimmed reads
+After trimming, the fastq are stored in the intermediate folder defined in `configs/config_main.yaml` at `OUTPUTPATH:`. 
+```yaml
+## paths for intermediate outputs and final outputs
+OUTPUTPATH: /shared/projects/YourProjectName/RASflow_IFB/data # intermediate output. do not upload to github
+FINALOUTPUT: /shared/projects/YourProjectName/RASflow_IFB/output
+```
+In this examples the trim fastq files will be stored in `/shared/projects/YourProjectName/RASflow_IFB/data/PROJECTNAME/trim/`. They are named
+- Sample1_R1_val_1.fq
+- Sample1_R2_val_2.fq
+
+#### Trimming report
+In the same folder, you'll find trimming reports such as `Sample1_forward.fq.gz_trimming_report.txt` for each samples. If you have trimmed a fixed number of bases, the trimming report will have a name related to the intermediate file (not conserved) generated after that trimming: such as `Sample1_forward.91bp_3prime.fq.gz_trimming_report.txt`. You'll find information about the tools and parameters, as well as trimming statistics:
+```
+[mhennion @ clust-slurm-client 09:47]$ RASflow : cat data/output/LXACT_1/trim/D197-D192T27_forward.91bp_3prime.fq.gz_trimming_report.txt
+
+SUMMARISING RUN PARAMETERS
+==========================
+Input filename: /shared/projects/lxactko_analyse/RASflow/data/output/LXACT_1/trim/D197-D192T27_forward.91bp_3prime.fq.gz
+Trimming mode: paired-end
+Trim Galore version: 0.6.2
+Cutadapt version: 2.10
+Python version: could not detect
+Number of cores used for trimming: 4
+Quality Phred score cutoff: 20
+Quality encoding type selected: ASCII+33
+Adapter sequence: 'AGATCGGAAGAGC' (Illumina TruSeq, Sanger iPCR; auto-detected)
+Maximum trimming error rate: 0.1 (default)
+Minimum required adapter overlap (stringency): 1 bp
+Minimum required sequence length for both reads before a sequence pair gets removed: 20 bp
+Running FastQC on the data once trimming has completed
+Output file will be GZIP compressed
 
 
-Outputs: trimmed reads, mapped reads, counts, dea
+This is cutadapt 2.10 with Python 3.6.7
+Command line parameters: -j 4 -e 0.1 -q 20 -O 1 -a AGATCGGAAGAGC /shared/projects/lxactko_analyse/RASflow/data/output/LXACT_1/trim/D197-D192T27_forward.91bp_3prime.fq.gz
+Processing reads on 4 cores in single-end mode ...
+Finished in 753.96 s (10 us/read; 6.12 M reads/minute).
+
+=== Summary ===
+
+Total reads processed:              76,953,098
+Reads with adapters:                26,337,424 (34.2%)
+Reads written (passing filters):    76,953,098 (100.0%)
+
+Total basepairs processed: 7,002,731,918 bp
+Quality-trimmed:               3,377,451 bp (0.0%)
+Total written (filtered):  6,945,877,513 bp (99.2%)
+
+=== Adapter 1 ===
+
+Sequence: AGATCGGAAGAGC; Type: regular 3'; Length: 13; Trimmed: 26337424 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-13 bp: 1
+
+Bases preceding removed adapters:
+  A: 28.4%
+  C: 34.7%
+  G: 19.3%
+  T: 17.6%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+1	17772643	19238274.5	0	17772643
+2	5175839	4809568.6	0	5175839
+3	1542956	1202392.2	0	1542956
+4	405786	300598.0	0	405786
+5	193232	75149.5	0	193232
+6	122612	18787.4	0	122612
+7	107160	4696.8	0	107160
+8	111233	1174.2	0	111233
+...
+RUN STATISTICS FOR INPUT FILE: /shared/projects/lxactko_analyse/RASflow/data/output/LXACT_1/trim/D197-D192T27_forward.91bp_3prime.fq.gz
+=============================================
+76953098 sequences processed in total
+```
+ 
+#### FastQC of trimmed reads
+After the trimming, fastQC is automatically run on the new fastq and the results are also in this folder:
+- Sample1_R1_val_1_fastqc.html
+- Sample1_R1_val_1_fastqc.zip
+- Sample1_R2_val_2_fastqc.html
+- Sample1_R2_val_2_fastqc.zip
+
+As previously MultiQC gives a summary for all the samples. It can be found in 
+[mhennion @ clust-slurm-client 10:06]$ RASflow : ll output/LXACT_1/fastqc_after_trimming/
+total 3,3M
+-rw-rw----+ 1 mhennion mhennion 1,4M May 14 13:50 report_quality_control_after_trimming.html
+drwxrwx---+ 2 mhennion mhennion 2,0M May 14 13:50 report_quality_control_after_trimming_data
+Nota: I will modify to have all the fastQC results in this folder.
+
+### Mapped reads
+
+### Mapping QC
+
+### Count Tables
+
+### DEA results
+
 
 
 
@@ -808,7 +901,7 @@ The `sacct` command gives you information about past and running jobs. The docum
 8024116      snakejob.+ 2020-05-14T13:48:56   00:01:48                2000Mn  COMPLETED 
 8024116.bat+      batch 2020-05-14T13:48:56   00:01:48    113456K     2000Mn  COMPLETED 
 ```
-Here you have the job ID and name, its starting time, its running time, the maximum RAM used, the memory you requested (it has to be higher than MaxRSS, otherwise the job fails, but not much higher to allow the others to use the ressource), and job status (failed, completed, running). 
+Here you have the job ID and name, its starting time, its running time, the maximum RAM used, the memory you requested (it has to be higher than MaxRSS, otherwise the job fails, but not much higher to allow the others to use the resource), and job status (failed, completed, running). 
 
 **Add `-S MMDD` to have older jobs (default is today only).** 
 
@@ -918,4 +1011,3 @@ Then you can restart your workflow.
 
 ## Good practice
 - Always save **job ID** or the **date_time** (ie 20200615_1540) in your notes when launching `Workflow.sh`. It's easier to find the outputs you're interested in days/weeks/months/years later.
-
