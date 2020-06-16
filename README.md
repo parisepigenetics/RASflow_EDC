@@ -124,7 +124,7 @@ Check that the transfer went fine using md5sum
 
 Here is a scheme of the workflow as implemented on the IFB cluster. In the green circles are the input files you have to give for the different steps. 
 
-<img src="RASflow/workflow_chart.pdf.png" alt="drawing" width="500"/>
+<img src="RASflow/workflow_chart.pdf.png" alt="drawing" width="600"/>
 
 The first step is to clone RASflow_IFB to your project, and to look at the files. 
 
@@ -595,7 +595,7 @@ total 38537
 Those are individual fastQC reports. MultiQC is called after FastQC, so you will also find `report_quality_control.html` that is a summary for all the samples. 
 You can copy those reports to your computer to read them, by typing (in a new terminal):
 ```
-You@YourComputer:~$ scp -r username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/output/PROJECTNAME/fastqc PathTo/WhereYouWantToSave/
+You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/output/PROJECTNAME/fastqc PathTo/WhereYouWantToSave/
 ```
 It's time to decide if you need trimming or not. 
 If you have no sequence bias, and little amount of adapters, trimming is not necessary and you can proceed directly to the Mapping step.
@@ -639,7 +639,7 @@ Nota: I will probably modify that part to be more computationally efficient.
 
 ### Mapping and feature count
 
-At this step you have to provide the path to your reference genome, its hisat2 index as well as a GTF annotation file. 
+At this step you have to provide the path to your reference genome, its HISAT2 index as well as a GTF annotation file. 
 Some reference files are shared between users. Before dowloading a new reference, check what is available at `/shared/bank/`. 
 ```bash
 [username@clust-slurm-client ]$ tree -L 2 /shared/bank/homo_sapiens/
@@ -733,6 +733,15 @@ ALIGNER: hisat2
 ## tool for feature count
 COUNTER: htseq-count #  "featureCounts" or "htseq-count", I haven't tested featureCounts yet
 ```
+For now only HISAT2 is available but I plan to add STAR. 
+
+For an easy visualisation on a genome browser, bigwig files are generated. You can choose if you want to separate forward and reverse reads setting `BWSTRANDED`. 
+
+Feature count is done by [HTseq-count](https://htseq.readthedocs.io/en/master/count.html) with default parameters. I will implement more parameters. 
+
+As an alternative, featureCounts ([SubReads package](http://subread.sourceforge.net/)) should be available soon too. 
+
+Finally STAR can also generate count tables and I plan to add this too. 
 
 ### Differential expression analysis and visualization
 
@@ -766,13 +775,25 @@ When this file is fully adapted to your experimental set up and needs, you can s
 
 ## Expected outputs
 
-### Trimmed reads
-After trimming, the fastq are stored in the intermediate folder defined in `configs/config_main.yaml` at `OUTPUTPATH:`. 
+The outputs are separated into two folders : 
+- the big files : trimmed fastq, bam files are in the intermediate folder defined in `configs/config_main.yaml` at `OUTPUTPATH:`
+- the small files: QC reports, count tables, bigwig, etc. are in the final output folder defined in `configs/config_main.yaml` at `FINALOUTPUT:`
+
 ```yaml
 ## paths for intermediate outputs and final outputs
 OUTPUTPATH: /shared/projects/YourProjectName/RASflow_IFB/data # intermediate output. do not upload to github
 FINALOUTPUT: /shared/projects/YourProjectName/RASflow_IFB/output
 ```
+
+This way you can get all the results on your computer by running 
+```
+You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/output/PROJECTNAME/ PathTo/WhereYouWantToSave/
+```
+and the huge files will stay on the server. You can of course download them as well if you have space (and this is recommanded for the long term). 
+
+### Trimmed reads
+After trimming, the fastq are stored in the intermediate folder defined in `configs/config_main.yaml` at `OUTPUTPATH:`. 
+
 In this examples the trim fastq files will be stored in `/shared/projects/YourProjectName/RASflow_IFB/data/PROJECTNAME/trim/`. They are named
 - Sample1_R1_val_1.fq
 - Sample1_R2_val_2.fq
@@ -844,7 +865,8 @@ RUN STATISTICS FOR INPUT FILE: /shared/projects/lxactko_analyse/RASflow/data/out
 =============================================
 76953098 sequences processed in total
 ```
- 
+This information is summarized in the MultiQC report, see  below. 
+
 #### FastQC of trimmed reads
 After the trimming, fastQC is automatically run on the new fastq and the results are also in this folder:
 - Sample1_R1_val_1_fastqc.html
@@ -852,30 +874,80 @@ After the trimming, fastQC is automatically run on the new fastq and the results
 - Sample1_R2_val_2_fastqc.html
 - Sample1_R2_val_2_fastqc.zip
 
-As previously MultiQC gives a summary for all the samples. It can be found in `output/PROJECTNAME/fastqc_after_trimming/. 
+As previously **MultiQC** gives a summary for all the samples. It can be found in `output/PROJECTNAME/fastqc_after_trimming/`. You'll find information from the trimming report (for instance you can rapidly see the % of trim reads for the different samples) as well as from fastQC. 
 
 Nota: I will modify to have all the fastQC results in this folder.
 
-
-
 ### Mapped reads
+The mapped reads are stored as sorted bam in `data/PROJECTNAME/genome/bamFileSort`, with their `.bai` index.
 
+### BigWig
+To facilitate visualization (for instance using a genome browser such as [IGV](http://software.broadinstitute.org/software/igv/home)), bigwig files are generated. There are in `output/PROJECTNAME/genome/bw`. If you have generated stranded bigwig, they are in  `output/PROJECTNAME/genome/bw_str`. 
+If not already done, you can get the files on your computer running:
+```
+You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/output/PROJECTNAME/genome/bw_str PathTo/WhereYouWantToSave/
+```
+![igv_RF.png](RASflow/results/igv_RF.png)
 ### Mapping QC
+[Qualimap](http://qualimap.bioinfo.cipf.es/) is used to check the mapping quality. You'll find qualimap reports in `output/PROJECTNAME/genome/alignmentQC`. Those reports contain a lot of information:
+- information about the mapper
+- number/% of mapped reads/pairs
+- number of indels and mismatches
+- coverage per chromosome
+- insert size histogram
+- ...  
+
+If not already done, you can get the files on your computer running:
+```
+You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/output/PROJECTNAME/genome/alignmentQC PathTo/WhereYouWantToSave/
+```
+Once again **MultiQC** aggregates the results of all the samples and you can have a quick overview by looking at `output/PROJECTNAME/genome/report_align_count.html`. 
 
 ### Count Tables
 
+The count tables can be found in `output/PROJECTNAME/genome/countFile/`. The .summary files are the tables
+
+`GeneID  counts`
+
+The `.tsv` are the same files, with additionnal information at the end:
+```
+[mhennion @ clust-slurm-client 16:32]$ RASflow : tail output/LXACT_1/genome/countFile/D197-D192T27_count.tsv
+ENSG00000288602.1	47
+ENSG00000288603.1	0
+ENSG00000288604.1	0
+__no_feature	2577896
+__ambiguous	7760223
+__too_low_aQual	2567823
+__not_aligned	350693
+__alignment_not_unique	7726115
+```
+Nota: I will change this (-> one count file and one additional info file). 
+
+In addition, 2 PDF are generated: 
+- `PCA.pdf` : it contains two figures 
+  - distribution of raw counts / samples
+![RawCount.png](RASflow/results/RawCounts.png)
+  - PCA of all the samples, colored by group
+![PCA.png](RASflow/results/PCA.png)
+- `Heatmap.pdf` with a heatmap of sample distances 
+<img src="RASflow/results/SampleHeatmap.png" alt="drawing" width="600"/>
+
+Nota: I didn't manage to do all in one, I have to spend more time in generating a nice report.
+
 ### DEA results
 
-
-
+DEA results are in `output/PROJECTNAME/genome/dea`. 
+- In `output/PROJECTNAME/genome/dea/countGroup/` are count tables per group, raw (`group_gene_count.tsv`) and normalized (`group_gene_norm.tsv`).
+- In `output/PROJECTNAME/genome/dea/DEA`, you'll find the edgeR results for each pair of conditions: 
+    - dea_J0_WT_J0_KO.tsv contains differential expression for all genes
+    - deg_J0_WT_J0_KO.tsv contains only the genes differentially expressed (FDR < 0.05)
+- In `output/PROJECTNAME/genome/dea/visualization/`, you'll find for each pair of conditions:
+    - Volcano plots representing differential expression 
+![volcano_plot2_J0_WT_J10_WT.pdf.png](RASflow/results/volcano_plot2_J0_WT_J10_WT.pdf.png)
+    - A heatmap of the 20 most regulated genes
+![heatmap2_J0_WT_J10_WT_1.pdf.png](RASflow/results/heatmap2_J0_WT_J10_WT_1.pdf.png)
 
 ---
----
----
-
-
-
-
 
 ## How to follow your jobs
 
