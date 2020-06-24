@@ -31,14 +31,14 @@
 ## Resources
 
 - IFB  
-Create and manage your [account](https://my.cluster.france-bioinformatique.fr/manager2/login)  
-Community [support](https://community.cluster.france-bioinformatique.fr)   
-[Documentation](https://ifb-elixirfr.gitlab.io/cluster/doc/)  
+  - Create and manage your [account](https://my.cluster.france-bioinformatique.fr/manager2/login)  
+  - Community [support](https://community.cluster.france-bioinformatique.fr)   
+  - [Documentation](https://ifb-elixirfr.gitlab.io/cluster/doc/)  
 
 - RASflow, Zhang, X.  
-[RASflow git repo](https://github.com/zhxiaokang/RASflow)  
-[Papier](https://doi.org/10.1186/s12859-020-3433-x)   
-[Tutorial](https://github.com/zhxiaokang/RASflow/blob/master/Tutorial.pdf)
+  - [RASflow git repo](https://github.com/zhxiaokang/RASflow)  
+  - [Papier](https://doi.org/10.1186/s12859-020-3433-x)   
+  - [Tutorial](https://github.com/zhxiaokang/RASflow/blob/master/Tutorial.pdf)
 
 
 ---
@@ -789,7 +789,7 @@ This way you can get all the results on your computer by running
 ```
 You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/output/PROJECTNAME/ PathTo/WhereYouWantToSave/
 ```
-and the huge files will stay on the server. You can of course download them as well if you have space (and this is recommanded for the long term). 
+and the huge files will stay on the server. You can of course download them as well if you have space (and this is recommended for the long term). 
 
 ### Trimmed reads
 After trimming, the fastq are stored in the intermediate folder defined in `configs/config_main.yaml` at `OUTPUTPATH:`. 
@@ -1035,7 +1035,7 @@ __default__:
 
 qualityControl:
   mem: 6000
-cat 
+
 trim:
   mem: 6000
 
