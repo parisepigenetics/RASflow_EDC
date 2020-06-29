@@ -63,7 +63,7 @@ TRANS: /shared/..
 
 ## genome and annotation files
 GENOME: /shared/bank/homo_sapiens/hg38/fasta/hg38.fa # genome fasta file
-INDEXPATH: /shared/projects/YourProjectName/RASflow_IFB/index/hg38 # folder containing index files
+INDEXPATH: /shared/bank/homo_sapiens/hg38/hisat2 # folder containing index files
 INDEXBASE:  genome # base of the name of the index files (ie genome.1.ht2)
 ANNOTATION: /shared/projects/YourProjectName/RASflow_IFB/gtf/gencode.v34.annotation.gtf # GTF file 
 

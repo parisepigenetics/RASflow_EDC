@@ -3,17 +3,30 @@ import numpy as np
 
 configfile: "configs/config_main.yaml"
 
-input_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/countFile"
-output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea"
+
+counter = config["COUNTER"]
+input_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/countFile_"+counter
+output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea_"+counter
+
+
 samples = np.array(pd.read_table(config["METAFILE"], header = 0)['sample'])
 groups = np.unique(np.array(pd.read_table(config["METAFILE"], header = 0)['group']))
 control = config["CONTROL"][0]
 treat = config["TREAT"][0]
+tool = config["DEATOOL"]
 
-rule all:
-    input:
-        normControl = output_path + "/countGroup/" + control + "_gene_norm.tsv",
-        dea = output_path + "/DEA/" + "dea_" + control + "_" + treat + ".tsv"
+
+if tool == "edgeR" :
+    rule all:
+        input:
+            normControl = output_path + "/Norm_edgeR/" + control + "_gene_norm.tsv",
+            dea = output_path + "/DEA_edgeR/" + "dea_" + control + "_" + treat + ".tsv"
+
+elif tool == "DESeq2" :
+    rule all:
+        input:
+            normControl = output_path + "/Norm_DESeq2/" + control + "_gene_norm.tsv",
+            dea = output_path + "/DEA_DESeq2/" + "dea_" + control + "_" + treat + ".tsv"
 
 rule combineSamples:
     input:
@@ -28,16 +41,30 @@ rule combineSamples:
     shell:
         "python scripts/combine2group_genome.py"
 
-rule DEA:
-    input:
-        groupCount = expand(output_path + "/countGroup/{group}_gene_count.tsv", group = groups)
-    output:
-        normControl = output_path + "/countGroup/" + control + "_gene_norm.tsv",
-        normTreat = output_path + "/countGroup/" + treat + "_gene_norm.tsv",
-        dea = output_path + "/DEA/" + "dea_" + control + "_" + treat + ".tsv", 
-        deg = output_path + "/DEA/" + "deg_" + control + "_" + treat + ".tsv"
-    conda:
-        "env.yaml"    
-    shell:
-        "Rscript scripts/dea_genome.R"
-
+if tool == "edgeR" : 
+    rule DEA:
+        input:
+            groupCount = expand(output_path + "/countGroup/{group}_gene_count.tsv", group = groups)
+        output:
+            normControl = output_path + "/Norm_edgeR/" + control + "_gene_norm.tsv",
+            normTreat = output_path + "/Norm_edgeR/" + treat + "_gene_norm.tsv",
+            dea = output_path + "/DEA_edgeR/" + "dea_" + control + "_" + treat + ".tsv",
+            deg = output_path + "/DEA_edgeR/" + "deg_" + control + "_" + treat + ".tsv"
+        conda:
+            "env.yaml"
+        shell:
+            "Rscript scripts/dea_genome.R"
+            
+if tool == "DESeq2" : 
+    rule DEA:
+        input:
+            groupCount = expand(output_path + "/countGroup/{group}_gene_count.tsv", group = groups)
+        output:
+            normControl = output_path + "/Norm_DESeq2/" + control + "_gene_norm.tsv",
+            normTreat = output_path + "/Norm_DESeq2/" + treat + "_gene_norm.tsv",
+            dea = output_path + "/DEA_DESeq2/" + "dea_" + control + "_" + treat + ".tsv",
+            deg = output_path + "/DEA_DESeq2/" + "deg_" + control + "_" + treat + ".tsv"
+        conda:
+            "env.yaml"
+        shell:
+            "Rscript scripts/dea_genome.R"

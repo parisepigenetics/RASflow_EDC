@@ -4,45 +4,36 @@ configfile: "configs/config_main.yaml"
 
 control = config["CONTROL"][0]
 treat = config["TREAT"][0]
-
+tool = config["DEATOOL"]
 reference = config["REFERENCE"]
 gene_level = config["GENE_LEVEL"]
 
 if reference == "transcriptome" and gene_level:
     norm_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/trans/dea/countGroup"
-    dea_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/trans/dea/DEA/gene-level"
-    output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/trans/dea/visualization"
+    if tool == "DESeq2": 
+        dea_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/trans/dea/DEA_DESeq2/gene-level"
+        output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/trans/dea/visualization_DESeq2"
+    if tool == "edgeR": 
+        dea_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/trans/dea/DEA_edgeR/gene-level"
+        output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/trans/dea/visualization_edgeR"
 
-    rule end:
-        input:
-            volcano = output_path + "/volcano_plot_" + control + "_" + treat + ".pdf",
-            heatmap = output_path + "/heatmap_" + control + "_" + treat + ".pdf"
-
-    rule plot:
-        input:
-            norm_path = norm_path,
-            dea_path = dea_path
-        output:
-            volcano = output_path + "/volcano_plot_" + control + "_" + treat + ".pdf",
-            heatmap = output_path + "/heatmap_" + control + "_" + treat + ".pdf"
-        conda:
-            "env.yaml"
-        params:
-            output_path = directory(output_path)
-        shell:
-            "Rscript scripts/visualize.R {input.norm_path} {input.dea_path} {params.output_path}"
 
 elif reference == "genome":
     norm_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea/countGroup"
-    dea_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea/DEA"
-    output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea/visualization"
+    if tool == "DESeq2":
+        dea_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea/DEA_DESeq2"
+        output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea/visualization_DESeq2"
+    if tool == "edgeR":
+        dea_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea/DEA_edgeR"
+        output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea/visualization_edgeR"
 
-    rule end:
+
+rule end:
         input:
             volcano = output_path + "/volcano_plot_" + control + "_" + treat + ".pdf",
             heatmap = output_path + "/heatmap_" + control + "_" + treat + ".pdf"
 
-    rule plot:
+rule plot:
         input:
             norm_path = norm_path,
             dea_path = dea_path

@@ -83,19 +83,18 @@ plot.volcano.heatmap <- function(name.control, name.treat) {
 
   # volcano plot
   if (dea.tool == 'edgeR') {
-    fig.volcano <- EnhancedVolcano(dea.table, lab = gene.dea, xlab = bquote(~Log[2]~ "fold change"), x = 'logFC', y = 'FDR', pCutoff = 10e-5, col = c("grey30", "orange2", "royalblue", "red2"),
-                                 FCcutoff = 1, xlim = c(-5, 5), ylim = c(0, 10), transcriptPointSize = 1.5, title = NULL, subtitle = NULL)  
-  fig.volcano2 <- EnhancedVolcano(dea.table, lab = gene.dea, xlab = bquote(~Log[2]~ "fold change"), x = 'logFC', y = 'FDR', pCutoff = 10e-5, col = c("grey30", "orange2", "royalblue", "red2"),
+  #  fig.volcano <- EnhancedVolcano(dea.table, lab = gene.dea, xlab = bquote(~Log[2]~ "fold change"), x = 'logFC', y = 'FDR', pCutoff = 10e-5, col = c("grey30", "orange2", "royalblue", "red2"),
+   #                              FCcutoff = 1, xlim = c(-5, 5), ylim = c(0, 10), transcriptPointSize = 1.5, title = NULL, subtitle = NULL)  
+  fig.volcano <- EnhancedVolcano(dea.table, lab = gene.dea, xlab = bquote(~Log[2]~ "fold change"), x = 'logFC', y = 'FDR', pCutoff = 10e-5, col = c("grey30", "orange2", "royalblue", "red2"),
                                  FCcutoff = 1, transcriptPointSize = 1.5, title = NULL, subtitle = NULL)
 
   } else if (dea.tool == 'DESeq2') {
     fig.volcano <- EnhancedVolcano(dea.table, lab = gene.dea, xlab = bquote(~Log[2]~ "fold change"), x = 'log2FoldChange', y = 'padj', pCutoff = 10e-5, col = c("grey30", "orange2", "royalblue", "red2"),
-                                 FCcutoff = 1, xlim = c(-5, 5), ylim = c(0, 10), transcriptPointSize = 1.5, title = NULL, subtitle = NULL)
+                                 FCcutoff = 1, transcriptPointSize = 1.5, title = NULL, subtitle = NULL)
   }
   
   as.pdf(fig.volcano, width = 9, height = 6, scaled = TRUE, file = file.path(out.path, paste('volcano_plot_', name.control, '_', name.treat, '.pdf', sep = '')))
-  as.pdf(fig.volcano2, width = 9, height = 6, scaled = TRUE, file = file.path(out.path, paste('volcano_plot2_', name.control, '_', name.treat, '.pdf', sep = '')))
-
+ 
   # heatmap
   norm.table.control <- read.table(norm.control, header = TRUE, row.names = 1)
   norm.table.treat <- read.table(norm.treat, header = TRUE, row.names = 1)
@@ -127,12 +126,12 @@ plot.volcano.heatmap <- function(name.control, name.treat) {
   palette.group <- c(rep(palette[1], num.control), rep(palette[2], num.treat))
 
   ## draw heatmap
-  pdf(file = file.path(out.path, paste('heatmap_', name.control, '_', name.treat, '.pdf', sep = '')), width = 15, height = 12, title = 'Heatmap using the top features')
-  heatmap(as.matrix(norm.table.deg), ColSideColors = palette.group, margins = c(9,5.5), labRow = gene.norm.table, cexRow = 1.9, cexCol = 1.9)
-  legend("topleft", title = 'Group', legend=groups, text.font = 15,
-         col = palette, fill = palette, cex=1.8)
+ # pdf(file = file.path(out.path, paste('heatmap_', name.control, '_', name.treat, '.pdf', sep = '')), width = 15, height = 12, title = 'Heatmap using the top features')
+  #heatmap(as.matrix(norm.table.deg), ColSideColors = palette.group, margins = c(9,5.5), labRow = gene.norm.table, cexRow = 1.9, cexCol = 1.9)
+  #legend("topleft", title = 'Group', legend=groups, text.font = 15,
+  #       col = palette, fill = palette, cex=1.8)
 
-  pdf(file = file.path(out.path, paste('heatmap2_', name.control, '_', name.treat, '.pdf', sep = '')), width = 15, height = 15, title = 'Heatmap using the top features')
+  pdf(file = file.path(out.path, paste('heatmap_', name.control, '_', name.treat, '.pdf', sep = '')), width = 15, height = 15, title = 'Heatmap using the top features')
   heatmap.2(as.matrix(norm.table.deg), col=brewer.pal(11,"RdBu"),scale="row", trace="none", ColSideColors = palette.group, margins = c(20,18), labRow = gene.norm.table, cexRow = 1.9, cexCol = 1.9)
   legend("topright", title = 'Group', legend=groups, text.font = 15,
          col = palette, fill = palette, cex=1.8)

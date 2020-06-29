@@ -8,22 +8,19 @@ trim:
   mem: 6000
 
 alignment:
-  mem: 30000
-
-sortBAM:
-  mem: 40000
+  mem: 7000
 
 alignmentQC:
   mem: 7000
 
 BigWig:
-  mem: 70000
+  mem: 80000
 
 BigWigR:
-  mem: 70000
+  mem: 80000
 
 BigWigF:
-  mem: 70000
+  mem: 80000
 
 featureCount:
-  mem: 20000
+  mem: 40000

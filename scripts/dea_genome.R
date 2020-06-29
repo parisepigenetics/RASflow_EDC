@@ -1,6 +1,8 @@
 library(yaml)
 library(edgeR)
 library(DESeq2)
+library(regionReport)
+
 
 # ====================== define the function of DEA ======================
 
@@ -42,11 +44,11 @@ DEA <- function(control, treat) {
 
     y.control <- calcNormFactors(y.control, method="TMM")
     count.table.control.norm <- cpm(y.control)
-    write.table(count.table.control.norm, paste(output.path, '/countGroup/', control, '_gene_norm.tsv', sep = ''), quote = FALSE, sep = "\t")
+    write.table(count.table.control.norm, paste(output.path, '/Norm_edgeR/', control, '_gene_norm.tsv', sep = ''), quote = FALSE, sep = "\t")
 
     y.treat <- calcNormFactors(y.treat, method="TMM")
     count.table.treat.norm <- cpm(y.treat)
-    write.table(count.table.treat.norm, paste(output.path, '/countGroup/', treat, '_gene_norm.tsv', sep = ''), quote = FALSE, sep = "\t")
+    write.table(count.table.treat.norm, paste(output.path, '/Norm_edgeR/', treat, '_gene_norm.tsv', sep = ''), quote = FALSE, sep = "\t")
 
     # Put the data into a DGEList object
     y <- DGEList(counts = count.table, genes = gene.list)
@@ -83,6 +85,9 @@ DEA <- function(control, treat) {
     # conduct likelihood ratio tests for tumour vs normal tissue differences and show the top genes
     lrt <- glmLRT(fit)
     
+    #Report
+    report <- edgeReport(y, lrt ,"edgeR Report",intgroup = "group", outdir = paste(output.path,'/Report_edgeR/', control, '_', treat, sep = ''))
+
     # the DEA result for all the genes
     # dea <- lrt$table
     toptag <- topTags(lrt, n = nrow(y$genes), p.value = 1)
@@ -97,8 +102,8 @@ DEA <- function(control, treat) {
     }
 
     # save the DEA result and DEGs to files
-    write.table(dea, paste(output.path, '/DEA/dea_', control, '_', treat, '.tsv', sep = ''), row.names = F, quote = FALSE, sep = '\t')
-    write.table(deg, paste(output.path, '/DEA/deg_', control, '_', treat, '.tsv', sep = ''), row.names = F, quote = FALSE, sep = '\t') 
+    write.table(dea, paste(output.path, '/DEA_edgeR/dea_', control, '_', treat, '.tsv', sep = ''), row.names = F, quote = FALSE, sep = '\t')
+    write.table(deg, paste(output.path, '/DEA_edgeR/deg_', control, '_', treat, '.tsv', sep = ''), row.names = F, quote = FALSE, sep = '\t') 
   } else if (dea.tool == "DESeq2") {  # use DESeq2 for DEA
 
     ## create the DESeqDataSet
@@ -110,10 +115,10 @@ DEA <- function(control, treat) {
     normalized_counts <- counts(dds, normalized=TRUE)
 
     normalized_counts.control <- normalized_counts[, which(colnames(normalized_counts) %in% sample.control)]
-    write.table(normalized_counts.control, paste(output.path, '/countGroup/', control, '_gene_norm.tsv', sep = ''), quote = FALSE, sep = "\t")
+    write.table(normalized_counts.control, paste(output.path, '/Norm_DESeq2/', control, '_gene_norm.tsv', sep = ''), quote = FALSE, sep = "\t")
 
     normalized_counts.treat <- normalized_counts[, which(colnames(normalized_counts) %in% sample.treat)]
-    write.table(normalized_counts.treat, paste(output.path, '/countGroup/', treat, '_gene_norm.tsv', sep = ''), quote = FALSE, sep = "\t")
+    write.table(normalized_counts.treat, paste(output.path, '/Norm_DESeq2/', treat, '_gene_norm.tsv', sep = ''), quote = FALSE, sep = "\t")
 
     ## Filtering
     if (filter.need) {
@@ -126,7 +131,10 @@ DEA <- function(control, treat) {
     
     ## perform DEA
     dds <- DESeq(dds)
-    
+
+    ## make a report
+    report <- DESeq2Report(dds, "DESeq2-report", outdir = paste(output.path,'/Report_DESeq2/', control, '_', treat, sep = ''),intgroup = c("group"))
+
     ## export the results
     res.dea <- results(dds)
     res.dea <- res.dea[complete.cases(res.dea), ]  # remove any rows with NA
@@ -140,8 +148,8 @@ DEA <- function(control, treat) {
     }
 
     # save the DEA result and DEGs to files
-    write.table(dea, paste(output.path, '/DEA/dea_', control, '_', treat, '.tsv', sep = ''), row.names = T, quote = FALSE, sep = '\t')
-    write.table(deg, paste(output.path, '/DEA/deg_', control, '_', treat, '.tsv', sep = ''), row.names = T, quote = FALSE, sep = '\t')
+    write.table(dea, paste(output.path, '/DEA_DESeq2/dea_', control, '_', treat, '.tsv', sep = ''), row.names = T, quote = FALSE, sep = '\t')
+    write.table(deg, paste(output.path, '/DEA_DESeq2/deg_', control, '_', treat, '.tsv', sep = ''), row.names = T, quote = FALSE, sep = '\t')
   }
 }
 
@@ -167,7 +175,7 @@ num.control <- length(controls)  # number of comparisons that the user wants to 
 num.treat <- length(treats)  # should equals to num.control
 
 if (num.control != num.treat) {
-  message("Error: Control groups don't mathch with treat groups!")
+  message("Error: Control groups don't match with treat groups!")
   message("Please check config_dea.yaml")
   quit(save = 'no')
 }
@@ -182,3 +190,4 @@ for (ith.comparison in c(1:num.comparison)) {
   treat <- treats[ith.comparison]
   DEA(control, treat)
 }
+
