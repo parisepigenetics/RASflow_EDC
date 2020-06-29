@@ -31,14 +31,14 @@
 ## Resources
 
 - IFB  
-Create and manage your [account](https://my.cluster.france-bioinformatique.fr/manager2/login)  
-Community [support](https://community.cluster.france-bioinformatique.fr)   
-[Documentation](https://ifb-elixirfr.gitlab.io/cluster/doc/)  
+  - Create and manage your [account](https://my.cluster.france-bioinformatique.fr/manager2/login)  
+  - Community [support](https://community.cluster.france-bioinformatique.fr)   
+  - [Documentation](https://ifb-elixirfr.gitlab.io/cluster/doc/)  
 
 - RASflow, Zhang, X.  
-[RASflow git repo](https://github.com/zhxiaokang/RASflow)  
-[Papier](https://doi.org/10.1186/s12859-020-3433-x)   
-[Tutorial](https://github.com/zhxiaokang/RASflow/blob/master/Tutorial.pdf)
+  - [RASflow git repo](https://github.com/zhxiaokang/RASflow)  
+  - [Papier](https://doi.org/10.1186/s12859-020-3433-x)   
+  - [Tutorial](https://github.com/zhxiaokang/RASflow/blob/master/Tutorial.pdf)
 
 
 ---
@@ -124,7 +124,7 @@ Check that the transfer went fine using md5sum
 
 Here is a scheme of the workflow as implemented on the IFB cluster. In the green circles are the input files you have to give for the different steps. 
 
-![workflow](RASflow/workflow_chart.pdf.png)
+<img src="RASflow/workflow_chart.pdf.png" alt="drawing" width="600"/>
 
 The first step is to clone RASflow_IFB to your project, and to look at the files. 
 
@@ -152,7 +152,8 @@ There are **3 files** that you have to modify before running your analysis, and 
 ### 1. **Workflow.sh**
 
 RASflow is launched as a python script named `main_cluster.py` which calls the workflow manager named [snakemake](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html). On the cluster this python script is launch via the shell script `Workflow.sh`, which basically contains only one command (+ information about the job). 
-![cluster_chart.pdf.png](RASflow/cluster_chart.pdf.png)
+
+<img src="RASflow/cluster_chart.pdf.png" alt="drawing" width="500"/>
 
 ```
 [...]
@@ -419,23 +420,69 @@ You can check if your job is running using squeue.
 ```
 [username@clust-slurm-client RASflow_IFB]$ squeue -u username
 ```
-You can also check slurm output files. 
+You should also check slurm output files. 
+### Description of the log files 
 
-The first job is the main script (slurm output is in your working directory (default) or in the specified folder if you modified `Workflow.sh`). This job will launch other jobs, here one fastqc job per sample. Those jobs are also controled by SLURM and you can check them reading `slurm-JOBID.out` (one per job).  
-Typically the main job output looks like  (example not from QC, I split it to explain the different parts).
+The first job is the main script. This job will call one or several snakefiles that define small workflows of the individual tasks. There are slurm outputs at the 3 levels. 
+1. main script
+2. snakefiles
+3. individual tasks
 
-Information about the job:
+Where to find those outputs and what to they contain?
+
+1. main script : slurm output is in your working directory (default) or in the specified folder if you modified `Workflow.sh`. It contains global information about your run. 
+Typically the main job output looks like :
 ```
-[mhennion@clust-slurm-client RASflow]$ cat slurm_output/RASflow-7908073.out 
+[mhennion @ clust-slurm-client 16:17]$ RASflow : cat slurm_output/Logs-9385967.out 
 ########################################
-Date: 2020-05-12T17:48:14+0200
+Date: 2020-06-15T15:40:11+0200
 User: mhennion
-Host: cpu-node-13
-Job Name: RASflow
-Job Id: 7908073
+Host: cpu-node-83
+Job Name: Logs
+Job Id: 9385967
 Directory: /shared/projects/lxactko_analyse/RASflow
 ########################################
+Python 3.7.3
+snakemake
+5.19.2
+conda 4.8.2
+Is quality control required?
+ no
+Is trimming required?
+ yes
+Which mapping reference will be used?
+ genome
+Is DEA required?
+ yes
+Is visualization required?
+ yes
+Start RASflow on project: LXACT_1-test
+Start Trimming!
+Trimming is done!
+Start mapping using  genome  as reference!
+Start doing DEA!
+DEA is done!
+Start visualization of DEA results!
+Visualization is done!
+RASflow is done!
+########################################
+Job finished 2020-06-15T15:50:43+0200
+---- Total runtime 632 s ; 10 min ----
 ```
+2. snakefiles. There are 5 snakefiles (visible in the `workflow` folder) that correspond to the different steps of the analysis:
+  - quality_control.rules (QC)
+  - trim.rules (reads trimming/filtering)
+  - align_count_genome.rules (mapping and feature counting)
+  - dea_genome.rules (differential gene expression)
+  - visualize.rules (plots)
+
+The slurm outputs of those different steps are stored in the `logs` folder and named as the corresponding snakefile plus the date : for instance
+`trim_20200615_1540.txt` or  `align_count_genome_20200615_1540.txt`. 
+
+Here is a description of those files (splitted): 
+
+---
+
 Building the DAG (directed acyclic graph): Define the jobs that will be launched and in which order.
 ```
 Building DAG of jobs...
@@ -460,7 +507,7 @@ rule getReads:
 
 Submitted DRMAA job 4 with external jobid 7908074.
 ```
-You have here the corresponding job ID. You can follow that particular job in `slurm-7908074.out`. 
+You have here the corresponding **job ID**. You can follow that particular job in `slurm-7908074.out`. 
 
 End of that job, start of the next one:
 ```
@@ -491,28 +538,23 @@ And so on... Finally:
 Finished job 0.
 5 of 5 steps (100%) done
 Complete log: /shared/mfs/data/projects/lxactko_analyse/RASflow/.snakemake/log/2020-05-12T174816.622252.snakemake.log
-Is quality control required?
- no
-Is trimming required?
- yes
-Which mapping reference will be used?
- x
-Is DEA required?
- no
-Is visualization required?
- no
-Start RASflow on project: LXACT_1-test
-Start Trimming!
-Trimming is done!
-Start mapping using  x  as reference!
-DEA is not required and RASflow is done!
-########################################
-Job finished 2020-05-12T17:51:21+0200
----- Total runtime 187 s ; 3 min ----
 ```
-Nota: I don't like this output that is sometimes confusing, I will improve it. You have in this file the job ID of every jobs
 
-For the job started by snakemake, slurm output is like this:
+---
+
+An extra log file named `running_time_20200615_1540.txt` stores running times.  
+```
+[mhennion @ clust-slurm-client 15:50]$ RASflow : cat logs/running_time_20200615_1540.txt 
+
+Project name: LXACT_1-test
+Start time: Mon Jun 15 15:40:13 2020
+Time of running trimming:0:00:12
+Time of running genome alignment:0:08:43
+Time of running DEA genome based:0:01:32
+Time of running visualization:0:00:01
+Finish time: Mon Jun 15 15:50:43 2020
+```
+3. individual tasks: every job generate a `slurm-JOBID.out` file in the working directory (I didn't manage to change the default path, I could add a step moving those files if necessary). Slurm output specifies the rule, the sample, and gives outputs specific to the tool:  
 ```
 [mhennion@clust-slurm-client RASflow]$ cat slurm_output/slurm-8080372.out 
 Building DAG of jobs...
@@ -539,6 +581,7 @@ Activating conda environment: /shared/mfs/data/projects/lxactko_analyse/RASflow/
 Finished job 0.
 1 of 1 steps (100%) done
 ```
+### FastQC results
 
 If everything goes fine, fastQC results will be in `output/PROJECTNAME/fastqc/`. For every sample you will have something like:
 ```
@@ -552,7 +595,7 @@ total 38537
 Those are individual fastQC reports. MultiQC is called after FastQC, so you will also find `report_quality_control.html` that is a summary for all the samples. 
 You can copy those reports to your computer to read them, by typing (in a new terminal):
 ```
-You@YourComputer:~$ scp -r username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/output/PROJECTNAME/fastqc PathTo/WhereYouWantToSave/
+You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/output/PROJECTNAME/fastqc PathTo/WhereYouWantToSave/
 ```
 It's time to decide if you need trimming or not. 
 If you have no sequence bias, and little amount of adapters, trimming is not necessary and you can proceed directly to the Mapping step.
@@ -596,7 +639,7 @@ Nota: I will probably modify that part to be more computationally efficient.
 
 ### Mapping and feature count
 
-At this step you have to provide the path to your reference genome, its hisat2 index as well as a GTF annotation file. 
+At this step you have to provide the path to your reference genome, its HISAT2 index as well as a GTF annotation file. 
 Some reference files are shared between users. Before dowloading a new reference, check what is available at `/shared/bank/`. 
 ```bash
 [username@clust-slurm-client ]$ tree -L 2 /shared/bank/homo_sapiens/
@@ -690,6 +733,15 @@ ALIGNER: hisat2
 ## tool for feature count
 COUNTER: htseq-count #  "featureCounts" or "htseq-count", I haven't tested featureCounts yet
 ```
+For now only HISAT2 is available but I plan to add STAR. 
+
+For an easy visualisation on a genome browser, bigwig files are generated. You can choose if you want to separate forward and reverse reads setting `BWSTRANDED`. 
+
+Feature count is done by [HTseq-count](https://htseq.readthedocs.io/en/master/count.html) with default parameters. I will implement more parameters. 
+
+As an alternative, featureCounts ([SubReads package](http://subread.sourceforge.net/)) should be available soon too. 
+
+Finally STAR can also generate count tables and I plan to add this too. 
 
 ### Differential expression analysis and visualization
 
@@ -719,21 +771,183 @@ When this file is fully adapted to your experimental set up and needs, you can s
 [username@clust-slurm-client RASflow_IFB]$ sbatch Workflow.sh
 ```
 
+---
+
 ## Expected outputs
 
+The outputs are separated into two folders : 
+- the big files : trimmed fastq, bam files are in the intermediate folder defined in `configs/config_main.yaml` at `OUTPUTPATH:`
+- the small files: QC reports, count tables, bigwig, etc. are in the final output folder defined in `configs/config_main.yaml` at `FINALOUTPUT:`
+
+```yaml
+## paths for intermediate outputs and final outputs
+OUTPUTPATH: /shared/projects/YourProjectName/RASflow_IFB/data # intermediate output. do not upload to github
+FINALOUTPUT: /shared/projects/YourProjectName/RASflow_IFB/output
+```
+
+This way you can get all the results on your computer by running 
+```
+You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/output/PROJECTNAME/ PathTo/WhereYouWantToSave/
+```
+and the huge files will stay on the server. You can of course download them as well if you have space (and this is recommended for the long term). 
+
+### Trimmed reads
+After trimming, the fastq are stored in the intermediate folder defined in `configs/config_main.yaml` at `OUTPUTPATH:`. 
+
+In this examples the trim fastq files will be stored in `/shared/projects/YourProjectName/RASflow_IFB/data/PROJECTNAME/trim/`. They are named
+- Sample1_R1_val_1.fq
+- Sample1_R2_val_2.fq
+
+#### Trimming report
+In the same folder, you'll find trimming reports such as `Sample1_forward.fq.gz_trimming_report.txt` for each samples. If you have trimmed a fixed number of bases, the trimming report will have a name related to the intermediate file (not conserved) generated after that trimming: such as `Sample1_forward.91bp_3prime.fq.gz_trimming_report.txt`. You'll find information about the tools and parameters, as well as trimming statistics:
+```
+[mhennion @ clust-slurm-client 09:47]$ RASflow : cat data/output/LXACT_1/trim/D197-D192T27_forward.91bp_3prime.fq.gz_trimming_report.txt
+
+SUMMARISING RUN PARAMETERS
+==========================
+Input filename: /shared/projects/lxactko_analyse/RASflow/data/output/LXACT_1/trim/D197-D192T27_forward.91bp_3prime.fq.gz
+Trimming mode: paired-end
+Trim Galore version: 0.6.2
+Cutadapt version: 2.10
+Python version: could not detect
+Number of cores used for trimming: 4
+Quality Phred score cutoff: 20
+Quality encoding type selected: ASCII+33
+Adapter sequence: 'AGATCGGAAGAGC' (Illumina TruSeq, Sanger iPCR; auto-detected)
+Maximum trimming error rate: 0.1 (default)
+Minimum required adapter overlap (stringency): 1 bp
+Minimum required sequence length for both reads before a sequence pair gets removed: 20 bp
+Running FastQC on the data once trimming has completed
+Output file will be GZIP compressed
 
 
-Outputs: trimmed reads, mapped reads, counts, dea
+This is cutadapt 2.10 with Python 3.6.7
+Command line parameters: -j 4 -e 0.1 -q 20 -O 1 -a AGATCGGAAGAGC /shared/projects/lxactko_analyse/RASflow/data/output/LXACT_1/trim/D197-D192T27_forward.91bp_3prime.fq.gz
+Processing reads on 4 cores in single-end mode ...
+Finished in 753.96 s (10 us/read; 6.12 M reads/minute).
 
+=== Summary ===
 
+Total reads processed:              76,953,098
+Reads with adapters:                26,337,424 (34.2%)
+Reads written (passing filters):    76,953,098 (100.0%)
+
+Total basepairs processed: 7,002,731,918 bp
+Quality-trimmed:               3,377,451 bp (0.0%)
+Total written (filtered):  6,945,877,513 bp (99.2%)
+
+=== Adapter 1 ===
+
+Sequence: AGATCGGAAGAGC; Type: regular 3'; Length: 13; Trimmed: 26337424 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-13 bp: 1
+
+Bases preceding removed adapters:
+  A: 28.4%
+  C: 34.7%
+  G: 19.3%
+  T: 17.6%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+1	17772643	19238274.5	0	17772643
+2	5175839	4809568.6	0	5175839
+3	1542956	1202392.2	0	1542956
+4	405786	300598.0	0	405786
+5	193232	75149.5	0	193232
+6	122612	18787.4	0	122612
+7	107160	4696.8	0	107160
+8	111233	1174.2	0	111233
+...
+RUN STATISTICS FOR INPUT FILE: /shared/projects/lxactko_analyse/RASflow/data/output/LXACT_1/trim/D197-D192T27_forward.91bp_3prime.fq.gz
+=============================================
+76953098 sequences processed in total
+```
+This information is summarized in the MultiQC report, see  below. 
+
+#### FastQC of trimmed reads
+After the trimming, fastQC is automatically run on the new fastq and the results are also in this folder:
+- Sample1_R1_val_1_fastqc.html
+- Sample1_R1_val_1_fastqc.zip
+- Sample1_R2_val_2_fastqc.html
+- Sample1_R2_val_2_fastqc.zip
+
+As previously **MultiQC** gives a summary for all the samples. It can be found in `output/PROJECTNAME/fastqc_after_trimming/`. You'll find information from the trimming report (for instance you can rapidly see the % of trim reads for the different samples) as well as from fastQC. 
+
+Nota: I will modify to have all the fastQC results in this folder.
+
+### Mapped reads
+The mapped reads are stored as sorted bam in `data/PROJECTNAME/genome/bamFileSort`, with their `.bai` index.
+
+### BigWig
+To facilitate visualization (for instance using a genome browser such as [IGV](http://software.broadinstitute.org/software/igv/home)), bigwig files are generated. There are in `output/PROJECTNAME/genome/bw`. If you have generated stranded bigwig, they are in  `output/PROJECTNAME/genome/bw_str`. 
+If not already done, you can get the files on your computer running:
+```
+You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/output/PROJECTNAME/genome/bw_str PathTo/WhereYouWantToSave/
+```
+![igv_RF.png](RASflow/results/igv_RF.png)
+### Mapping QC
+[Qualimap](http://qualimap.bioinfo.cipf.es/) is used to check the mapping quality. You'll find qualimap reports in `output/PROJECTNAME/genome/alignmentQC`. Those reports contain a lot of information:
+- information about the mapper
+- number/% of mapped reads/pairs
+- number of indels and mismatches
+- coverage per chromosome
+- insert size histogram
+- ...  
+
+If not already done, you can get the files on your computer running:
+```
+You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/output/PROJECTNAME/genome/alignmentQC PathTo/WhereYouWantToSave/
+```
+Once again **MultiQC** aggregates the results of all the samples and you can have a quick overview by looking at `output/PROJECTNAME/genome/report_align_count.html`. 
+
+### Count Tables
+
+The count tables can be found in `output/PROJECTNAME/genome/countFile/`. The .summary files are the tables
+
+`GeneID  counts`
+
+The `.tsv` are the same files, with additionnal information at the end:
+```
+[mhennion @ clust-slurm-client 16:32]$ RASflow : tail output/LXACT_1/genome/countFile/D197-D192T27_count.tsv
+ENSG00000288602.1	47
+ENSG00000288603.1	0
+ENSG00000288604.1	0
+__no_feature	2577896
+__ambiguous	7760223
+__too_low_aQual	2567823
+__not_aligned	350693
+__alignment_not_unique	7726115
+```
+Nota: I will change this (-> one count file and one additional info file). 
+
+In addition, 2 PDF are generated: 
+- `PCA.pdf` : it contains two figures 
+  - distribution of raw counts / samples
+![RawCount.png](RASflow/results/RawCounts.png)
+  - PCA of all the samples, colored by group
+![PCA.png](RASflow/results/PCA.png)
+- `Heatmap.pdf` with a heatmap of sample distances 
+<img src="RASflow/results/SampleHeatmap.png" alt="drawing" width="600"/>
+
+Nota: I didn't manage to do all in one, I have to spend more time in generating a nice report.
+
+### DEA results
+
+DEA results are in `output/PROJECTNAME/genome/dea`. 
+- In `output/PROJECTNAME/genome/dea/countGroup/` are count tables per group, raw (`group_gene_count.tsv`) and normalized (`group_gene_norm.tsv`).
+- In `output/PROJECTNAME/genome/dea/DEA`, you'll find the edgeR results for each pair of conditions: 
+    - dea_J0_WT_J0_KO.tsv contains differential expression for all genes
+    - deg_J0_WT_J0_KO.tsv contains only the genes differentially expressed (FDR < 0.05)
+- In `output/PROJECTNAME/genome/dea/visualization/`, you'll find for each pair of conditions:
+    - Volcano plots representing differential expression 
+![volcano_plot2_J0_WT_J10_WT.pdf.png](RASflow/results/volcano_plot2_J0_WT_J10_WT.pdf.png)
+    - A heatmap of the 20 most regulated genes
+![heatmap2_J0_WT_J10_WT_1.pdf.png](RASflow/results/heatmap2_J0_WT_J10_WT_1.pdf.png)
 
 ---
----
----
-
-
-
-
 
 ## How to follow your jobs
 
@@ -759,15 +973,25 @@ The `sacct` command gives you information about past and running jobs. The docum
 8024116      snakejob.+ 2020-05-14T13:48:56   00:01:48                2000Mn  COMPLETED 
 8024116.bat+      batch 2020-05-14T13:48:56   00:01:48    113456K     2000Mn  COMPLETED 
 ```
-Here you have the job ID and name, its starting time, its running time, the maximum RAM used, the memory you requested (it has to be higher than MaxRSS, otherwise the job fails, but not much higher to allow the others to use the ressource), and job status (failed, completed, running). 
+Here you have the job ID and name, its starting time, its running time, the maximum RAM used, the memory you requested (it has to be higher than MaxRSS, otherwise the job fails, but not much higher to allow the others to use the resource), and job status (failed, completed, running). 
 
 **Add `-S MMDD` to have older jobs (default is today only).** 
 
 ```
 [mhennion@clust-slurm-client RASflow]$ sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State -S 0518
 ```
+### Cancelling a job
+If you want to cancel a job: scancel job number
+```
+[username@clust-slurm-client RASflow_IFB]$ scancel 8016984
+```
+Nota: when snakemake is working on a folder, this folder is locked so that you can't start another DAG and create a big mess. If you cancel the main job, snakemake won't be able to unlock the folder (see [below](#error)). 
 
-## Trick make aliases
+---
+
+## Tricks 
+
+### Make aliases
 To save time avoiding typing long commands again and again, you can add aliases to your `.bashrc` file: 
 
 ``` 
@@ -786,8 +1010,11 @@ fi
 
 alias qq="squeue -u username"
 alias sa="sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State"
+alias ll="ls -lht --color=always"
 ```
 It will work next time you connect to the server. When you type `sa`, you will get the command `sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State` running. 
+
+---
 
 ## Common errors
 
@@ -808,7 +1035,7 @@ __default__:
 
 qualityControl:
   mem: 6000
-cat 
+
 trim:
   mem: 6000
 
@@ -834,3 +1061,25 @@ featureCount:
   mem: 20000
 ```
 If the rule that failed is not listed here, you can add it respecting the format. And restart your workflow. 
+<a name="error">
+
+### Folder locked
+</a>
+
+When snakemake is working on a folder, this folder is locked so that you can't start another DAG and create a big mess. If you cancel the main job, snakemake won't be able to unlock the folder and next time you run `Workflow.sh`, you will get the following error:
+
+```
+Error: Directory cannot be locked. Please make sure that no other Snakemake process is trying to create the same files in the following directory:
+/shared/mfs/data/projects/lxactko_analyse/RASflow
+If you are sure that no other instances of snakemake are running on this directory, the remaining lock was likely caused by a kill signal or a power loss. It can be removed with the --unlock argument.
+```
+In order to remove the lock, run:
+```
+[username@clust-slurm-client RASflow_IFB]$ sbatch Unlock.sh
+```
+Then you can restart your workflow. 
+
+---
+
+## Good practice
+- Always save **job ID** or the **date_time** (ie 20200615_1540) in your notes when launching `Workflow.sh`. It's easier to find the outputs you're interested in days/weeks/months/years later.
