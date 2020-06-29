@@ -106,6 +106,7 @@ else:
         shell:
             "hisat2 -p {config[NCORE]} --known-splicesite-infile {input.splicesites} -x {params.index} -U {input.fw} | samtools sort -O BAM > {output.sort}"
 
+
 rule BamIndex:
     input:
         sort = intermediate_path + "/bamFileSort/{sample}.sort.bam"

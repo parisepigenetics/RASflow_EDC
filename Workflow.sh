@@ -44,7 +44,6 @@ python --version
 echo 'snakemake' && snakemake --version
 conda --version
 echo '-------------------------'
-
 # remove display to make qualimap run:
 unset DISPLAY
 

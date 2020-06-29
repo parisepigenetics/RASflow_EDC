@@ -11,18 +11,34 @@
     + [3. **env.yaml** (facultative)](#3---envyaml----facultative-)
   * [Running your analysis step by step](#running-your-analysis-step-by-step)
     + [QC](#qc)
+    + [Description of the log files](#description-of-the-log-files)
+    + [FastQC results](#fastqc-results)
     + [Trimming](#trimming)
     + [Mapping and feature count](#mapping-and-feature-count)
     + [Differential expression analysis and visualization](#differential-expression-analysis-and-visualization)
   * [Expected outputs](#expected-outputs)
+    + [Trimmed reads](#trimmed-reads)
+      - [Trimming report](#trimming-report)
+      - [FastQC of trimmed reads](#fastqc-of-trimmed-reads)
+    + [Mapped reads](#mapped-reads)
+    + [BigWig](#bigwig)
+    + [Mapping QC](#mapping-qc)
+    + [Count Tables](#count-tables)
+    + [DEA results](#dea-results)
+      - [regionReport](#regionreport)
   * [How to follow your jobs](#how-to-follow-your-jobs)
     + [Running jobs](#running-jobs)
     + [Information about past jobs](#information-about-past-jobs)
-  * [Trick make aliases](#trick-make-aliases)
+    + [Cancelling a job](#cancelling-a-job)
+  * [Tricks](#tricks)
+    + [Make aliases](#make-aliases)
   * [Common errors](#common-errors)
     + [Memory](#memory)
+    + [Folder locked](#folder-locked)
+  * [Good practice](#good-practice)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
 
 
 
@@ -155,7 +171,7 @@ RASflow is launched as a python script named `main_cluster.py` which calls the w
 
 <img src="RASflow/cluster_chart.pdf.png" alt="drawing" width="500"/>
 
-```
+```bash
 [...]
 # modules loading
 module load snakemake python conda slurm-drmaa
@@ -175,7 +191,7 @@ You have to modify the command to fit your project name (replace `YourProjectNam
 [Facultative]  
 In `Workflow.sh`, you can also modify the **Job name** and the **Output** folder to save slurm outputs. If you don't change this file, slurm outputs will be saved in your working directory. The line is read if it starts with one `#` and is not used if it starts with 2 (or more) `#`. For instance here
 
-```
+```bash
 [username@clust-slurm-client RASflow_IFB]$ cat Workflow.sh
 #!/bin/bash
 
@@ -189,7 +205,7 @@ In `Workflow.sh`, you can also modify the **Job name** and the **Output** folder
 [...]
 ```
 the default path is used, whereas here
-```
+```bash
 #!/bin/bash
 
 ################################ Slurm options #################################
@@ -232,7 +248,7 @@ The configuration of the workflow (see step by step description below) is done i
 
    1. Define project name and the steps of the workflow you want to run
 
-```
+```yaml
 [username@clust-slurm-client RASflow_IFB]$ cat configs/config_main.yaml 
 # Please check the parameters, and adjust them according to your circumstance
 
@@ -260,7 +276,7 @@ DEA: yes  # "yes" or "no"
 VISUALIZE: yes  # "yes" or "no"
 ```
 3.   2. shared parameters
-```
+```yaml
 # ================== Shared parameters for some or all of the sub-workflows ==================
 
 ## key file if the data is stored remotely, otherwise leave it empty
@@ -284,7 +300,7 @@ FINALOUTPUT: /shared/projects/YourProjectName/RASflow_IFB/output
 
 ```
 3.   3. Configuration of the specific tools
-```
+```yaml
 # ================== Configuration for Quality Control ==================
 
 ## All required params have already been defined in the public params
@@ -304,7 +320,7 @@ TRANS: /shared/..
 
 ## genome and annotation files
 GENOME: /shared/bank/homo_sapiens/hg38/fasta/hg38.fa
-INDEXPATH: /shared/projects/YourProjectName/RASflow_IFB/index/hg38
+INDEXPATH: /shared/bank/homo_sapiens/hg38/hisat2
 INDEXBASE:  genome
 ANNOTATION: /shared/projects/YourProjectName/RASflow_IFB/gtf/gencode.v34.annotation.gtf  
 
@@ -327,47 +343,52 @@ COUNTER: htseq-count #  "featureCounts" or "htseq-count", I haven't implemented 
 ### 3. **env.yaml** (facultative)
 
 RASflow relies on a conda environment, you can check the version of the tools (and eventually modify them) in `workflow/env.yaml`. 
-```
+```yaml
 [username@clust-slurm-client RASflow_IFB]$ cat workflow/env.yaml 
-name: rasflow 
+name: rasflow_IFB 
 channels:
   - conda-forge
   - bioconda
   - r
   - defaults
 dependencies:
-  - snakemake=5.3.0
-  - graphviz=2.40.1
+  - snakemake=5.14.0
+  - graphviz=2.42.3
 # command tool installs
-  - R=3.5.1
-  - python=3.6.7
+  - R=4.0
+  - python=3.7.6
 # r channel installs
-  - r-yaml=2.2.0
-  - r-statmod=1.4.30
-  - r-gplots=3.0.1
+  - r-yaml=2.2.1
+  - r-statmod=1.4.34
+  - r-gplots=3.0.3
+  - r-magick=2.3
+  - r-dt=0.13
+  - r-sessioninfo=1.1.1
 # conda-forge channel installs
   - r-heatmap.plus=1.3
   - r-readr=1.3.1
   - r-hash=3.0.1
   - r-pheatmap=1.0.12
   - r-rcolorbrewer=1.1_2
+  - imagemagick=7.0.10
 # bioconda channel installs
-  - fastqc=0.11.8
-  - trim-galore=0.6.2
-  - multiqc=1.5
-  - salmon=0.14.1
-  - hisat2=2.1.0
-  - samtools=1.9
-  - subread=1.6.4  # featureCounts included
-  - htseq=0.12.3  # htseq-count included
-  - bioconductor-edger=3.26.0
-  - bioconductor-deseq2=1.22.1
+  - fastqc=0.11.9
+  - trim-galore=0.6.5
+  - multiqc=1.9
+  - salmon=1.2.1
+  - hisat2=2.2.0
+  - samtools=1.10
+  - subread=2.0.1  # featureCounts included
+  - htseq=0.12.4  # htseq-count included
+  - bioconductor-edger=3.30.0
+  - bioconductor-deseq2=1.28.0
   - qualimap=2.2.2a
-  - bioconductor-mygene=1.18.0
-  - bioconductor-tximport=1.12.1
-  - bioconductor-enhancedvolcano=1.2.0
-  - bioconductor-biomart=2.38.0
-  - deeptools=3.1.3
+  - bioconductor-mygene=1.24.0
+  - bioconductor-tximport=1.16.0
+  - bioconductor-enhancedvolcano=1.6.0
+  - bioconductor-biomart=2.44.0
+  - deeptools=3.4.3
+  - bioconductor-regionreport=1.22.0
 ```
 ## Running your analysis step by step
 
@@ -380,12 +401,12 @@ Prerequisite:
 Now you have to check in `config/config_main.yaml` that: 
 
 - you gave a project name
-```
+```yaml
 # Project name
 PROJECT: PROJECTNAME
 ```
 - In Control of the workflow, QC is set to `yes`: 
-```
+```yaml
 # ================== Control of the workflow ==================
 ## Do you need to do quality control?
 QC: yes  # "yes" or "no"
@@ -393,7 +414,7 @@ QC: yes  # "yes" or "no"
 The rest of the part `Control of the workflow` will be ignored. The software will stop after the QC to give you the opportunity to decide if trimming is necessary or not. 
 
 - The shared parameters are correct (paths to the fastq files, metadata.tsv, outputs, single or paired-end data). 
-```
+```yaml
 ## the path to fastq files
 READSPATH: /shared/projects/YourProjectName/Raw_fastq
 
@@ -482,7 +503,6 @@ The slurm outputs of those different steps are stored in the `logs` folder and n
 Here is a description of those files (splitted): 
 
 ---
-
 Building the DAG (directed acyclic graph): Define the jobs that will be launched and in which order.
 ```
 Building DAG of jobs...
@@ -751,7 +771,7 @@ Finally you have to set the parameters for the differential expression analysis.
 # ================== Configuration for DEA ==================
 
 ## Do you want to use edgeR or DESeq2 to do DEA?
-DEATOOL: edgeR  # "edgeR" or "DESeq2"? DESeq2 is recommended for transcriptome-based and DEA, not tested yet
+DEATOOL: edgeR  # "edgeR" or "DESeq2"? DESeq2 is recommended for transcriptome-based DEA
 
 ## Is your experiment designed in a pair-wise way?
 PAIR: FALSE  # Is this a pair test or not? ("TRUE" or "FALSE"). For instance 2 samples from the same patient taken at different times. 
@@ -905,23 +925,19 @@ Once again **MultiQC** aggregates the results of all the samples and you can hav
 
 ### Count Tables
 
-The count tables can be found in `output/PROJECTNAME/genome/countFile/`. The .summary files are the tables
+Depending on the tool you use, the count tables can be found in `output/PROJECTNAME/genome/countFile_htseq-count/` or in `output/PROJECTNAME/genome/countFile_featureCounts`. The `.tsv` files are the tables
 
 `GeneID  counts`
 
-The `.tsv` are the same files, with additionnal information at the end:
+The `.summary` contains information about the reads that couldn't be attributed to a feature:
 ```
-[mhennion @ clust-slurm-client 16:32]$ RASflow : tail output/LXACT_1/genome/countFile/D197-D192T27_count.tsv
-ENSG00000288602.1	47
-ENSG00000288603.1	0
-ENSG00000288604.1	0
+[mhennion @ clust-slurm-client 16:32]$ RASflow : cat output/LXACT_1/genome/countFile_htseq-count/D197-D192T27_count.tsv.summary
 __no_feature	2577896
 __ambiguous	7760223
 __too_low_aQual	2567823
 __not_aligned	350693
 __alignment_not_unique	7726115
 ```
-Nota: I will change this (-> one count file and one additional info file). 
 
 In addition, 2 PDF are generated: 
 - `PCA.pdf` : it contains two figures 
@@ -937,15 +953,50 @@ Nota: I didn't manage to do all in one, I have to spend more time in generating 
 ### DEA results
 
 DEA results are in `output/PROJECTNAME/genome/dea`. 
-- In `output/PROJECTNAME/genome/dea/countGroup/` are count tables per group, raw (`group_gene_count.tsv`) and normalized (`group_gene_norm.tsv`).
-- In `output/PROJECTNAME/genome/dea/DEA`, you'll find the edgeR results for each pair of conditions: 
+- In `output/PROJECTNAME/genome/dea/countGroup/` are raw count tables per group (`group_gene_count.tsv`).  
+- Normalized counts can be found in `Norm_DESeq2/` or `Norm_edgeR/`. 
+- In `output/PROJECTNAME/genome/dea/DEA_DESeq2` or `DEA_edgeR`, you'll find the results for each pair of conditions: 
     - dea_J0_WT_J0_KO.tsv contains differential expression for all genes
     - deg_J0_WT_J0_KO.tsv contains only the genes differentially expressed (FDR < 0.05)
-- In `output/PROJECTNAME/genome/dea/visualization/`, you'll find for each pair of conditions:
+- In `output/PROJECTNAME/genome/dea/visualization_DESeq2/` or `visualization_edgeR/`, you'll find for each pair of conditions:
     - Volcano plots representing differential expression 
 ![volcano_plot2_J0_WT_J10_WT.pdf.png](RASflow/results/volcano_plot2_J0_WT_J10_WT.pdf.png)
     - A heatmap of the 20 most regulated genes
 ![heatmap2_J0_WT_J10_WT_1.pdf.png](RASflow/results/heatmap2_J0_WT_J10_WT_1.pdf.png)
+
+#### regionReport 
+
+In addition a report is generated by [regionReport](http://leekgroup.github.io/regionReport/reference/index.html) using `DESeq2Report()` or `edgeReport()`. This report can be found in `output/LXACT_1/genome/dea/Report_DESeq2` or `Report_edgeR`. 
+
+Those files contains interesting plots, such as 
+
+- PCA
+
+<img src="RASflow/results/RR_pca.png" alt="drawing" width="600"/>
+
+- Sample-to-sample distance heatmap
+
+<img src="RASflow/results/RR_heat.png" alt="drawing" width="500"/>
+
+- MA plots
+
+<img src="RASflow/results/RR_MAplot.png" alt="drawing" width="500"/>
+
+- P-values distribution
+
+<img src="RASflow/results/RR_pval.png" alt="drawing" width="500"/>
+
+- Count plots for top features
+
+<img src="RASflow/results/RR_plot.png" alt="drawing" width="500"/>
+
+as well as a table with top features 
+
+<img src="RASflow/results/top.png" alt="drawing" width="500"/>
+
+and information about all the tools used to facilitate reproducibility. 
+
+<img src="RASflow/results/repro.png" alt="drawing" width="500"/>
 
 ---
 
