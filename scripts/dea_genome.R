@@ -164,7 +164,8 @@ treats <- yaml.file$TREAT  # all groups used as treat, should correspond to cont
 filter.need <- yaml.file$FILTER$yesOrNo
 pair.test <- yaml.file$PAIR
 meta.file <- yaml.file$METAFILE
-output.path <- file.path(yaml.file$FINALOUTPUT, project, "genome/dea")
+counter <- yaml.file$COUNTER
+output.path <- file.path(yaml.file$FINALOUTPUT, project, paste("genome/dea_",counter,sep = ''))
 
 # extract the metadata
 meta.data <- read.csv(meta.file, header = TRUE, sep = '\t')

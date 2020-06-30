@@ -85,7 +85,7 @@ COUNTER: htseq-count #  "featureCounts" or "htseq-count", I haven't tested featu
 # ================== Configuration for DEA ==================
 
 ## Do you want to use edgeR or DESeq2 to do DEA?
-DEATOOL: edgeR  # "edgeR" or "DESeq2"? DESeq2 is recommended for transcriptome-based and DEA
+DEATOOL: edgeR  # "edgeR" or "DESeq2"? DESeq2 is recommended for transcriptome-based DEA
 
 ## Is your experiment designed in a pair-wise way?
 PAIR: FALSE  # Is this a pair test or not? ("TRUE" or "FALSE"). For instance 2 samples from the same patient taken at different times. 

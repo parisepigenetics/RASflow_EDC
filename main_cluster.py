@@ -36,7 +36,7 @@ print("Start RASflow on project: " + project)
 ## write the running time in a log file
 start_time = time.localtime()
 time_string = time.strftime("%Y%m%d_%H%M", start_time) # convert to '20200612_1705' format
-file_main_time = open("logs/running_time_"+time_string+".txt", "a+")
+file_main_time = open("logs/"+time_string+"_running_time.txt", "a+")
 file_main_time.write("\nProject name: " + project + "\n")
 file_main_time.write("Start time: " + time.ctime() + "\n")
 
@@ -56,7 +56,7 @@ if qc=='yes':
     # Double check that the user really wants to do QC instead of forgetting to change the param after doing QC
         print("Start Quality Control!")
         start_time = time.time()
-        os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem}\" --use-conda --jobs=30 -s workflow/quality_control.rules 2> logs/quality_control_"+time_string+".txt")
+        os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem}\" --use-conda --jobs=30 -s workflow/quality_control.rules 2> logs/"+time_string+"_quality_control.txt")
         end_time = time.time()
         file_main_time.write("Time of running QC: " + spend_time(start_time, end_time) + "\n")
         print("Quality control is done!\n Please check the report and decide whether trimming is needed\n Please remember to turn off the QC in the config file!")
@@ -65,7 +65,7 @@ else:
     if trim=='yes':
         print("Start Trimming!")
         start_time = time.time()
-        os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem}\" --use-conda --jobs=30 -s workflow/trim.rules 2> logs/trim_"+time_string+".txt")
+        os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem}\" --use-conda --jobs=30 -s workflow/trim.rules 2> logs/"+time_string+"_trim.txt")
         end_time = time.time()
         file_main_time.write("Time of running trimming:" + spend_time(start_time, end_time) + "\n")
         print("Trimming is done!")
@@ -76,12 +76,12 @@ else:
 
     if reference == "transcriptome":
         start_time = time.time()
-        os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem}\" --use-conda --jobs=30 -s workflow/quantify_trans.rules 2> logs/quantify_trans_"+time_string+".txt")
+        os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem}\" --use-conda --jobs=30 -s workflow/quantify_trans.rules 2> logs/"+time_string+"_quantify_trans.txt")
         end_time = time.time()
         file_main_time.write("Time of running transcripts quantification:" + spend_time(start_time, end_time) + "\n")
     elif reference == "genome":
         start_time = time.time()
-        os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem}\" --use-conda --jobs=30 -s workflow/align_count_genome.rules 2> logs/align_count_genome_"+time_string+".txt")
+        os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem}\" --use-conda --jobs=30 -s workflow/align_count_genome.rules 2> logs/"+time_string+"_align_count_genome.txt")
         end_time = time.time()
         file_main_time.write("Time of running genome alignment:" + spend_time(start_time, end_time) + "\n")
 
@@ -89,12 +89,12 @@ else:
         print("Start doing DEA!")
         if reference == "transcriptome":
             start_time = time.time()
-            os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem}\" --use-conda --jobs=30 -s workflow/dea_trans.rules 2> logs/dea_trans_"+time_string+".txt")
+            os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem}\" --use-conda --jobs=30 -s workflow/dea_trans.rules 2> logs/"+time_string+"_dea_trans.txt")
             end_time = time.time()
             file_main_time.write("Time of running DEA transcriptome based:" + spend_time(start_time, end_time) + "\n")
         elif reference == "genome":
             start_time = time.time()
-            os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem}\" --use-conda --jobs=30 -s workflow/dea_genome.rules 2> logs/dea_genome_"+time_string+".txt")
+            os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem}\" --use-conda --jobs=30 -s workflow/dea_genome.rules 2> logs/"+time_string+"_dea_genome.txt")
             end_time = time.time()
             file_main_time.write("Time of running DEA genome based:" + spend_time(start_time, end_time) + "\n")
         print("DEA is done!")
@@ -113,7 +113,7 @@ else:
 
             print("Start visualization of DEA results!")
             start_time = time.time()
-            os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem}\" --use-conda --jobs=30 -s workflow/visualize.rules 2> logs/visualize_"+time_string+".txt")
+            os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem}\" --use-conda --jobs=30 -s workflow/visualize.rules 2> logs/"+time_string+"_visualize.txt")
             end_time = time.time()
             file_main_time.write("Time of running visualization:" + spend_time(start_time, end_time) + "\n")
             print("Visualization is done!")
