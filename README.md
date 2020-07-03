@@ -35,9 +35,11 @@
   * [Common errors](#common-errors)
     + [Memory](#memory)
     + [Folder locked](#folder-locked)
+    + [Storage space](#storage-space)
   * [Good practice](#good-practice)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
 
 
 
