@@ -757,11 +757,21 @@ For now only HISAT2 is available but I plan to add STAR.
 
 For an easy visualisation on a genome browser, bigwig files are generated. You can choose if you want to separate forward and reverse reads setting `BWSTRANDED`. 
 
-Feature count is done by [HTseq-count](https://htseq.readthedocs.io/en/master/count.html) with default parameters. I will implement more parameters. 
+Two counters are available: 
+- [HTseq-count](https://htseq.readthedocs.io/en/master/count.html) 
 
-As an alternative, featureCounts ([SubReads package](http://subread.sourceforge.net/)) should be available soon too. 
+- featureCounts ([SubReads package](http://subread.sourceforge.net/)) 
 
-Finally STAR can also generate count tables and I plan to add this too. 
+Both are now running with default parameters. I will implement more parameters. Beside the methode that is a bit different, HTseq-count is much slower at the moment (several hours for a human RNAseq sample) than featureCounts (~10 min). This is because HTseq count is not parallelizable yet. featureCounts is very fast, but needs a lot of free storage space (I measure at least 150 Go) that is used temporarily. As at the moment the default projet quota in 500 Go you might be exceeding the space you have (and may or may not get error messages). So if featureCounts fails, try removing files to get more space, or ask to increase your quota on Community [support](https://community.cluster.france-bioinformatique.fr). To see the space you have you can run:
+``` 
+[username@clust-slurm-client ]$ du -h --max-depth=1 /shared/projects/YourProjectName/
+```
+and
+```
+[username@ clust-slurm-client ]$ RASflow_IFB : mfsgetquota -H /shared/projects/YourProjectName/
+```
+
+Nota: STAR can also generate count tables and I plan to add this too. 
 
 ### Differential expression analysis and visualization
 
@@ -925,13 +935,13 @@ Once again **MultiQC** aggregates the results of all the samples and you can hav
 
 ### Count Tables
 
-Depending on the tool you use, the count tables can be found in `output/PROJECTNAME/genome/countFile_htseq-count/` or in `output/PROJECTNAME/genome/countFile_featureCounts`. The `.tsv` files are the tables
+Depending on the tool you use, the count tables can be found in `output/PROJECTNAME/genome/countFile_htseq-count/` or in `output/PROJECTNAME/genome/countFile_featureCounts`. The `count.tsv` files are the tables
 
 `GeneID  counts`
 
 The `.summary` contains information about the reads that couldn't be attributed to a feature:
 ```
-[mhennion @ clust-slurm-client 16:32]$ RASflow : cat output/LXACT_1/genome/countFile_htseq-count/D197-D192T27_count.tsv.summary
+[mhennion @ clust-slurm-client 16:32]$ RASflow : cat output/LXACT_1/genome/countFile_htseq-count/D197-D192T27_table.tsv.summary
 __no_feature	2577896
 __ambiguous	7760223
 __too_low_aQual	2567823
@@ -950,12 +960,18 @@ In addition, 2 PDF are generated:
 
 Nota: I didn't manage to do all in one, I have to spend more time in generating a nice report.
 
+MultiQC is run after the counting and you can find a report named `report_count_htseq-count.html` or `report_count_featureCounts.html` in `output/PROJECTNAME/genome/`, that will help you to check that everything went fine. 
+
+![htseq](RASflow/results/htseq_assignment_plot.png)
+
+
+
 ### DEA results
 
-DEA results are in `output/PROJECTNAME/genome/dea`. 
-- In `output/PROJECTNAME/genome/dea/countGroup/` are raw count tables per group (`group_gene_count.tsv`).  
+DEA results are in `output/PROJECTNAME/genome/dea_featureCounts` or `dea_htseq-count`. 
+- In `output/PROJECTNAME/genome/dea_htseq-count/countGroup/` are raw count tables per group (`group_gene_count.tsv`).  
 - Normalized counts can be found in `Norm_DESeq2/` or `Norm_edgeR/`. 
-- In `output/PROJECTNAME/genome/dea/DEA_DESeq2` or `DEA_edgeR`, you'll find the results for each pair of conditions: 
+- In `output/PROJECTNAME/genome/dea_htseq-count/DEA_DESeq2` or `DEA_edgeR`, you'll find the results for each pair of conditions: 
     - dea_J0_WT_J0_KO.tsv contains differential expression for all genes
     - deg_J0_WT_J0_KO.tsv contains only the genes differentially expressed (FDR < 0.05)
 - In `output/PROJECTNAME/genome/dea/visualization_DESeq2/` or `visualization_edgeR/`, you'll find for each pair of conditions:
@@ -1129,6 +1145,15 @@ In order to remove the lock, run:
 [username@clust-slurm-client RASflow_IFB]$ sbatch Unlock.sh
 ```
 Then you can restart your workflow. 
+
+
+### Storage space
+Sometimes you may reach the quota you have for your project. To check the quota, run: 
+```
+[username@ clust-slurm-client ]$ RASflow_IFB : mfsgetquota -H /shared/projects/YourProjectName/
+```
+In principle it should raise an error, but sometimes it doesn't and it's hard to find out what is the problem. So if a task fails with no error (typically the mapping or featureCounts), try to make more space (or ask for more space on Community [support](https://community.cluster.france-bioinformatique.fr)) before trying again. 
+
 
 ---
 

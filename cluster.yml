@@ -23,4 +23,9 @@ BigWigF:
   mem: 80000
 
 featureCount:
-  mem: 40000
+  mem: 10000
+
+htseqCount:
+  mem: 50000
+
+

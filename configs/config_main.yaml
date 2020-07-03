@@ -80,7 +80,7 @@ FEATURE: transcript # "exon" or "transcript"
 ALIGNER: hisat2
 
 ## tool for feature count
-COUNTER: htseq-count #  "featureCounts" or "htseq-count", I haven't tested featureCounts yet
+COUNTER: featureCounts #  "featureCounts" or "htseq-count"
 
 # ================== Configuration for DEA ==================
 

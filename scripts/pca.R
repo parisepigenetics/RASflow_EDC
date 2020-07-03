@@ -18,7 +18,7 @@ metafile <- yaml.file$METAFILE
 # load count files
 countload <-function(input_path, col.nb){
     message("loading gene counts ...")
-    exprs.in <-list.files(path=input_path,pattern=".summary",full.names=TRUE,recursive=TRUE)
+    exprs.in <-list.files(path=input_path,pattern="count.tsv",full.names=TRUE,recursive=TRUE)
     counts.exprs <-lapply(exprs.in, read.csv, sep="\t", header=FALSE,row.names=1, check.names=FALSE)
     counts.exprs <-data.frame(lapply(counts.exprs, "[", col.nb))
     colnames(counts.exprs) <-basename(exprs.in)
