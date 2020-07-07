@@ -15,39 +15,39 @@ rule end:
 if end == "pair":
     rule getReads:
         output:
-            forward = temp(intermediate_path + "/reads/{sample}_forward.fastq.gz"),
-            reverse = temp(intermediate_path + "/reads/{sample}_reverse.fastq.gz")
+            fw = temp(intermediate_path + "/reads/{sample}_fw.fastq.gz"),
+            rv = temp(intermediate_path + "/reads/{sample}_rv.fastq.gz")
         params:
             key = key,
             input_path = input_path
         run:
-            #shell("scp -i {params.key} {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.forward}"),
-            #shell("scp -i {params.key} {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.reverse}")
-            shell("echo creating link {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.reverse}"),
-            shell("ln -s {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.reverse}"),
-            shell("echo creating link {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.forward}"),
-            shell("ln -s {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.forward}")
+            #shell("scp -i {params.key} {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.fw}"),
+            #shell("scp -i {params.key} {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.rv}")
+            shell("echo creating link {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.rv}"),
+            shell("ln -s {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.rv}"),
+            shell("echo creating link {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.fw}"),
+            shell("ln -s {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.fw}")
 
             
     rule qualityControl:
         input:
-            forward = intermediate_path + "/reads/{sample}_forward.fastq.gz",
-            reverse = intermediate_path + "/reads/{sample}_reverse.fastq.gz"
+            fw = intermediate_path + "/reads/{sample}_fw.fastq.gz",
+            rv = intermediate_path + "/reads/{sample}_rv.fastq.gz"
         output:
-            fastqc_forward = final_path + "/fastqc/{sample}_forward_fastqc.html",
-            fastqc_reverse = final_path + "/fastqc/{sample}_reverse_fastqc.html"
+            fastqc_fw = final_path + "/fastqc/{sample}_fw_fastqc.html",
+            fastqc_rv = final_path + "/fastqc/{sample}_rv_fastqc.html"
         conda:
             "env.yaml"
         params:
             outputpath = final_path + "/fastqc"
         shell:
-            "fastqc -t $(({config[NCORE]}+0)) -o {params.outputpath} {input.forward} && "
-            "fastqc -t $(({config[NCORE]}+0)) -o {params.outputpath} {input.reverse}"
+            "fastqc -t $(({config[NCORE]}+0)) -o {params.outputpath} {input.fw} && "
+            "fastqc -t $(({config[NCORE]}+0)) -o {params.outputpath} {input.rv}"
             
     rule summaryReport:
         input:
-            fastqc_forward = expand(final_path + "/fastqc/{sample}_forward_fastqc.html", sample = samples),
-            fastqc_reverse = expand(final_path + "/fastqc/{sample}_reverse_fastqc.html", sample = samples)
+            fastqc_fw = expand(final_path + "/fastqc/{sample}_fw_fastqc.html", sample = samples),
+            fastqc_rv = expand(final_path + "/fastqc/{sample}_rv_fastqc.html", sample = samples)
         output:
             report = final_path + "/fastqc/report_quality_control.html"
         conda:
