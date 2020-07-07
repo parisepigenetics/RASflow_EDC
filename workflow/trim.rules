@@ -25,19 +25,19 @@ rule all:
 if end == "pair":
     rule getReads:
         output:
-            forward = temp(intermediate_path + "/reads/{sample}_forward.fastq.gz"),
-            reverse = temp(intermediate_path + "/reads/{sample}_reverse.fastq.gz")
+            fw = temp(intermediate_path + "/reads/{sample}_forward.fastq.gz"),
+            rv = temp(intermediate_path + "/reads/{sample}_reverse.fastq.gz")
         params:
             key = key,
             input_path = input_path
         run:
-            shell("ln -s {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.forward}"),
-            shell("ln -s {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.reverse}")
+            shell("ln -s {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.fw}"),
+            shell("ln -s {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.rv}")
     if trim3 != "no" :
         rule trimstart:
             input:
-                forward = intermediate_path + "/reads/{sample}_forward.fastq.gz",
-                reverse = intermediate_path + "/reads/{sample}_reverse.fastq.gz"
+                fw = intermediate_path + "/reads/{sample}_forward.fastq.gz",
+                rv = intermediate_path + "/reads/{sample}_reverse.fastq.gz"
             output:
                 shforward = temp(intermediate_path + "/{sample}_forward." + str(trim3) + "bp_3prime.fq.gz"),
                 shreverse = temp(intermediate_path + "/{sample}_reverse." + str(trim3) + "bp_3prime.fq.gz")
@@ -46,7 +46,7 @@ if end == "pair":
             params:
                 outputpath = intermediate_path
             shell:
-                "trim_galore --hardtrim3 {trim3} --j 4 --paired --basename {wildcards.sample} -o {params.outputpath} {input.forward} {input.reverse}"
+                "trim_galore --hardtrim3 {trim3} --j 4 --paired --basename {wildcards.sample} -o {params.outputpath} {input.fw} {input.rv}"
 
         if trim5 < trim3 :
             rule trimend:
@@ -93,8 +93,8 @@ if end == "pair":
     else:
         rule trim:
             input:
-                forward = intermediate_path + "/reads/{sample}_forward.fastq.gz",
-                reverse = intermediate_path + "/reads/{sample}_reverse.fastq.gz"
+                fw = intermediate_path + "/reads/{sample}_forward.fastq.gz",
+                rv = intermediate_path + "/reads/{sample}_reverse.fastq.gz"
             output:
                 read_trim_forward = intermediate_path + "/{sample}_R1_val_1.fq.gz",
                 read_trim_reverse = intermediate_path + "/{sample}_R2_val_2.fq.gz"
@@ -103,7 +103,7 @@ if end == "pair":
             params:
                 outputpath = intermediate_path
             shell:
-                "trim_galore --fastqc -j 4 --paired --basename {wildcards.sample} -o {params.outputpath} {input.forward} {input.reverse}"
+                "trim_galore --fastqc -j 4 --paired --basename {wildcards.sample} -o {params.outputpath} {input.fw} {input.rv}"
            
 
  
