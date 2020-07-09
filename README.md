@@ -142,7 +142,7 @@ Check that the transfer went fine using md5sum
 
 Here is a scheme of the workflow as implemented on the IFB cluster. In the green circles are the input files you have to give for the different steps. 
 
-<img src="RASflow/workflow_chart.pdf.png" alt="drawing" width="600"/>
+<img src="Tuto_pictures/workflow_chart.pdf.png" alt="drawing" width="600"/>
 
 The first step is to clone RASflow_IFB to your project, and to look at the files. For now the repository is private, so you have to enter your github username and password to clone the repository. 
 
@@ -181,7 +181,7 @@ There are **3 files** that you have to modify before running your analysis, and 
 
 RASflow is launched as a python script named `main_cluster.py` which calls the workflow manager named [snakemake](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html). On the cluster this python script is launch via the shell script `Workflow.sh`, which basically contains only one command (+ information about the job). 
 
-<img src="RASflow/cluster_chart.pdf.png" alt="drawing" width="500"/>
+<img src="Tuto_pictures/cluster_chart.pdf.png" alt="drawing" width="500"/>
 
 ```bash
 [...]
@@ -929,7 +929,7 @@ If not already done, you can get the files on your computer running:
 ```
 You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/output/PROJECTNAME/genome/bw_str PathTo/WhereYouWantToSave/
 ```
-![igv_RF.png](RASflow/results/igv_RF.png)
+![igv_RF.png](Tuto_pictures/igv_RF.png)
 ### Mapping QC
 [Qualimap](http://qualimap.bioinfo.cipf.es/) is used to check the mapping quality. You'll find qualimap reports in `output/PROJECTNAME/genome/alignmentQC`. Those reports contain a lot of information:
 - information about the mapper
@@ -964,17 +964,17 @@ __alignment_not_unique	7726115
 In addition, 2 PDF are generated: 
 - `PCA.pdf` : it contains two figures 
   - distribution of raw counts / samples
-![RawCount.png](RASflow/results/RawCounts.png)
+![RawCount.png](Tuto_pictures/RawCounts.png)
   - PCA of all the samples, colored by group
-![PCA.png](RASflow/results/PCA.png)
+![PCA.png](Tuto_pictures/PCA.png)
 - `Heatmap.pdf` with a heatmap of sample distances 
-<img src="RASflow/results/SampleHeatmap.png" alt="drawing" width="600"/>
+<img src="Tuto_pictures/SampleHeatmap.png" alt="drawing" width="600"/>
 
 Nota: I didn't manage to do all in one, I have to spend more time in generating a nice report.
 
 MultiQC is run after the counting and you can find a report named `report_count_htseq-count.html` or `report_count_featureCounts.html` in `output/PROJECTNAME/genome/`, that will help you to check that everything went fine. 
 
-![htseq](RASflow/results/htseq_assignment_plot.png)
+![htseq](Tuto_pictures/htseq_assignment_plot.png)
 
 
 
@@ -988,9 +988,9 @@ DEA results are in `output/PROJECTNAME/genome/dea_featureCounts` or `dea_htseq-c
     - deg_J0_WT_J0_KO.tsv contains only the genes differentially expressed (FDR < 0.05)
 - In `output/PROJECTNAME/genome/dea/visualization_DESeq2/` or `visualization_edgeR/`, you'll find for each pair of conditions:
     - Volcano plots representing differential expression 
-![volcano_plot2_J0_WT_J10_WT.pdf.png](RASflow/results/volcano_plot2_J0_WT_J10_WT.pdf.png)
+![volcano_plot2_J0_WT_J10_WT.pdf.png](Tuto_pictures/volcano_plot2_J0_WT_J10_WT.pdf.png)
     - A heatmap of the 20 most regulated genes
-![heatmap2_J0_WT_J10_WT_1.pdf.png](RASflow/results/heatmap2_J0_WT_J10_WT_1.pdf.png)
+![heatmap2_J0_WT_J10_WT_1.pdf.png](Tuto_pictures/heatmap2_J0_WT_J10_WT_1.pdf.png)
 
 #### regionReport 
 
@@ -1000,31 +1000,31 @@ Those files contains interesting plots, such as
 
 - PCA
 
-<img src="RASflow/results/RR_pca.png" alt="drawing" width="600"/>
+<img src="Tuto_pictures/RR_pca.png" alt="drawing" width="600"/>
 
 - Sample-to-sample distance heatmap
 
-<img src="RASflow/results/RR_heat.png" alt="drawing" width="500"/>
+<img src="Tuto_pictures/RR_heat.png" alt="drawing" width="500"/>
 
 - MA plots
 
-<img src="RASflow/results/RR_MAplot.png" alt="drawing" width="500"/>
+<img src="Tuto_pictures/RR_MAplot.png" alt="drawing" width="500"/>
 
 - P-values distribution
 
-<img src="RASflow/results/RR_pval.png" alt="drawing" width="500"/>
+<img src="Tuto_pictures/RR_pval.png" alt="drawing" width="500"/>
 
 - Count plots for top features
 
-<img src="RASflow/results/RR_plot.png" alt="drawing" width="500"/>
+<img src="Tuto_pictures/RR_plot.png" alt="drawing" width="500"/>
 
 as well as a table with top features 
 
-<img src="RASflow/results/top.png" alt="drawing" width="500"/>
+<img src="Tuto_pictures/top.png" alt="drawing" width="500"/>
 
 and information about all the tools used to facilitate reproducibility. 
 
-<img src="RASflow/results/repro.png" alt="drawing" width="500"/>
+<img src="Tuto_pictures/repro.png" alt="drawing" width="500"/>
 
 ---
 
