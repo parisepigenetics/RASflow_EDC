@@ -144,11 +144,21 @@ Here is a scheme of the workflow as implemented on the IFB cluster. In the green
 
 <img src="RASflow/workflow_chart.pdf.png" alt="drawing" width="600"/>
 
-The first step is to clone RASflow_IFB to your project, and to look at the files. 
+The first step is to clone RASflow_IFB to your project, and to look at the files. For now the repository is private, so you have to enter your github username and password to clone the repository. 
 
 ```
 [username@clust-slurm-client Raw_fastq]$ cd ..
 [username@clust-slurm-client YourProjectName]$ git clone https://github.com/parisepigenetics/RASflow_IFB
+Cloning into 'RASflow_IFB'...
+Username for 'https://github.com': GITHUBusername
+Password for 'https://username@github.com': GITHUBpassword
+remote: Enumerating objects: 203, done.
+remote: Counting objects: 100% (203/203), done.
+remote: Compressing objects: 100% (152/152), done.
+remote: Total 203 (delta 74), reused 175 (delta 49), pack-reused 0
+Receiving objects: 100% (203/203), 8.37 MiB | 6.08 MiB/s, done.
+Resolving deltas: 100% (74/74), done.
+Checking out files: 100% (100/100), done.
 [username@clust-slurm-client YourProjectName]$ cd RASflow_IFB
 [username@clust-slurm-client RASflow_IFB]$ ll
 total 3030
