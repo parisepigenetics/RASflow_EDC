@@ -463,7 +463,7 @@ The first job is the main script. This job will call one or several snakefiles t
 
 Where to find those outputs and what to they contain?
 
-1. main script : slurm output is in your working directory (default) or in the specified folder if you modified `Workflow.sh`. It contains global information about your run. 
+1. main script : slurm output is in `slurm_output` (default) or in the specified folder if you modified `Workflow.sh`. It contains global information about your run. 
 Typically the main job output looks like :
 ```
 [mhennion @ clust-slurm-client 16:17]$ RASflow : cat slurm_output/Logs-9385967.out 
@@ -586,7 +586,7 @@ Time of running DEA genome based:0:01:32
 Time of running visualization:0:00:01
 Finish time: Mon Jun 15 15:50:43 2020
 ```
-3. individual tasks: every job generate a `slurm-JOBID.out` file in the working directory (I didn't manage to change the default path, I could add a step moving those files if necessary). Slurm output specifies the rule, the sample, and gives outputs specific to the tool:  
+3. individual tasks: every job generate a `slurm-JOBID.out` file in the `slurm_output` forder. Slurm output specifies the rule, the sample, and gives outputs specific to the tool:  
 ```
 [mhennion@clust-slurm-client RASflow]$ cat slurm_output/slurm-8080372.out 
 Building DAG of jobs...
