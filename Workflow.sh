@@ -50,6 +50,8 @@ unset DISPLAY
 # What you actually want to launch
 python /shared/projects/YourProjectName/RASflow_IFB/main_cluster.py
 
+# move logs
+mv slurm-* slurm_output/
 
 echo '########################################'
 echo 'Job finished' $(date --iso-8601=seconds)

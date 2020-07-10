@@ -1031,9 +1031,12 @@ and information about all the tools used to facilitate reproducibility.
 ## How to follow your jobs
 
 ### Running jobs
+
+You can check the jobs that are running using `squeue`.
 ```
 [username@clust-slurm-client RASflow_IFB]$ squeue -u username
 ```
+
 
 ### Information about past jobs
 
@@ -1057,7 +1060,7 @@ Here you have the job ID and name, its starting time, its running time, the maxi
 **Add `-S MMDD` to have older jobs (default is today only).** 
 
 ```
-[mhennion@clust-slurm-client RASflow]$ sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State -S 0518
+[username@clust-slurm-client RASflow]$ sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State -S 0518
 ```
 ### Cancelling a job
 If you want to cancel a job: scancel job number
@@ -1065,6 +1068,24 @@ If you want to cancel a job: scancel job number
 [username@clust-slurm-client RASflow_IFB]$ scancel 8016984
 ```
 Nota: when snakemake is working on a folder, this folder is locked so that you can't start another DAG and create a big mess. If you cancel the main job, snakemake won't be able to unlock the folder (see [below](#error)). 
+
+### Check the whole pipeline
+To quickly check if everything went fine, you can run :
+```
+[username @ clust-slurm-client RASflow_IFB]$ cat logs/20200710_1013_* | grep error
+```
+replacing `20200710_1013` by the date (YYYYMMDD) and time (HHMM) of the start of the run. You will immediately see if something went wrong, for instance: 
+```
+Error executing rule plot on cluster (jobid: 1, external: 9726359, jobscript: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/tmp.ntswueat/snakejob.plot.1.sh). For error details see the cluster log and the log files of the involved rule(s).
+Exiting because a job execution failed. Look above for error message
+```
+And you can check the problem using the external jobid, here 9726359: 
+```
+[username @ clust-slurm-client RASflow_IFB]$ cat slurm_output/slurm-9726359.out
+```
+
+
+
 
 ---
 
