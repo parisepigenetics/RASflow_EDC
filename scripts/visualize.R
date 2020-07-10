@@ -6,10 +6,7 @@ library(mygene)
 library(EnhancedVolcano)
 library(plotscale)
 library(gplots)
-if (!require("RColorBrewer")) {
-install.packages("RColorBrewer")
 library(RColorBrewer)
-}
 
 
 # ====================== load parameters in config file ======================
@@ -86,11 +83,11 @@ plot.volcano.heatmap <- function(name.control, name.treat) {
   #  fig.volcano <- EnhancedVolcano(dea.table, lab = gene.dea, xlab = bquote(~Log[2]~ "fold change"), x = 'logFC', y = 'FDR', pCutoff = 10e-5, col = c("grey30", "orange2", "royalblue", "red2"),
    #                              FCcutoff = 1, xlim = c(-5, 5), ylim = c(0, 10), transcriptPointSize = 1.5, title = NULL, subtitle = NULL)  
   fig.volcano <- EnhancedVolcano(dea.table, lab = gene.dea, xlab = bquote(~Log[2]~ "fold change"), x = 'logFC', y = 'FDR', pCutoff = 10e-5, col = c("grey30", "orange2", "royalblue", "red2"),
-                                 FCcutoff = 1, transcriptPointSize = 1.5, title = NULL, subtitle = NULL)
+                                 FCcutoff = 1, title = NULL, subtitle = NULL)
 
   } else if (dea.tool == 'DESeq2') {
     fig.volcano <- EnhancedVolcano(dea.table, lab = gene.dea, xlab = bquote(~Log[2]~ "fold change"), x = 'log2FoldChange', y = 'padj', pCutoff = 10e-5, col = c("grey30", "orange2", "royalblue", "red2"),
-                                 FCcutoff = 1, transcriptPointSize = 1.5, title = NULL, subtitle = NULL)
+                                 FCcutoff = 1, title = NULL, subtitle = NULL)
   }
   
   as.pdf(fig.volcano, width = 9, height = 6, scaled = TRUE, file = file.path(out.path, paste('volcano_plot_', name.control, '_', name.treat, '.pdf', sep = '')))

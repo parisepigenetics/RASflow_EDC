@@ -249,7 +249,7 @@ elif counter == "htseq-count":
 
     rule summaryReport:
         input:
-            countF =  expand(final_path + "/countFile_htseq-count/{sample}_count.tsv", sample = samples)
+            countF =  expand(final_path + "/countFile_htseq-count/{sample}_table.tsv.summary.tsv", sample = samples)
         output:
             report = final_path + "/report_count_htseq-count.html"
         conda:
