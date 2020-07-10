@@ -30,6 +30,7 @@
     + [Running jobs](#running-jobs)
     + [Information about past jobs](#information-about-past-jobs)
     + [Cancelling a job](#cancelling-a-job)
+    + [Check the whole pipeline](#check-the-whole-pipeline)
   * [Tricks](#tricks)
     + [Make aliases](#make-aliases)
   * [Common errors](#common-errors)
@@ -39,7 +40,6 @@
   * [Good practice](#good-practice)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-
 
 
 
