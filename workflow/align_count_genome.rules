@@ -3,7 +3,7 @@ configfile: "configs/config_main.yaml"
 
 samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
 trimmed = config["TRIMMED"]
-if trimmed == "yes": 
+if trimmed == "yes" or trimmed == True:  
     input_path = config["OUTPUTPATH"] + "/" + config["PROJECT"] + "/trim"
 else:
     input_path = config["READSPATH"]
@@ -16,16 +16,16 @@ final_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome"
 alignmentQC = config["alignmentQC"]
 counter = config["COUNTER"]
 bwStranded = config["BWSTRANDED"]
+main_path = config["MAINPATH"]
 
-
-if bwStranded == "no":
+if bwStranded == "no" or bwStranded==False: 
     rule end:
         input:
             report = final_path + "/report_count_"+counter+".html",
             bw = expand(final_path + "/bw/{sample}.bw", sample = samples),
             pca = final_path + "/countFile_"+counter+"/PCA.pdf"
 
-if bwStranded == "yes" :
+if bwStranded == "yes" or bwStranded==True:
     rule end:
         input:
             pca = final_path + "/countFile_"+counter+"/PCA.pdf",
@@ -118,7 +118,7 @@ rule BamIndex:
         "samtools index {input.sort}"
 
 
-if bwStranded == "yes" or bwStranded == "both":
+if bwStranded == "yes" or bwStranded == "both" or bwStranded==True:
     rule BigWigF:
         input:
             sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
@@ -143,7 +143,7 @@ if bwStranded == "yes" or bwStranded == "both":
 
     
 
-if bwStranded == "no" or bwStranded == "both" :
+if bwStranded == "no" or bwStranded == "both" or bwStranded==False:
     rule BigWig:
         input:
             sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
@@ -191,9 +191,10 @@ if counter == "featureCounts":
         conda:
             "env.yaml"
         params:
-            count_path = final_path + "/countFile_featureCounts"
+            count_path = final_path + "/countFile_featureCounts",
+            mp = main_path
         shell:
-            "Rscript scripts/pca.R {params.count_path}"
+            "Rscript {params.mp}scripts/pca.R {params.count_path}"
 
     rule summaryReport:
         input:
@@ -243,9 +244,10 @@ elif counter == "htseq-count":
         conda:
             "env.yaml"
         params:
-            count_path = final_path + "/countFile_htseq-count"
+            count_path = final_path + "/countFile_htseq-count",
+            mp = main_path
         shell:
-            "Rscript scripts/pca.R {params.count_path}"
+            "Rscript {params.mp}scripts/pca.R {params.count_path}"
 
     rule summaryReport:
         input:
@@ -258,7 +260,7 @@ elif counter == "htseq-count":
             "multiqc {input.countF} --filename {output.report}"
 
 
-if alignmentQC:
+if alignmentQC==True or alignmentQC=="yes": 
 
     rule AQC:
         input:

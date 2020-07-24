@@ -14,7 +14,7 @@ groups = np.unique(np.array(pd.read_table(config["METAFILE"], header = 0)['group
 control = config["CONTROL"][0]
 treat = config["TREAT"][0]
 tool = config["DEATOOL"]
-
+main_path = config["MAINPATH"]
 
 if tool == "edgeR" :
     rule all:
@@ -37,9 +37,9 @@ rule combineSamples:
     conda:
         "env.yaml"
     params:
-        path = output_path + "countFile"
+        mp = main_path
     shell:
-        "python scripts/combine2group_genome.py"
+        "python {params.mp}scripts/combine2group_genome.py"
 
 if tool == "edgeR" : 
     rule DEA:
@@ -52,8 +52,10 @@ if tool == "edgeR" :
             deg = output_path + "/DEA_edgeR/" + "deg_" + control + "_" + treat + ".tsv"
         conda:
             "env.yaml"
+        params:
+            mp = main_path
         shell:
-            "Rscript scripts/dea_genome.R"
+            "Rscript {params.mp}scripts/dea_genome.R"
             
 if tool == "DESeq2" : 
     rule DEA:
@@ -66,5 +68,7 @@ if tool == "DESeq2" :
             deg = output_path + "/DEA_DESeq2/" + "deg_" + control + "_" + treat + ".tsv"
         conda:
             "env.yaml"
+        params:
+            mp = main_path
         shell:
-            "Rscript scripts/dea_genome.R"
+            "Rscript {params.mp}scripts/dea_genome.R"

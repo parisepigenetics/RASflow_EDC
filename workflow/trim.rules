@@ -1,13 +1,13 @@
-import pandas as pd
 configfile: "configs/config_main.yaml"
+
+import pandas as pd
+samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
 
 key = config["KEY"]
 input_path = config["READSPATH"]
-samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
 end = config["END"]
 intermediate_path = config["OUTPUTPATH"] + "/" + config["PROJECT"] + "/trim"
 final_path = config["FINALOUTPUT"] + "/" + config["PROJECT"]
-logs_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/slurm_logs"
 trim3 = config["TRIM3"]
 trim5 = config["TRIM5"]
 
@@ -49,7 +49,8 @@ if end == "pair":
             shell:
                 "trim_galore --hardtrim3 {trim3} --j 4 --paired --basename {wildcards.sample} -o {params.outputpath} {input.fw} {input.rv}"
 
-        if trim5 < trim3 :
+
+        if trim5 != "no" and int(trim5) < int(trim3) :
             rule trimend:
                 input:
                     shforward = intermediate_path + "/{sample}_forward." + str(trim3) + "bp_3prime.fq.gz",
@@ -91,8 +92,6 @@ if end == "pair":
                 params:
                     outputpath = intermediate_path,
                     outputrename = intermediate_path+"/"
-                log:
-                    logs_path + "/{sample}_trim.log"
                 shell:
                     "trim_galore --fastqc -j 4 --paired --basename {wildcards.sample} -o {params.outputpath} {input.shforward} {input.shreverse} && rename _val_1 _R1_trimmed {params.outputrename}{wildcards.sample}*  && rename _val_2 _R2_trimmed {params.outputrename}{wildcards.sample}*"
     else:
@@ -144,8 +143,6 @@ rule summaryReport:
         "env.yaml"
     params:
         path = intermediate_path
-    log: 
-        logs_path + "/fastqc_after_trimming.log"
     shell:
         "multiqc {params.path} --filename {output.report}"
 

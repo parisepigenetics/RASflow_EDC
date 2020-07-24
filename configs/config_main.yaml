@@ -9,10 +9,10 @@ PROJECT: EXAMPLE
 QC: yes  # "yes" or "no"
 
 ## Do you need to do trimming?
-TRIMMED: "yes"  # "yes" or "no"? 
+TRIMMED: yes  # "yes" or "no"? 
 
 ## Which mapping reference do you want to use? Genome or transcriptome?
-REFERENCE: genome  # "genome" or "transcriptome", I haven't implemented transcriptome yet. 
+REFERENCE: genome  # "genome" or "transcriptome", I haven't implemented transcriptome yet.
 
 ## alignment quality control
 alignmentQC: yes  # "yes" or "no" to specify whether you want to do alignment QC
@@ -53,7 +53,8 @@ FINALOUTPUT: /shared/projects/YourProjectName/RASflow_IFB/output
 ## Number of trimmed bases
 ## put "no" for TRIM3 if you don't want to trim a fixed number of bases. 
 TRIM3: 91 #  hard-clip sequences from their 5' end, keep the N 3' end bases (remove start of the sequences) , put "no" if don't want trimming 
-TRIM5: 91 # hard-clip sequences from their 3' end, keep the N 5' end bases (remove end of the sequences) , the trimming of the beginning of the read is done first. This number should be smaller than or equal to TRIM3 (it is the final length of the sequences). 
+TRIM5: 91 # hard-clip sequences from their 3' end, keep the N 5' end bases (remove end of the sequences) , the trimming of the beginning of the read is done first. This number should be smaller than or equal to TRIM3 (it is the final lenght of the sequences).
+
 # ================== Configuration for quantification using transcriptome ==================
 
 ## transcriptome file
@@ -64,7 +65,7 @@ TRANS: /shared/..
 ## genome and annotation files
 GENOME: /shared/bank/homo_sapiens/hg38/fasta/hg38.fa # genome fasta file
 INDEXPATH: /shared/bank/homo_sapiens/hg38/hisat2 # folder containing index files
-INDEXBASE:  genome # base of the name of the index files (ie genome.1.ht2)
+INDEXBASE: genome # base of the name of the index files (ie genome.1.ht2)
 ANNOTATION: /shared/projects/YourProjectName/RASflow_IFB/gtf/gencode.v34.annotation.gtf # GTF file 
 
 ## bigwig option
@@ -80,7 +81,7 @@ FEATURE: transcript # "exon" or "transcript"
 ALIGNER: hisat2
 
 ## tool for feature count
-COUNTER: featureCounts #  "featureCounts" or "htseq-count"
+COUNTER: featureCounts # "featureCounts" or "htseq-count"
 
 # ================== Configuration for DEA ==================
 
@@ -88,7 +89,7 @@ COUNTER: featureCounts #  "featureCounts" or "htseq-count"
 DEATOOL: edgeR  # "edgeR" or "DESeq2"? DESeq2 is recommended for transcriptome-based DEA
 
 ## Is your experiment designed in a pair-wise way?
-PAIR: FALSE  # Is this a pair test or not? ("TRUE" or "FALSE"). For instance 2 samples from the same patient taken at different times. 
+PAIR: no  # Is this a pair test or not? (yes or no). For instance 2 samples from the same patient taken at different times.
 
 ## the comparison(s) you want to do. If multiple comparisons, specify each pair (CONTROL & TREAT) in order respectively
 CONTROL: ["J0_WT","J0_WT","J10_WT","J0_KO"]
@@ -96,10 +97,13 @@ TREAT: ["J0_KO","J10_WT","J10_KO","J10_KO"]
 ## length of 'CONTROL' should agree with that of 'TREAT'
 ## what you fill in there should agree with the "group" column in metadata.tsv
 
-FILTER:
-  yesOrNo: TRUE  # Filter out low expressed transcripts/genes or not? (TRUE or FALSE) It's better to be set to TRUE. FALSE is set as default only for testing fake toy data
+FILTER: yes  # Filter out low expressed transcripts/genes or not? (yes or no) It's better to be set to "yes".
+
 
 # ================== Configuration for visualization ==================
 
 ## All required params have already been defined in the public params
 
+# ================== Path to main scripts  ==================
+
+MAINPATH: "" # leave empty for IFB core cluster, "/scratch/epigenetique/workflows/RASflow_RPBS/" for RPBS cluster.

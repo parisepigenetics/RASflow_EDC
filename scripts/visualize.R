@@ -1,10 +1,8 @@
 # load the libraries
-if (!require("plotscale")) install.packages('scripts/plotscale_0.1.6.tar.gz', repos = NULL, type="source")
 library(yaml)
 library(hash)
 library(mygene)
 library(EnhancedVolcano)
-library(plotscale)
 library(gplots)
 library(RColorBrewer)
 
@@ -16,13 +14,13 @@ args <- commandArgs(TRUE)
 norm.path <- args[1]
 dea.path <- args[2]
 out.path <- args[3]
+main.path <- args[4]
+
+if (!require("plotscale")) install.packages('scripts/plotscale_0.1.6.tar.gz', repos = NULL, type="source")
+
 
 # load the config file
-if (length(args) > 3) {  # this script is used in  visualize_test.rules
-    yaml.file <- yaml.load_file(args[4])
-} else {  # this script is used in visualize.rules
-    yaml.file <- yaml.load_file('configs/config_main.yaml')
-}
+yaml.file <- yaml.load_file('configs/config_main.yaml')
 
 # extract the information from the yaml file
 controls <- yaml.file$CONTROL

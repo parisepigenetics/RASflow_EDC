@@ -7,6 +7,7 @@ treat = config["TREAT"][0]
 tool = config["DEATOOL"]
 reference = config["REFERENCE"]
 counter = config["COUNTER"]
+main_path = config["MAINPATH"]
 
 if reference == "genome":
     norm_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea_"+counter+"/Norm_"+tool
@@ -29,6 +30,8 @@ rule plot:
         conda:
             "env.yaml"
         params:
-            output_path = directory(output_path)
+            output_path = directory(output_path),
+            mp = main_path
         shell:
-            "Rscript scripts/visualize.R {input.norm_path} {input.dea_path} {params.output_path}"
+            "Rscript {params.mp}scripts/visualize.R {input.norm_path} {input.dea_path} {params.output_path} {params.mp}"
+            

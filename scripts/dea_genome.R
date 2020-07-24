@@ -56,7 +56,7 @@ DEA <- function(control, treat) {
     # do DEA
 
     # Filtering
-    if (filter.need) {
+    if (filter.need==TRUE || filter.need=="yes") {
       countsPerMillion <- cpm(y)
       countCheck <- countsPerMillion > 1
       keep <- which(rowSums(countCheck) > 1)
@@ -121,7 +121,7 @@ DEA <- function(control, treat) {
     write.table(normalized_counts.treat, paste(output.path, '/Norm_DESeq2/', treat, '_gene_norm.tsv', sep = ''), quote = FALSE, sep = "\t")
 
     ## Filtering
-    if (filter.need) {
+    if (filter.need==TRUE || filter.need=="yes") {
       keep <- rowSums(counts(dds)) >= 10
       dds <- dds[keep,]
     }
@@ -161,7 +161,7 @@ project <- yaml.file$PROJECT  # project name of this analysis
 dea.tool <- yaml.file$DEATOOL  # tool used for DEA
 controls <- yaml.file$CONTROL  # all groups used as control
 treats <- yaml.file$TREAT  # all groups used as treat, should correspond to control
-filter.need <- yaml.file$FILTER$yesOrNo
+filter.need <- yaml.file$FILTER
 pair.test <- yaml.file$PAIR
 meta.file <- yaml.file$METAFILE
 counter <- yaml.file$COUNTER
