@@ -54,7 +54,7 @@ echo '-------------------------'
 unset DISPLAY
 
 # What you actually want to launch
-python /shared/projects/YourProjectName/RASflow_IFB/main_cluster.py ifb
+python main_cluster.py ifb
 
 # move logs
 mkdir -p slurm_output

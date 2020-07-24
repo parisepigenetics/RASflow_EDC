@@ -161,47 +161,41 @@ Resolving deltas: 100% (74/74), done.
 Checking out files: 100% (100/100), done.
 [username@clust-slurm-client YourProjectName]$ cd RASflow_IFB
 [username@clust-slurm-client RASflow_IFB]$ ll
-total 3030
--rw-rw----+ 1 mhennion mhennion     243 Jun  3 14:42 cluster.yml
-drwxr-x---+ 2 mhennion mhennion 1002187 Jun  9 16:55 configs
-drwxrwx---+ 2 mhennion mhennion       1 Jun  9 16:10 data
-drwxrwx---+ 2 mhennion mhennion       1 Jun  9 16:12 gtf
-drwxrwx---+ 2 mhennion mhennion       1 Jun  9 16:12 index
-drwxrwx---+ 2 mhennion mhennion       1 Jun  9 16:12 logs
--rw-rw----+ 1 mhennion mhennion    5519 May 27 15:14 main_cluster.py
-drwxr-x---+ 2 mhennion mhennion 1011000 Jun  9 16:16 scripts
-drwxrwx---+ 2 mhennion mhennion       1 Jun  9 16:14 slurm_output
-drwxr-x---+ 2 mhennion mhennion 1078670 Jun  9 16:47 workflow
--rw-rw----+ 1 mhennion mhennion    1320 Jun  9 16:27 Workflow.sh
+total 5,0M
+drwxrwxr-x 2 mhennion mhennion 1,1M Jul 24 16:51 workflow
+-rw-rw-r-- 1 mhennion mhennion  247 Jul 24 16:51 cluster.yml
+drwxrwxr-x 2 mhennion mhennion 978K Jul 24 16:51 configs
+-rw-rw-r-- 1 mhennion mhennion 6,3K Jul 24 16:51 main_cluster.py
+drwxrwxr-x 2 mhennion mhennion 988K Jul 24 16:51 scripts
+drwxrwxr-x 2 mhennion mhennion 2,0M Jul 24 16:51 Tuto_pictures
+-rw-rw-r-- 1 mhennion mhennion 1006 Jul 24 16:51 Unlock.sh
+-rw-rw-r-- 1 mhennion mhennion 1,6K Jul 24 16:51 Workflow.sh
+-rw-rw-r-- 1 mhennion mhennion  35K Jul 24 16:51 LICENSE
+-rw-rw-r-- 1 mhennion mhennion  52K Jul 24 16:51 README.md
 ```
+RASflow is launched as a python script named `main_cluster.py` which calls the workflow manager named [snakemake](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html). Snakemake will execute rules that are defined in `workflow/xxx.rules` and distribute the corresponding jobs to the computing nodes via SLURM. 
 
-There are **3 files** that you have to modify before running your analysis, and another one not mandatory.  
-
-### 1. **Workflow.sh**
-
-RASflow is launched as a python script named `main_cluster.py` which calls the workflow manager named [snakemake](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html). On the cluster this python script is launch via the shell script `Workflow.sh`, which basically contains only one command (+ information about the job). 
+ On the cluster the main python script is launched via the shell script `Workflow.sh`, which basically contains only one command (+ information about the job). 
 
 <img src="Tuto_pictures/cluster_chart.pdf.png" alt="drawing" width="500"/>
 
 ```bash
 [...]
 # modules loading
-module load snakemake python conda slurm-drmaa
+module load conda snakemake slurm-drmaa
 
 # remove display to make qualimap run:
 unset DISPLAY
 
 # What you actually want to launch
-python /shared/projects/YourProjectName/RASflow_IFB/main_cluster.py
+python main_cluster.py ifb
 [...]
 ```
-You have to modify the command to fit your project name (replace `YourProjectName`). To modify the text files on the cluster you can use **vi**, **emacs**, **nano** or **gedit** (the last one being easier to use).
-``` 
-[username@clust-slurm-client RASflow_IFB]$ gedit Workflow.sh
-```
+There are **2 files** that you have to modify before running your analysis (`metadata.tsv`and `config_main.yaml` in the `configs` folder), and eventually some others not mandatory. To modify the text files on the cluster you can use **vi**, **emacs**, **nano** or **gedit** (the last one being easier to use). 
 
-[Facultative]  
-In `Workflow.sh`, you can also modify the **Job name** and the **Output** folder to save slurm outputs. If you don't change this file, slurm outputs will be saved in your working directory. The line is read if it starts with one `#` and is not used if it starts with 2 (or more) `#`. For instance here
+### 1. **Workflow.sh** [Facultative] 
+
+In `Workflow.sh`, you can modify the **Job name** and the **Output** folder to save slurm outputs. If you don't change this file, slurm outputs will be saved in a `slurm_output` folder that will be created in your working directory. The line is read if it starts with one `#` and is not used if it starts with 2 (or more) `#`. For instance here
 
 ```bash
 [username@clust-slurm-client RASflow_IFB]$ cat Workflow.sh
@@ -210,26 +204,26 @@ In `Workflow.sh`, you can also modify the **Job name** and the **Output** folder
 ################################ Slurm options #################################
 
 ### Job name 
-##SBATCH --job-name=QC 
+##SBATCH --job-name=RASflow 
 
 ### Output
-##SBATCH --output=/shared/projects/YourProjectName/RASflow_IFB/slurm_output/QC-%j.out
+##SBATCH --output=RASflow-%j.out
 [...]
 ```
-the default path is used, whereas here
+the default names `slurm-xxx` will be used, whereas here
 ```bash
 #!/bin/bash
 
 ################################ Slurm options #################################
 
 ### Job name 
-#SBATCH --job-name=QC 
+#SBATCH --job-name=RASflow 
 
 ### Output
-#SBATCH --output=/shared/projects/YourProjectName/RASflow_IFB/slurm_output/QC-%j.out
+#SBATCH --output=TheFolderIwant/RASflow-%j.out
 [...]
 ```
-the job name will be `QC` and slurm output (only for the snakemake commands, not for the jobs launched by snakemake) will go to `slurm_output/QC-%j.out`. 
+the job name will be `RASflow` and slurm output (only for the snakemake commands, not for the jobs launched by snakemake) will go to `TheFolderIwant/RASflow-%j.out`. 
 
 ### 2. **metadata.tsv**
 
@@ -352,7 +346,7 @@ COUNTER: htseq-count #  "featureCounts" or "htseq-count", I haven't implemented 
 [...]
 ```
 
-### 3. **env.yaml** (facultative)
+### 4. **env.yaml** (facultative)
 
 RASflow relies on a conda environment, you can check the version of the tools (and eventually modify them) in `workflow/env.yaml`. 
 ```yaml
