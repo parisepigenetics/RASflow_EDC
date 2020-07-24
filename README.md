@@ -2,7 +2,7 @@
   * [Resources](#resources)
   * [Get an account on IFB core cluster and create a project](#get-an-account-on-ifb-core-cluster-and-create-a-project)
   * [Transfer your data](#transfer-your-data)
-    + [Fastq names](#fastq-names)
+    + [FASTQ names](#fastq-names)
   * [Connect to IFB core cluster](#connect-to-ifb-core-cluster)
   * [RASflow installation and description](#rasflow-installation-and-description)
     + [1. **Workflow.sh**](#1---workflowsh--)
@@ -73,12 +73,12 @@ Once your account is active, you have to connect to [my.cluster.france-bioinform
 ## Transfer your data
 Once your project is created you can access it at `/shared/projects/YourProjectName`. This is where you should transfer your data before doing your analysis. 
 
-### Fastq names
-The workflow is expecting gzip compressed fastq files with names formatted as   
+### FASTQ names
+The workflow is expecting gzip-compressed FASTQ files with names formatted as   
 - SampleName_R1.fastq.gz and SampleName_R2.fastq.gz for pair-end data, 
 - SampleName.fastq.gz for single-end data. 
 
-It is recommended to check the md5sum for big files. If your raw fastq files are on your computer in `PathTo/RNAseqProject/Fastq/`, you can type in a terminal: 
+It is recommended to check the md5sum for big files. If your raw FASTQ files are on your computer in `PathTo/RNAseqProject/Fastq/`, you can type in a terminal: 
 ```
 You@YourComputer:~$ cd PathTo/RNAseqProject
 You@YourComputer:~/PathTo/RNAseqProject$ md5sum Fastq/* > Fastq/fastq.md5
@@ -87,13 +87,14 @@ You can then copy the Fastq folder to the cluster using `rsync`, replacing `user
 ```
 You@YourComputer:~/PathTo/RNAseqProject$ rsync -avP  Fastq/ username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/Raw_fastq
 ```
+In this example the FASTQ files are copied in a folder named `Raw_fastq` in your project folder on IFB core cluster. Feel free to name your folders as you want! 
 You will be asked to enter your password, and then the transfer will begin. If it stops before the end, rerun the last command, it will only add the incomplete/missing files. 
 
 ---
 
 ## Connect to IFB core cluster
 
-It's time to go to the cluster!
+It's time to go to the cluster! You can connect to IFB server typing the following command replacing `username` by your IFB username. 
 
 ```bash
 You@YourComputer:~/PathTo/RNAseqProject$ ssh -o "ServerAliveInterval 10" -X username@core.cluster.france-bioinformatique.fr
@@ -127,7 +128,7 @@ You can now go to your project
 ```
 and check the files in `Raw_fastq`
 ```
-[username@clust-slurm-client YourProjectName]$ ll `Raw_fastq
+[username@clust-slurm-client YourProjectName]$ ll Raw_fastq
 ```
 
 Check that the transfer went fine using md5sum
@@ -140,14 +141,13 @@ Check that the transfer went fine using md5sum
 
 ## RASflow installation and description
 
-Here is a scheme of the workflow as implemented on the IFB cluster. In the green circles are the input files you have to give for the different steps. 
+Here is a simplified scheme of the workflow as implemented on the IFB cluster. In the green circles are the input files you have to give for the different steps. 
 
 <img src="Tuto_pictures/workflow_chart.pdf.png" alt="drawing" width="600"/>
 
-The first step is to clone RASflow_IFB to your project, and to look at the files. For now the repository is private, so you have to enter your github username and password to clone the repository. 
-
+The first step is to clone the RASflow_IFB GitHub repository to your project. For now the repository is private, so you need to have a GitHub account and to be a member of [EDC repository](https://github.com/parisepigenetics) to have access. If you're not, please let me know and I will add you. You will have to enter your GitHub username and password to clone the repository. You can then look at the files. 
 ```
-[username@clust-slurm-client Raw_fastq]$ cd ..
+[username@clust-slurm-client Raw_fastq]$ cd .. #to go back at the root of your project directory
 [username@clust-slurm-client YourProjectName]$ git clone https://github.com/parisepigenetics/RASflow_IFB
 Cloning into 'RASflow_IFB'...
 Username for 'https://github.com': GITHUBusername
@@ -175,7 +175,7 @@ drwxr-x---+ 2 mhennion mhennion 1078670 Jun  9 16:47 workflow
 -rw-rw----+ 1 mhennion mhennion    1320 Jun  9 16:27 Workflow.sh
 ```
 
-There are **3 files** that you have to modify before running your analysis, and  another one not mandatory.  
+There are **3 files** that you have to modify before running your analysis, and another one not mandatory.  
 
 ### 1. **Workflow.sh**
 
@@ -252,7 +252,7 @@ D197-D192T38	J10_KO	3
 ```   
 **Important:** the columns have to be **tab-separated**. 
 
-The first column contains the **sample** names that have to correspond to the fastq names (for instance here D197-D192T27_R1.fastq.gz). The second column describes the **group** the sample belongs to and will be used for differential expression analysis. The last column contains the replicate number or **subject**. If the samples are paired, for instance 2 samples from the same patient taken at different times, the **subject** number should be the same (this information is important for differential expression analysis).
+The first column contains the **sample** names that have to correspond to the FASTQ names (for instance here D197-D192T27_R1.fastq.gz). The second column describes the **group** the sample belongs to and will be used for differential expression analysis. The last column contains the replicate number or **subject**. If the samples are paired, for instance 2 samples from the same patient taken at different times, the **subject** number should be the same (this information is important for differential expression analysis).
 
 ### 3. **config_main.yaml**
 
@@ -407,7 +407,7 @@ dependencies:
 ### QC
 
 Prerequisite:   
-- Your fastq files are in `/shared/projects/YourProjectName/Raw_fastq`. 
+- Your FASTQ files are in `/shared/projects/YourProjectName/Raw_fastq`. 
 - You have modified `config/metadata.tsv` according to your experimental design.
 
 Now you have to check in `config/config_main.yaml` that: 
@@ -425,7 +425,7 @@ QC: yes  # "yes" or "no"
 ```
 The rest of the part `Control of the workflow` will be ignored. The software will stop after the QC to give you the opportunity to decide if trimming is necessary or not. 
 
-- The shared parameters are correct (paths to the fastq files, metadata.tsv, outputs, single or paired-end data). 
+- The shared parameters are correct (paths to the FASTQ files, metadata.tsv, outputs, single or paired-end data). 
 ```yaml
 ## the path to fastq files
 READSPATH: /shared/projects/YourProjectName/Raw_fastq
@@ -818,7 +818,7 @@ When this file is fully adapted to your experimental set up and needs, you can s
 ## Expected outputs
 
 The outputs are separated into two folders : 
-- the big files : trimmed fastq, bam files are in the intermediate folder defined in `configs/config_main.yaml` at `OUTPUTPATH:`
+- the big files : trimmed FASTQ, bam files are in the intermediate folder defined in `configs/config_main.yaml` at `OUTPUTPATH:`
 - the small files: QC reports, count tables, bigwig, etc. are in the final output folder defined in `configs/config_main.yaml` at `FINALOUTPUT:`
 
 ```yaml
@@ -834,9 +834,9 @@ You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/sha
 and the huge files will stay on the server. You can of course download them as well if you have space (and this is recommended for the long term). 
 
 ### Trimmed reads
-After trimming, the fastq are stored in the intermediate folder defined in `configs/config_main.yaml` at `OUTPUTPATH:`. 
+After trimming, the FASTQ are stored in the intermediate folder defined in `configs/config_main.yaml` at `OUTPUTPATH:`. 
 
-In this examples the trim fastq files will be stored in `/shared/projects/YourProjectName/RASflow_IFB/data/PROJECTNAME/trim/`. They are named
+In this examples the trim FASTQ files will be stored in `/shared/projects/YourProjectName/RASflow_IFB/data/PROJECTNAME/trim/`. They are named
 - Sample1_R1_val_1.fq
 - Sample1_R2_val_2.fq
 
@@ -910,7 +910,7 @@ RUN STATISTICS FOR INPUT FILE: /shared/projects/lxactko_analyse/RASflow/data/out
 This information is summarized in the MultiQC report, see  below. 
 
 #### FastQC of trimmed reads
-After the trimming, fastQC is automatically run on the new fastq and the results are also in this folder:
+After the trimming, fastQC is automatically run on the new FASTQ and the results are also in this folder:
 - Sample1_R1_val_1_fastqc.html
 - Sample1_R1_val_1_fastqc.zip
 - Sample1_R2_val_2_fastqc.html
