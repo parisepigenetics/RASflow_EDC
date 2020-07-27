@@ -1,22 +1,27 @@
-- [Tutorial RASflow on IFB core cluster](#tutorial-rasflow-on-ifb-core-cluster)
+# Tutorial RASflow on IFB core cluster
+
+[short introduction]
+
+## Table of content
+
   * [Resources](#resources)
   * [Get an account on IFB core cluster and create a project](#get-an-account-on-ifb-core-cluster-and-create-a-project)
   * [Transfer your data](#transfer-your-data)
     + [FASTQ names](#fastq-names)
   * [Connect to IFB core cluster](#connect-to-ifb-core-cluster)
   * [RASflow installation and description](#rasflow-installation-and-description)
-    + [1. **Workflow.sh**](#1---workflowsh--)
-    + [2. **metadata.tsv**](#2---metadatatsv--)
-    + [3. **config_main.yaml**](#3---config-mainyaml--)
-    + [3. **env.yaml** (facultative)](#3---envyaml----facultative-)
+    + [1. **metadata.tsv**](#1---metadatatsv--)
+    + [2. **config_main.yaml**](#2---config-mainyaml--)
+    + [3. **Workflow.sh** [Facultative]](#3---workflowsh----facultative-)
+    + [4. **env.yaml** [Facultative]](#4---envyaml----facultative-)
   * [Running your analysis step by step](#running-your-analysis-step-by-step)
     + [QC](#qc)
     + [Description of the log files](#description-of-the-log-files)
     + [FastQC results](#fastqc-results)
     + [Trimming](#trimming)
-    + [Mapping and feature count](#mapping-and-feature-count)
+    + [Mapping and counting reads in genes](#mapping-and-counting-reads-in-genes)
     + [Differential expression analysis and visualization](#differential-expression-analysis-and-visualization)
-  * [Expected outputs](#expected-outputs)
+  * [Workflow results](#workflow-results)
     + [Trimmed reads](#trimmed-reads)
       - [Trimming report](#trimming-report)
       - [FastQC of trimmed reads](#fastqc-of-trimmed-reads)
@@ -31,20 +36,18 @@
     + [Information about past jobs](#information-about-past-jobs)
     + [Cancelling a job](#cancelling-a-job)
     + [Check the whole pipeline](#check-the-whole-pipeline)
-  * [Tricks](#tricks)
-    + [Make aliases](#make-aliases)
   * [Common errors](#common-errors)
     + [Memory](#memory)
     + [Folder locked](#folder-locked)
     + [Storage space](#storage-space)
   * [Good practice](#good-practice)
+  * [Tricks](#tricks)
+    + [Make aliases](#make-aliases)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 
 
-
-# Tutorial RASflow on IFB core cluster
 
 ## Resources
 
@@ -141,11 +144,11 @@ Check that the transfer went fine using md5sum
 
 ## RASflow installation and description
 
-Here is a simplified scheme of the workflow as implemented on the IFB cluster. In the green circles are the input files you have to give for the different steps. 
+Here is a simplified scheme of the workflow as implemented on the IFB cluster. The main steps are indicated in the blue boxes. RASflow will allow you to choose which step you want to execute for your project. In the green circles are the input files you have to give for the different steps. 
 
 <img src="Tuto_pictures/workflow_chart.pdf.png" alt="drawing" width="600"/>
 
-The first step is to clone the RASflow_IFB GitHub repository to your project. For now the repository is private, so you need to have a GitHub account and to be a member of [EDC repository](https://github.com/parisepigenetics) to have access. If you're not, please let me know and I will add you. You will have to enter your GitHub username and password to clone the repository. You can then look at the files. 
+In order to install RASflow, you  have to clone the RASflow_IFB GitHub repository to your IFB project. For now the repository is private, so you need to have a GitHub account and to be a member of [EDC repository](https://github.com/parisepigenetics) to have access. If you're not, please let me know and I will add you. You will have to enter your GitHub username and password to clone the repository. You can then look at the files. 
 ```
 [username@clust-slurm-client Raw_fastq]$ cd .. #to go back at the root of your project directory
 [username@clust-slurm-client YourProjectName]$ git clone https://github.com/parisepigenetics/RASflow_IFB
@@ -173,7 +176,7 @@ drwxrwxr-x 2 mhennion mhennion 2,0M Jul 24 16:51 Tuto_pictures
 -rw-rw-r-- 1 mhennion mhennion  35K Jul 24 16:51 LICENSE
 -rw-rw-r-- 1 mhennion mhennion  52K Jul 24 16:51 README.md
 ```
-RASflow is launched as a python script named `main_cluster.py` which calls the workflow manager named [snakemake](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html). Snakemake will execute rules that are defined in `workflow/xxx.rules` and distribute the corresponding jobs to the computing nodes via SLURM. 
+RASflow is launched as a python script named `main_cluster.py` which calls the workflow manager named [snakemake](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html). Snakemake will execute rules that are defined in `workflow/xxx.rules` and distribute the corresponding jobs to the computing nodes via [Slurm](https://ifb-elixirfr.gitlab.io/cluster/doc/slurm_user_guide/). 
 
  On the cluster the main python script is launched via the shell script `Workflow.sh`, which basically contains only one command (+ information about the job). 
 
@@ -191,11 +194,140 @@ unset DISPLAY
 python main_cluster.py ifb
 [...]
 ```
-There are **2 files** that you have to modify before running your analysis (`metadata.tsv`and `config_main.yaml` in the `configs` folder), and eventually some others not mandatory. To modify the text files on the cluster you can use **vi**, **emacs**, **nano** or **gedit** (the last one being easier to use). 
+There are **2 files that you have to modify** before running your analysis (`metadata.tsv` and `config_main.yaml` in the `configs` folder), and eventually some others not mandatory. To modify the text files on the cluster you can use **vi**, **emacs**, **nano** or **gedit** (the last one being easier to use).  
 
-### 1. **Workflow.sh** [Facultative] 
+### 1. **metadata.tsv**
 
-In `Workflow.sh`, you can modify the **Job name** and the **Output** folder to save slurm outputs. If you don't change this file, slurm outputs will be saved in a `slurm_output` folder that will be created in your working directory. The line is read if it starts with one `#` and is not used if it starts with 2 (or more) `#`. For instance here
+The experimental description is set up in `config/metadata.tsv`: 
+```
+[username@clust-slurm-client RASflow_IFB]$ cat configs/metadata.tsv 
+sample	group	subject
+D197-D192T27	J0_WT	1
+D197-D192T28	J0_WT	2
+D197-D192T29	J0_WT	3
+D197-D192T30	J0_KO	1
+D197-D192T31	J0_KO	2
+D197-D192T32	J0_KO	3
+D197-D192T33	J10_WT	1
+D197-D192T34	J10_WT	2
+D197-D192T35	J10_WT	3
+D197-D192T36	J10_KO	1
+D197-D192T37	J10_KO	2
+D197-D192T38	J10_KO	3
+```   
+**Important:** the columns have to be **tab-separated**. 
+
+The first column contains the **sample** names that have to correspond to the FASTQ names (for instance here D197-D192T27_R1.fastq.gz). The second column describes the **group** the sample belongs to and will be used for differential expression analysis. The last column contains the replicate number or **subject**. If the samples are paired, for instance 2 samples from the same patient taken at different times, the **subject** number should be the same (this information is important for differential expression analysis).
+
+### 2. **config_main.yaml**
+ 
+The configuration of the workflow (see [step by step description](#running-your-analysis-step-by-step)) below) is done in `config/config_main.yaml`. This is the most important file. It controls the workflow and many tool parameters. It contains 3 parts:  
+
+   1. Define project name and the steps of the workflow you want to run
+
+```yaml
+[username@clust-slurm-client RASflow_IFB]$ cat configs/config_main.yaml 
+# Please check the parameters, and adjust them according to your circumstance
+
+# Project name
+PROJECT: EXAMPLE
+
+# ================== Control of the workflow ==================
+
+## Do you need to do quality control?
+QC: yes  # "yes" or "no"
+
+## Do you need to do trimming?
+TRIMMED: yes  # "yes" or "no"? 
+
+## Which mapping reference do you want to use? Genome or transcriptome?
+REFERENCE: genome  # "genome" or "transcriptome", I haven't implemented transcriptome yet. 
+
+## alignment quality control
+alignmentQC: yes  # "yes" or "no" to specify whether you want to do alignment QC
+
+## Do you want to do Differential Expression Analysis (DEA)?
+DEA: yes  # "yes" or "no"
+
+## Do you want to visualize the results of DEA?
+VISUALIZE: yes  # "yes" or "no"
+```
+2. Shared parameters   
+Here you define where the fastq files are stored, where is the file describing the experimental set up, the name and localisation of the folders where the output will be saved. The outputs are separated into two folders (see [Expected outputs](#expected-outputs)).  
+- the big files : trimmed FASTQ, bam files are in an intermediate folder defined at `OUTPUTPATH:`
+- the small files: QC reports, count tables, BigWig, etc. are in the final output folder defined at `FINALOUTPUT:`  
+Examples are given in the configuration file, but you're free to name and organise them as you want. Be sure to include the full path (starting from `/`). Here you also precise if your data are paired-end or single-end and the number of CPUs you want to use for your analysis. 
+
+
+```yaml
+# ================== Shared parameters for some or all of the sub-workflows ==================
+
+## key file if the data is stored remotely, otherwise leave it empty
+KEY: 
+
+## the path to fastq files
+READSPATH: /shared/projects/YourProjectName/Raw_fastq
+
+## the meta file describing the experiment settings
+METAFILE: /shared/projects/YourProjectName/RASflow_IFB/configs/metadata.tsv
+
+## paths for intermediate outputs and final outputs
+OUTPUTPATH: /shared/projects/YourProjectName/RASflow_IFB/data # intermediate output. do not upload to github
+FINALOUTPUT: /shared/projects/YourProjectName/RASflow_IFB/output
+
+## is the sequencing paired-end or single-end?
+END: pair  # "pair" or "single"
+
+## number of cores you want to allocate to this workflow
+NCORE: 30  # Use command "getconf _NPROCESSORS_ONLN" to check the number of cores/CPU on your machine
+
+```
+3. Configuration of the specific tools  
+Here you precise parameters that are specific to one of the steps of the workflow. 
+
+```yaml
+# ================== Configuration for Quality Control ==================
+
+## All required params have already been defined in the public params
+
+# ================== Configuration for trimming ==================
+
+## Number of trimmed bases
+## put "no" for TRIM3 if you don't want to trim a fixed number of bases. 
+TRIM3: no #  integer or "no", hard-clip sequences from their 5' end, keep the N 3' end bases (remove start of the sequences) , put "no" if don't want trimming 
+TRIM5: no # integer or "no", hard-clip sequences from their 3' end, keep the N 5' end bases (remove end of the sequences) , the trimming of the beginning of the read is done first. This number should be smaller than or equal to TRIM3 (it is the final lenght of the sequences).
+
+# ================== Configuration for quantification using transcriptome ==================
+
+## transcriptome file
+TRANS: /shared/..  # not yet implemented
+
+# ================== Configuration for alignment to genome and feature count ==================
+
+## genome and annotation files
+INDEXPATH: /shared/bank/homo_sapiens/hg38/hisat2 # folder containing index files
+INDEXBASE: genome  # base of the name of the index files (ie genome.1.ht2)
+ANNOTATION: /shared/projects/YourProjectName/RASflow_IFB/gtf/gencode.v34.annotation.gtf # GTF file 
+
+## bigwig option
+BWSTRANDED: both # "no": bw merging forward and reverse reads, "yes": get 2 bw files, one forward and one reverse; "both": get the two bw per strand as well as the merge one. 
+
+## counting options
+ATTRIBUTE: gene_id  # the attribute used in annotation file. It's usually "gene_id", but double check that since it may also be "gene", "ID"...
+STRAND: "reverse" # "no", "yes", "reverse". For ht-seq counts: For stranded=no, a read is considered overlapping with a feature regardless of whether it is mapped to the same or the opposite strand as the feature. For stranded=yes and single-end reads, the read has to be mapped to the same strand as the feature. For paired-end reads, the first read has to be on the same strand and the second read on the opposite strand. For stranded=reverse, these rules are reversed.
+FEATURE: transcript # "exon" or "transcript"
+
+## aligner
+ALIGNER: hisat2
+
+## tool for feature count
+COUNTER: featureCounts # "featureCounts" or "htseq-count"
+
+[...]
+```
+### 3. **Workflow.sh** [Facultative] 
+
+In `Workflow.sh`, you can modify the **Job name** and the **Output** folder to save Slurm outputs. If you don't change this file, Slurm outputs will be saved in a `slurm_output` folder that will be created in your working directory. The line is read if it starts with one `#` and is not used if it starts with 2 (or more) `#`. For instance here
 
 ```bash
 [username@clust-slurm-client RASflow_IFB]$ cat Workflow.sh
@@ -223,132 +355,12 @@ the default names `slurm-xxx` will be used, whereas here
 #SBATCH --output=TheFolderIwant/RASflow-%j.out
 [...]
 ```
-the job name will be `RASflow` and slurm output (only for the snakemake commands, not for the jobs launched by snakemake) will go to `TheFolderIwant/RASflow-%j.out`. 
+the job name will be `RASflow` and Slurm output (only for the snakemake commands, not for the jobs launched by snakemake) will go to `TheFolderIwant/RASflow-%j.out`.
 
-### 2. **metadata.tsv**
+### 4. **env.yaml** [Facultative]
 
-The experimental description is set up in `config/metadata.tsv`: 
-```
-[username@clust-slurm-client RASflow_IFB]$ cat configs/metadata.tsv 
-sample	group	subject
-D197-D192T27	J0_WT	1
-D197-D192T28	J0_WT	2
-D197-D192T29	J0_WT	3
-D197-D192T30	J0_KO	1
-D197-D192T31	J0_KO	2
-D197-D192T32	J0_KO	3
-D197-D192T33	J10_WT	1
-D197-D192T34	J10_WT	2
-D197-D192T35	J10_WT	3
-D197-D192T36	J10_KO	1
-D197-D192T37	J10_KO	2
-D197-D192T38	J10_KO	3
-```   
-**Important:** the columns have to be **tab-separated**. 
+RASflow relies on a conda environment, you can check the version of the tools (and eventually modify them) in `workflow/env.yaml`. Note that conflicts between versions are frequent and might be tricky to solve. 
 
-The first column contains the **sample** names that have to correspond to the FASTQ names (for instance here D197-D192T27_R1.fastq.gz). The second column describes the **group** the sample belongs to and will be used for differential expression analysis. The last column contains the replicate number or **subject**. If the samples are paired, for instance 2 samples from the same patient taken at different times, the **subject** number should be the same (this information is important for differential expression analysis).
-
-### 3. **config_main.yaml**
-
-The configuration of the workflow (see step by step description below) is done in `config/config_main.yaml` that contains different parts:  
-
-   1. Define project name and the steps of the workflow you want to run
-
-```yaml
-[username@clust-slurm-client RASflow_IFB]$ cat configs/config_main.yaml 
-# Please check the parameters, and adjust them according to your circumstance
-
-# Project name
-PROJECT: EXAMPLE
-
-# ================== Control of the workflow ==================
-
-## Do you need to do quality control?
-QC: yes  # "yes" or "no"
-
-## Do you need to do trimming?
-TRIMMED: "yes"  # "yes" or "no"? 
-
-## Which mapping reference do you want to use? Genome or transcriptome?
-REFERENCE: genome  # "genome" or "transcriptome", I haven't implemented transcriptome yet. 
-
-## alignment quality control
-alignmentQC: yes  # "yes" or "no" to specify whether you want to do alignment QC
-
-## Do you want to do Differential Expression Analysis (DEA)?
-DEA: yes  # "yes" or "no"
-
-## Do you want to visualize the results of DEA?
-VISUALIZE: yes  # "yes" or "no"
-```
-3.   2. shared parameters
-```yaml
-# ================== Shared parameters for some or all of the sub-workflows ==================
-
-## key file if the data is stored remotely, otherwise leave it empty
-KEY: 
-
-## the path to fastq files
-READSPATH: /shared/projects/YourProjectName/Raw_fastq
-
-## the meta file describing the experiment settings
-METAFILE: /shared/projects/YourProjectName/RASflow_IFB/configs/metadata.tsv
-
-## is the sequencing paired-end or single-end?
-END: pair  # "pair" or "single"
-
-## number of cores you want to allocate to this workflow
-NCORE: 30  # Use command "getconf _NPROCESSORS_ONLN" to check the number of cores/CPU on your machine
-
-## paths for intermediate outputs and final outputs
-OUTPUTPATH: /shared/projects/YourProjectName/RASflow_IFB/data # intermediate output. do not upload to github
-FINALOUTPUT: /shared/projects/YourProjectName/RASflow_IFB/output
-
-```
-3.   3. Configuration of the specific tools
-```yaml
-# ================== Configuration for Quality Control ==================
-
-## All required params have already been defined in the public params
-
-# ================== Configuration for trimming ==================
-
-## Number of trimmed bases
-## put "no" for TRIM3 if you don't want to trim a fixed number of bases. 
-TRIM3: 91 #  hard-clip sequences from their 5' end, keep the N 3' end bases (remove start of the sequences) , put "no" if don't want trimming 
-TRIM5: 91 # hard-clip sequences from their 3' end, keep the N 5' end bases (remove end of the sequences) , the trimming of the beginning of the read is done first. This number should be smaller than or equal to TRIM3 (it is the final length of the sequences). 
-# ================== Configuration for quantification using transcriptome ==================
-
-## transcriptome file
-TRANS: /shared/..
-
-# ================== Configuration for alignment to genome and feature count ==================
-
-## genome and annotation files
-GENOME: /shared/bank/homo_sapiens/hg38/fasta/hg38.fa
-INDEXPATH: /shared/bank/homo_sapiens/hg38/hisat2
-INDEXBASE:  genome
-ANNOTATION: /shared/projects/YourProjectName/RASflow_IFB/gtf/gencode.v34.annotation.gtf  
-
-## bigwig option
-BWSTRANDED: both # "no": bw merging forward and reverse reads, "yes": get 2 bw files, one forward and one reverse; "both": get the two bw per strand as well as the merge one. 
-
-## counting options
-ATTRIBUTE: gene_id  # the attribute used in annotation file. It's usually "gene_id", but double check that since it may also be "gene", "ID"...
-STRAND: "reverse" # "no", "yes", "reverse". For ht-seq counts: For stranded=no, a read is considered overlapping with a feature regardless of whether it is mapped to the same or the opposite strand as the feature. For stranded=yes and single-end reads, the read has to be mapped to the same strand as the feature. For paired-end reads, the first read has to be on the same strand and the second read on the opposite strand. For stranded=reverse, these rules are reversed.
-FEATURE: transcript # "exon" or "transcript"
-
-## aligner
-ALIGNER: hisat2
-
-## tool for feature count
-COUNTER: htseq-count #  "featureCounts" or "htseq-count", I haven't implemented featureCounts
-[...]
-```
-
-### 4. **env.yaml** (facultative)
-
-RASflow relies on a conda environment, you can check the version of the tools (and eventually modify them) in `workflow/env.yaml`. 
 ```yaml
 [username@clust-slurm-client RASflow_IFB]$ cat workflow/env.yaml 
 name: rasflow_IFB 
@@ -396,12 +408,14 @@ dependencies:
   - deeptools=3.4.3
   - bioconductor-regionreport=1.22.0
 ```
+
+
 ## Running your analysis step by step
 
 ### QC
 
 Prerequisite:   
-- Your FASTQ files are in `/shared/projects/YourProjectName/Raw_fastq`. 
+- Your FASTQ files are on the cluster, in our example in `/shared/projects/YourProjectName/Raw_fastq` (but you can name your folders as you want, as long as you adjust the `READSPATH` parameter in `config_main.yaml`). 
 - You have modified `config/metadata.tsv` according to your experimental design.
 
 Now you have to check in `config/config_main.yaml` that: 
@@ -417,7 +431,7 @@ PROJECT: PROJECTNAME
 ## Do you need to do quality control?
 QC: yes  # "yes" or "no"
 ```
-The rest of the part `Control of the workflow` will be ignored. The software will stop after the QC to give you the opportunity to decide if trimming is necessary or not. 
+The rest of the part `Control of the workflow` will be **ignored**. The software will stop after the QC to give you the opportunity to decide if trimming is necessary or not. 
 
 - The shared parameters are correct (paths to the FASTQ files, metadata.tsv, outputs, single or paired-end data). 
 ```yaml
@@ -427,15 +441,15 @@ READSPATH: /shared/projects/YourProjectName/Raw_fastq
 ## the meta file describing the experiment settings
 METAFILE: /shared/projects/YourProjectName/RASflow_IFB/configs/metadata.tsv
 
+## paths for intermediate outputs and final outputs
+OUTPUTPATH: /shared/projects/YourProjectName/RASflow_IFB/data # intermediate output. do not upload to github
+FINALOUTPUT: /shared/projects/YourProjectName/RASflow_IFB/output
+
 ## is the sequencing paired-end or single-end?
 END: pair  # "pair" or "single"
 
 ## number of cores you want to allocate to this workflow
 NCORE: 30  # Use command "getconf _NPROCESSORS_ONLN" to check the number of cores/CPU on your machine
-
-## paths for intermediate outputs and final outputs
-OUTPUTPATH: /shared/projects/YourProjectName/RASflow_IFB/data # intermediate output. do not upload to github
-FINALOUTPUT: /shared/projects/YourProjectName/RASflow_IFB/output
 ```
 When this is done, you can start the QC by running:
 ```
@@ -447,17 +461,18 @@ You can check if your job is running using squeue.
 ```
 [username@clust-slurm-client RASflow_IFB]$ squeue -u username
 ```
-You should also check slurm output files. 
+You should also check Slurm output files. 
+
 ### Description of the log files 
 
-The first job is the main script. This job will call one or several snakefiles that define small workflows of the individual tasks. There are slurm outputs at the 3 levels. 
+The first job is the main script. This job will call one or several snakefiles (`.rules` files) that define small workflows of the individual steps. There are Slurm outputs at the 3 levels. 
 1. main script
 2. snakefiles
 3. individual tasks
 
-Where to find those outputs and what to they contain?
+Where to find those outputs and what do they contain?
 
-1. main script : slurm output is in `slurm_output` (default) or in the specified folder if you modified `Workflow.sh`. It contains global information about your run. 
+1. main script : Slurm output is in `slurm_output` (default) or in the specified folder if you modified `Workflow.sh`. It contains global information about your run. 
 Typically the main job output looks like :
 ```
 [mhennion @ clust-slurm-client 16:17]$ RASflow : cat slurm_output/Logs-9385967.out 
@@ -499,17 +514,17 @@ Job finished 2020-06-15T15:50:43+0200
 2. snakefiles. There are 5 snakefiles (visible in the `workflow` folder) that correspond to the different steps of the analysis:
   - quality_control.rules (QC)
   - trim.rules (reads trimming/filtering)
-  - align_count_genome.rules (mapping and feature counting)
+  - align_count_genome.rules (mapping and counting)
   - dea_genome.rules (differential gene expression)
   - visualize.rules (plots)
 
-The slurm outputs of those different steps are stored in the `logs` folder and named as the corresponding snakefile plus the date : for instance
-`trim_20200615_1540.txt` or  `align_count_genome_20200615_1540.txt`. 
+The Slurm outputs of those different steps are stored in the `logs` folder and named as the date plus the corresponding snakefile: for instance
+`20200615_1540_trim.txt` or  `20200615_1540_align_count_genome.txt`. 
 
-Here is a description of those files (splitted): 
+Here is a description of one of those files (splitted): 
 
 ---
-Building the DAG (directed acyclic graph): Define the jobs that will be launched and in which order.
+- Building the DAG (directed acyclic graph): Define the jobs that will be launched and in which order.
 ```
 Building DAG of jobs...
 Using shell: /usr/bin/bash
@@ -523,7 +538,7 @@ Job counts:
 	1	trimstart
 	5
 ```
-Start the first job (or jobs if there are several independant jobs). The rule is indicated, with the expected outputs. For the first steps one job is started per sample. 
+- Start the first job (or jobs if there are several independant jobs). The rule is indicated, with the expected outputs. For the first steps one job is started per sample. 
 ```
 [Tue May 12 17:48:20 2020]
 rule getReads:
@@ -535,7 +550,7 @@ Submitted DRMAA job 4 with external jobid 7908074.
 ```
 You have here the corresponding **job ID**. You can follow that particular job in `slurm-7908074.out`. 
 
-End of that job, start of the next one:
+- End of that job, start of the next one:
 ```
 [Tue May 12 17:48:30 2020]
 Finished job 4.
@@ -550,7 +565,7 @@ rule trimstart:
 
 Submitted DRMAA job 3 with external jobid 7908075.
 ```
-At the end of the job, it removes temporary files
+- At the end of the job, it removes temporary files if any:
 ```
 Removing temporary output file /shared/projects/lxactko_analyse/RASflow/data/output/LXACT_1-test/trim/reads/Test_forward.fastq.gz.
 Removing temporary output file /shared/projects/lxactko_analyse/RASflow/data/output/LXACT_1-test/trim/reads/Test_reverse.fastq.gz.
@@ -558,7 +573,7 @@ Removing temporary output file /shared/projects/lxactko_analyse/RASflow/data/out
 Finished job 3.
 2 of 5 steps (40%) done
 ```
-And so on... Finally:
+- And so on... Finally:
 ```
 [Tue May 12 17:51:10 2020]
 Finished job 0.
@@ -568,19 +583,19 @@ Complete log: /shared/mfs/data/projects/lxactko_analyse/RASflow/.snakemake/log/2
 
 ---
 
-An extra log file named `running_time_20200615_1540.txt` stores running times.  
+An extra log file named `20200615_1540_running_time.txt` stores running times.  
 ```
-[mhennion @ clust-slurm-client 15:50]$ RASflow : cat logs/running_time_20200615_1540.txt 
+[mhennion @ clust-slurm-client 15:50]$ RASflow : cat logs/20200615_1540_running_time.txt 
 
-Project name: LXACT_1-test
+Project name: YourProjectName
 Start time: Mon Jun 15 15:40:13 2020
-Time of running trimming:0:00:12
-Time of running genome alignment:0:08:43
-Time of running DEA genome based:0:01:32
-Time of running visualization:0:00:01
+Time of running trimming: 0:00:12
+Time of running genome alignment: 0:08:43
+Time of running DEA genome based: 0:01:32
+Time of running visualization: 0:00:01
 Finish time: Mon Jun 15 15:50:43 2020
 ```
-3. individual tasks: every job generate a `slurm-JOBID.out` file in the `slurm_output` forder. Slurm output specifies the rule, the sample, and gives outputs specific to the tool:  
+3. individual tasks: every job generate a `slurm-JOBID.out` file. It is localised in the working directory as long as the workflow is running. It is then moved to the `slurm_output` forder. Slurm output specifies the rule, the sample (or samples) involved, and gives outputs specific to the tool:  
 ```
 [mhennion@clust-slurm-client RASflow]$ cat slurm_output/slurm-8080372.out 
 Building DAG of jobs...
@@ -619,23 +634,23 @@ total 38537
 -rw-rw----+ 1 username username  871080 May 11 15:16 Sample1_reverse_fastqc.zip
 ```
 Those are individual fastQC reports. MultiQC is called after FastQC, so you will also find `report_quality_control.html` that is a summary for all the samples. 
-You can copy those reports to your computer to read them, by typing (in a new terminal):
+You can copy those reports to your computer to read them, by typing (in a new local terminal):
 ```
 You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/output/PROJECTNAME/fastqc PathTo/WhereYouWantToSave/
 ```
 It's time to decide if you need trimming or not. 
-If you have no sequence bias, and little amount of adapters, trimming is not necessary and you can proceed directly to the Mapping step.
+If you have no sequence bias, and little amount of adapters, trimming is not necessary and you can proceed directly to the [mapping step](#mapping-and-counting-reads-in-genes).
 
 ---
 
-In principle you can now run all the rest of the pipeline at once. To do so you have set QC to "no" and to configure the other parts of `config_main.yaml`. 
+**In principle you can now run all the rest of the pipeline at once. To do so you have set QC to "no" and to configure the other parts of `config_main.yaml`.** 
 
 ---
 
 ### Trimming
-If you put `TRIMMED`: "no", there will be no trimming and the original fastq sequences will be mapped. 
+If you put `TRIMMED: no`, there will be no trimming and the original fastq sequences will be mapped. 
 
-If you put `TRIMMED` to "yes", Trim Galore will remove low quality and very short reads, and cut the adapters. If you also want to remove a fixed number of bases in 5' or 3', you have to configure it:
+If you put `TRIMMED: yes`, [Trim Galore](https://github.com/FelixKrueger/TrimGalore/blob/master/Docs/Trim_Galore_User_Guide.md) will remove low quality and very short reads, and cut the adapters. If you also want to remove a fixed number of bases in 5' or 3', you have to configure it. For instance if you want to remove the first 10 bases of reads of 101 bases: 
 
 ```yaml
 # ================== Control of the workflow ==================
@@ -650,22 +665,24 @@ TRIMMED: "yes"  # "yes" or "no"?
 
 ## Number of trimmed bases 
 ## put "no" for TRIM3 if you don't want to trim a fixed number of bases. 
-TRIM3: 91 #  hard-clip sequences from their 5' end, keep the N 3' end bases (remove start of the sequences) , put "no" if don't want trimming 
-TRIM5: 91 # hard-clip sequences from their 3' end, keep the N 5' end bases (remove end of the sequences) , the trimming of the beginning of the read is done first. This number should be smaller than or equal to TRIM3 (it is the final length of the sequences). 
+TRIM3: 91 #  integer or "no", hard-clip sequences from their 5' end, keep the N 3' end bases (remove start of the sequences) , put "no" if don't want trimming 
+TRIM5: 91 #  integer or "no", hard-clip sequences from their 3' end, keep the N 5' end bases (remove end of the sequences) , the trimming of the beginning of the read is done first. This number should be smaller than or equal to TRIM3 (it is the final length of the sequences). 
 ```
 !! The number you indicate is the number of bases **to keep** !!  
 Of note, this trimming is done before the adapter removal and read filtering.  
-If you don't want to trim a fixed number of bases, put "no" for TRIM3 (TRIM5 won't be used then).  
-If you want to trim only 3' end, set TRIM3 to the starting read length and TRIM5 to the final length you want.  
-If you want to trim only 5' end, set TRIM3 and TRIM5 to the final length you want (as in the example).  
-If you want to trim both, put `read length MINUS number of bases to remove at 5' end` for TRIM3 and final length for TRIM5. 
+- If you don't want to trim a fixed number of bases, put "no" for TRIM3 (TRIM5 won't be used then).  
+- If you want to trim only 3' end, set TRIM3 to the starting read length and TRIM5 to the final length you want.  
+- If you want to trim only 5' end, set TRIM3 and TRIM5 to the final length you want (as in the example above).  
+- If you want to trim both, put   
+TRIM3: read length MINUS number of bases to remove at 5' end  
+TRIM5: final length. 
 
 Nota: I will probably modify that part to be more computationally efficient. 
 
 
-### Mapping and feature count
+### Mapping and counting reads in genes
 
-At this step you have to provide the path to your reference genome, its HISAT2 index as well as a GTF annotation file. 
+At this step you have to provide the path to HISAT2 index as well as a GTF annotation file. 
 Some reference files are shared between users. Before dowloading a new reference, check what is available at `/shared/bank/`. 
 ```bash
 [username@clust-slurm-client ]$ tree -L 2 /shared/bank/homo_sapiens/
@@ -739,9 +756,8 @@ alignmentQC: yes  # "yes" or "no" to specify whether you want to do alignment QC
 # ================== Configuration for alignment to genome and feature count ==================
 
 ## genome and annotation files
-GENOME: /shared/bank/homo_sapiens/hg38/fasta/hg38.fa # genome fasta file
-INDEXPATH: /shared/projects/YourProjectName/RASflow_IFB/index/hg38 # folder containing index files
-INDEXBASE:  genome  # base of the name of the index files (ie genome.1.ht2)
+INDEXPATH: /shared/bank/homo_sapiens/hg38/hisat2 # folder containing index files
+INDEXBASE: genome  # base of the name of the index files (ie genome.1.ht2)
 ANNOTATION: /shared/projects/YourProjectName/RASflow_IFB/gtf/gencode.v34.annotation.gtf # GTF file
 
 ## bigwig option
@@ -752,16 +768,15 @@ ATTRIBUTE: gene_id  # the attribute used in annotation file. It's usually "gene_
 STRAND: "reverse" # "no", "yes", "reverse". For ht-seq counts: For stranded=no, a read is considered overlapping with a feature regardless of whether it is mapped to the same or the opposite strand as the feature. For stranded=yes and single-end reads, the read has to be mapped to the same strand as the feature. For paired-end reads, the first read has to be on the same strand and the second read on the opposite strand. For stranded=reverse, these rules are reversed.
 FEATURE: transcript # "exon" or "transcript"
 
-
 ## aligner
 ALIGNER: hisat2
 
 ## tool for feature count
-COUNTER: htseq-count #  "featureCounts" or "htseq-count", I haven't tested featureCounts yet
+COUNTER: featureCounts # "featureCounts" or "htseq-count"
 ```
 For now only HISAT2 is available but I plan to add STAR. 
 
-For an easy visualisation on a genome browser, bigwig files are generated. You can choose if you want to separate forward and reverse reads setting `BWSTRANDED`. 
+For an easy visualisation on a genome browser, BigWig files are generated. You can choose if you want to separate forward and reverse reads setting `BWSTRANDED`. 
 
 Two counters are available: 
 - [HTseq-count](https://htseq.readthedocs.io/en/master/count.html) 
@@ -790,7 +805,7 @@ Finally you have to set the parameters for the differential expression analysis.
 DEATOOL: edgeR  # "edgeR" or "DESeq2"? DESeq2 is recommended for transcriptome-based DEA
 
 ## Is your experiment designed in a pair-wise way?
-PAIR: FALSE  # Is this a pair test or not? ("TRUE" or "FALSE"). For instance 2 samples from the same patient taken at different times. 
+PAIR: no  # Is this a pair test or not? (yes or no). For instance 2 samples from the same patient taken at different times.
 
 ## the comparison(s) you want to do. If multiple comparisons, specify each pair (CONTROL & TREAT) in order respectively
 CONTROL: ["J0_WT","J0_WT","J10_WT","J0_KO"]
@@ -798,8 +813,7 @@ TREAT: ["J0_KO","J10_WT","J10_KO","J10_KO"]
 ## length of 'CONTROL' should agree with that of 'TREAT'
 ## what you fill in there should agree with the "group" column in metadata.tsv
 
-FILTER:
-  yesOrNo: TRUE  # Filter out low expressed transcripts/genes or not? (TRUE or FALSE) It's better to be set to TRUE. FALSE is set as default only for testing fake toy data
+FILTER: yes  # Filter out low expressed transcripts/genes or not? (yes or no) It's better to be set to "yes".
 ```
 
 When this file is fully adapted to your experimental set up and needs, you can start the workflow by running:
@@ -809,18 +823,48 @@ When this file is fully adapted to your experimental set up and needs, you can s
 
 ---
 
-## Expected outputs
+## Workflow results
 
 The outputs are separated into two folders : 
-- the big files : trimmed FASTQ, bam files are in the intermediate folder defined in `configs/config_main.yaml` at `OUTPUTPATH:`
-- the small files: QC reports, count tables, bigwig, etc. are in the final output folder defined in `configs/config_main.yaml` at `FINALOUTPUT:`
-
+- the big files : trimmed FASTQ and bam files are in the intermediate folder defined in `configs/config_main.yaml` at `OUTPUTPATH:`
 ```yaml
 ## paths for intermediate outputs and final outputs
 OUTPUTPATH: /shared/projects/YourProjectName/RASflow_IFB/data # intermediate output. do not upload to github
-FINALOUTPUT: /shared/projects/YourProjectName/RASflow_IFB/output
+```
+```
+[username@clust-slurm-client RASflow_IFB]$ tree -L 2 data/YourProjectName/
+data/YourProjectName/
+├── genome
+│   ├── bamFileSort
+│   ├── benchmarks
+│   └── splicesites.txt
+└── trim
+    ├── redD197-D192T27_forward.91bp_3prime.fq.gz_trimming_report.txt
+    ├── redD197-D192T27_R1_trimmed_fastqc.html
+    ├── redD197-D192T27_R1_trimmed_fastqc.zip
+    ├── redD197-D192T27_R1_trimmed.fq.gz
+    ...
 ```
 
+- the small files: QC reports, count tables, BigWig, DEA reports, etc. are in the final output folder defined in `configs/config_main.yaml` at `FINALOUTPUT:`
+```yaml
+FINALOUTPUT: /shared/projects/YourProjectName/RASflow_IFB/output
+```
+```
+[username@clust-slurm-client RASflow_IFB]$ tree -L 2 output/YourProjectName/
+├── fastqc_after_trimming
+│   ├── report_quality_control_after_trimming_data
+│   └── report_quality_control_after_trimming.html
+└── genome
+    ├── bw
+    ├── bw_str
+    ├── countFile_featureCounts
+    ├── dea_featureCounts
+    ├── report_count_featureCounts_data
+    └── report_count_featureCounts.html
+
+8 directories, 2 files
+```
 This way you can get all the results on your computer by running 
 ```
 You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/output/PROJECTNAME/ PathTo/WhereYouWantToSave/
@@ -835,7 +879,7 @@ In this examples the trim FASTQ files will be stored in `/shared/projects/YourPr
 - Sample1_R2_val_2.fq
 
 #### Trimming report
-In the same folder, you'll find trimming reports such as `Sample1_forward.fq.gz_trimming_report.txt` for each samples. If you have trimmed a fixed number of bases, the trimming report will have a name related to the intermediate file (not conserved) generated after that trimming: such as `Sample1_forward.91bp_3prime.fq.gz_trimming_report.txt`. You'll find information about the tools and parameters, as well as trimming statistics:
+In the same folder, you'll find trimming reports such as `Sample1_forward.fq.gz_trimming_report.txt` for each samples. If you have trimmed a fixed number of bases, the trimming report will have a name related to the intermediate file (not conserved) generated after that initial trimming: such as `Sample1_forward.91bp_3prime.fq.gz_trimming_report.txt`. You'll find information about the tools and parameters, as well as trimming statistics:
 ```
 [mhennion @ clust-slurm-client 09:47]$ RASflow : cat data/output/LXACT_1/trim/D197-D192T27_forward.91bp_3prime.fq.gz_trimming_report.txt
 
@@ -915,11 +959,12 @@ As previously **MultiQC** gives a summary for all the samples. It can be found i
 Nota: I will modify to have all the fastQC results in this folder.
 
 ### Mapped reads
-The mapped reads are stored as sorted bam in `data/PROJECTNAME/genome/bamFileSort`, with their `.bai` index.
+The mapped reads are stored as sorted bam in the intermediate output folder, in our example in `data/PROJECTNAME/genome/bamFileSort`, together with their `.bai` index. They can be visualized using a genome browser such as [IGV](http://software.broadinstitute.org/software/igv/home) but this is not very convenient as the files are heavy. [BigWig](https://deeptools.readthedocs.io/en/develop/content/tools/bamCoverage.html) files, that summarize the information converting the individual read positions into a number of reads per bin of a given size, are more adapted. 
+
 
 ### BigWig
-To facilitate visualization (for instance using a genome browser such as [IGV](http://software.broadinstitute.org/software/igv/home)), bigwig files are generated. There are in `output/PROJECTNAME/genome/bw`. If you have generated stranded bigwig, they are in  `output/PROJECTNAME/genome/bw_str`. 
-If not already done, you can get the files on your computer running:
+To facilitate visualization on a genome browser, [BigWig](https://deeptools.readthedocs.io/en/develop/content/tools/bamCoverage.html) files are generated (window size of 50 bp). There are in `output/PROJECTNAME/genome/bw`. If you have generated stranded BigWig, they are in  `output/PROJECTNAME/genome/bw_str`. 
+If not already done, you can specifically get the BigWig files on your computer running:
 ```
 You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/output/PROJECTNAME/genome/bw_str PathTo/WhereYouWantToSave/
 ```
@@ -927,7 +972,7 @@ You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/sha
 ### Mapping QC
 [Qualimap](http://qualimap.bioinfo.cipf.es/) is used to check the mapping quality. You'll find qualimap reports in `output/PROJECTNAME/genome/alignmentQC`. Those reports contain a lot of information:
 - information about the mapper
-- number/% of mapped reads/pairs
+- number and % of mapped reads/pairs
 - number of indels and mismatches
 - coverage per chromosome
 - insert size histogram
@@ -947,7 +992,7 @@ Depending on the tool you use, the count tables can be found in `output/PROJECTN
 
 The `.summary` contains information about the reads that couldn't be attributed to a feature:
 ```
-[mhennion @ clust-slurm-client 16:32]$ RASflow : cat output/LXACT_1/genome/countFile_htseq-count/D197-D192T27_table.tsv.summary
+[mhennion @ clust-slurm-client]$ RASflow_IFB : cat output/YourProjectName/genome/countFile_htseq-count/D197-D192T27_table.tsv.summary
 __no_feature	2577896
 __ambiguous	7760223
 __too_low_aQual	2567823
@@ -974,23 +1019,50 @@ MultiQC is run after the counting and you can find a report named `report_count_
 
 ### DEA results
 
-DEA results are in `output/PROJECTNAME/genome/dea_featureCounts` or `dea_htseq-count`. 
-- In `output/PROJECTNAME/genome/dea_htseq-count/countGroup/` are raw count tables per group (`group_gene_count.tsv`).  
+DEA results are in `output/PROJECTNAME/genome/dea_featureCounts` or `dea_htseq-count`.
+```
+[mhennion @ clust-slurm-client 16:53]$ RASflow : tree output/YourProjectName/genome/dea_featureCounts/
+output/YourProjectName/genome/dea_featureCounts/
+├── countGroup
+│   ├── J0_KO_gene_count.tsv
+│   ├── J0_WT_gene_count.tsv
+|   ...
+├── DEA_edgeR
+│   ├── dea_J0_KO_J10_KO.tsv
+│   ├── dea_J0_WT_J0_KO.tsv
+|   ...
+├── Norm_edgeR
+│   ├── J0_KO_gene_norm.tsv
+│   ├── J0_WT_gene_norm.tsv
+│   ├── J10_KO_gene_norm.tsv
+│   └── J10_WT_gene_norm.tsv
+├── Report_edgeR
+│   ├── J0_KO_J10_KO
+│   │   ├── edgeRexploration.bib
+│   │   └── edgeRexploration.html
+│   ├── J0_WT_J0_KO
+│   │   ├── edgeRexploration.bib
+│   │   └── edgeRexploration.html
+│  ...
+└── visualization_edgeR
+    ├── heatmap_J0_KO_J10_KO.pdf
+    ├── heatmap_J0_WT_J0_KO.pdf
+    ├── volcano_plot_J0_KO_J10_KO.pdf
+    ├── volcano_plot_J0_WT_J0_KO.pdf
+    ...
+```
+
+- In `output/PROJECTNAME/genome/dea_featureCounts/countGroup/` are raw count tables per group (`group_gene_count.tsv`).  
 - Normalized counts can be found in `Norm_DESeq2/` or `Norm_edgeR/`. 
-- In `output/PROJECTNAME/genome/dea_htseq-count/DEA_DESeq2` or `DEA_edgeR`, you'll find the results for each pair of conditions: 
+- In `output/PROJECTNAME/genome/dea_featureCounts/DEA_DESeq2` or `DEA_edgeR`, you'll find the results for each pair of conditions: 
     - dea_J0_WT_J0_KO.tsv contains differential expression for all genes
     - deg_J0_WT_J0_KO.tsv contains only the genes differentially expressed (FDR < 0.05)
-- In `output/PROJECTNAME/genome/dea/visualization_DESeq2/` or `visualization_edgeR/`, you'll find for each pair of conditions:
-    - Volcano plots representing differential expression 
-![volcano_plot2_J0_WT_J10_WT.pdf.png](Tuto_pictures/volcano_plot2_J0_WT_J10_WT.pdf.png)
-    - A heatmap of the 20 most regulated genes
-![heatmap2_J0_WT_J10_WT_1.pdf.png](Tuto_pictures/heatmap2_J0_WT_J10_WT_1.pdf.png)
 
-#### regionReport 
+#### Visualization
 
-In addition a report is generated by [regionReport](http://leekgroup.github.io/regionReport/reference/index.html) using `DESeq2Report()` or `edgeReport()`. This report can be found in `output/LXACT_1/genome/dea/Report_DESeq2` or `Report_edgeR`. 
+A report is generated by [regionReport](http://leekgroup.github.io/regionReport/reference/index.html) using `DESeq2Report()` or `edgeReport()` for each pair of conditions. Those reports can be found in `output/YourProjectName/genome/dea_featureCounts/Report_DESeq2` or `Report_edgeR`. 
 
-Those files contains interesting plots, such as 
+Those files may help you to show your results to your collaborators. It contains interesting plots, such as 
 
 - PCA
 
@@ -1020,6 +1092,13 @@ and information about all the tools used to facilitate reproducibility.
 
 <img src="Tuto_pictures/repro.png" alt="drawing" width="500"/>
 
+Additional figures can be found in `output/PROJECTNAME/genome/dea_featureCounts/visualization_DESeq2/` or `visualization_edgeR/`. You'll find for each pair of conditions:
+- Volcano plots representing differential expression 
+![volcano_plot2_J0_WT_J10_WT.pdf.png](Tuto_pictures/volcano_plot2_J0_WT_J10_WT.pdf.png)
+- A heatmap of the 20 most regulated genes
+![heatmap2_J0_WT_J10_WT_1.pdf.png](Tuto_pictures/heatmap2_J0_WT_J10_WT_1.pdf.png)
+
+
 ---
 
 ## How to follow your jobs
@@ -1040,14 +1119,18 @@ The `sacct` command gives you information about past and running jobs. The docum
 [username@clust-slurm-client RASflow_IFB]$ sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State
        JobID    JobName               Start    CPUTime     MaxRSS     ReqMem      State 
 ------------ ---------- ------------------- ---------- ---------- ---------- ---------- 
-8016984      snakejob.+ 2020-05-14T11:16:35   01:04:18                6000Mn  COMPLETED 
-8016984.bat+      batch 2020-05-14T11:16:35   01:04:18   3809132K     6000Mn  COMPLETED 
-8016988      snakejob.+ 2020-05-14T11:18:24   01:06:40                6000Mn  COMPLETED 
-8016988.bat+      batch 2020-05-14T11:18:24   01:06:40   3662960K     6000Mn  COMPLETED 
-8018092      snakejob.+ 2020-05-14T11:23:54   01:49:52                6000Mn  COMPLETED 
-8018092.bat+      batch 2020-05-14T11:23:54   01:49:52   3650812K     6000Mn  COMPLETED 
-8024116      snakejob.+ 2020-05-14T13:48:56   00:01:48                2000Mn  COMPLETED 
-8024116.bat+      batch 2020-05-14T13:48:56   00:01:48    113456K     2000Mn  COMPLETED 
+...
+9875767          BigWig 2020-07-27T16:02:48   00:00:59               80000Mn  COMPLETED 
+9875767.bat+      batch 2020-07-27T16:02:48   00:00:59     87344K    80000Mn  COMPLETED 
+9875768         BigWigR 2020-07-27T16:02:51   00:00:44               80000Mn  COMPLETED 
+9875768.bat+      batch 2020-07-27T16:02:51   00:00:44     85604K    80000Mn  COMPLETED 
+9875769             PCA 2020-07-27T16:02:52   00:01:22                2000Mn  COMPLETED 
+9875769.bat+      batch 2020-07-27T16:02:52   00:01:22    600332K     2000Mn  COMPLETED 
+9875770         multiQC 2020-07-27T16:02:52   00:01:16                2000Mn  COMPLETED 
+9875770.bat+      batch 2020-07-27T16:02:52   00:01:16    117344K     2000Mn  COMPLETED 
+9875773        snakejob 2020-07-27T16:04:35   00:00:42                2000Mn  COMPLETED 
+9875773.bat+      batch 2020-07-27T16:04:35   00:00:42     59360K     2000Mn  COMPLETED 
+9875774             DEA 2020-07-27T16:05:25   00:05:49                2000Mn    RUNNING 
 ```
 Here you have the job ID and name, its starting time, its running time, the maximum RAM used, the memory you requested (it has to be higher than MaxRSS, otherwise the job fails, but not much higher to allow the others to use the resource), and job status (failed, completed, running). 
 
@@ -1078,42 +1161,12 @@ And you can check the problem using the external jobid, here 9726359:
 [username @ clust-slurm-client RASflow_IFB]$ cat slurm_output/slurm-9726359.out
 ```
 
-
-
-
----
-
-## Tricks 
-
-### Make aliases
-To save time avoiding typing long commands again and again, you can add aliases to your `.bashrc` file: 
-
-``` 
-[mhennion@clust-slurm-client RASflow]$ cat ~/.bashrc 
-# .bashrc
-
-# Source global definitions
-if [ -f /etc/bashrc ]; then
-	. /etc/bashrc
-fi
-
-# Uncomment the following line if you don't like systemctl's auto-paging feature:
-# export SYSTEMD_PAGER=
-
-# User specific aliases and functions
-
-alias qq="squeue -u username"
-alias sa="sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State"
-alias ll="ls -lht --color=always"
-```
-It will work next time you connect to the server. When you type `sa`, you will get the command `sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State` running. 
-
 ---
 
 ## Common errors
 
 ### Memory 
-I set up the memory necessary for each rule, but it is possible that big datasets induce a memory excess error. In that case the job stops and you get in the corresponding slurm output something like this: 
+I set up the memory necessary for each rule, but it is possible that big datasets induce a memory excess error. In that case the job stops and you get in the corresponding Slurm output something like this: 
 
 ```
 slurmstepd: error: Job 8430179 exceeded memory limit (10442128 > 10240000), being killed
@@ -1179,10 +1232,36 @@ Sometimes you may reach the quota you have for your project. To check the quota,
 ```
 [username@ clust-slurm-client ]$ RASflow_IFB : mfsgetquota -H /shared/projects/YourProjectName/
 ```
-In principle it should raise an error, but sometimes it doesn't and it's hard to find out what is the problem. So if a task fails with no error (typically the mapping or featureCounts), try to make more space (or ask for more space on Community [support](https://community.cluster.france-bioinformatique.fr)) before trying again. 
-
+In principle it should raise an error, but sometimes it doesn't and it's hard to find out what is the problem. So if a task fails with no error (typically mapping or counting), try to make more space (or ask for more space on Community [support](https://community.cluster.france-bioinformatique.fr)) before trying again. 
 
 ---
 
 ## Good practice
 - Always save **job ID** or the **date_time** (ie 20200615_1540) in your notes when launching `Workflow.sh`. It's easier to find the outputs you're interested in days/weeks/months/years later.
+
+---
+
+## Tricks 
+
+### Make aliases
+To save time avoiding typing long commands again and again, you can add aliases to your `.bashrc` file (change only the aliases, unless you know what you're doing). 
+
+``` 
+[mhennion@clust-slurm-client RASflow]$ cat ~/.bashrc 
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+	. /etc/bashrc
+fi
+
+# Uncomment the following line if you don't like systemctl's auto-paging feature:
+# export SYSTEMD_PAGER=
+
+# User specific aliases and functions
+
+alias qq="squeue -u username"
+alias sa="sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State"
+alias ll="ls -lht --color=always"
+```
+It will work next time you connect to the server. When you type `sa`, you will get the command `sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State` running. 
