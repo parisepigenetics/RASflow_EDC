@@ -7,7 +7,7 @@ import sys
 
 server = sys.argv[1]
 if server == "rpbs": 
-    option = "-p epigenetique"
+    option = " -p epigenetique"
     MainPath = "/scratch/epigenetique/workflows/RASflow_RPBS/"
 elif server == "ifb" : 
     option = ""

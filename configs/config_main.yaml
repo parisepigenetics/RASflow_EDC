@@ -72,7 +72,7 @@ BWSTRANDED: both # "no": bw merging forward and reverse reads, "yes": get 2 bw f
 
 ## counting options
 ATTRIBUTE: gene_id  # the attribute used in annotation file. It's usually "gene_id", but double check that since it may also be "gene", "ID"...
-STRAND: "reverse" # "no", "yes", "reverse". For ht-seq counts: For stranded=no, a read is considered overlapping with a feature regardless of whether it is mapped to the same or the opposite strand as the feature. For stranded=yes and single-end reads, the read has to be mapped to the same strand as the feature. For paired-end reads, the first read has to be on the same strand and the second read on the opposite strand. For stranded=reverse, these rules are reversed.
+STRAND: reverse # "no", "yes", "reverse". For ht-seq counts: For stranded=no, a read is considered overlapping with a feature regardless of whether it is mapped to the same or the opposite strand as the feature. For stranded=yes and single-end reads, the read has to be mapped to the same strand as the feature. For paired-end reads, the first read has to be on the same strand and the second read on the opposite strand. For stranded=reverse, these rules are reversed.
 FEATURE: transcript # "exon" or "transcript"
 
 
@@ -105,4 +105,4 @@ FILTER: yes  # Filter out low expressed transcripts/genes or not? (yes or no) It
 
 # ================== Path to main scripts  ==================
 
-MAINPATH: "" # leave empty for IFB core cluster, "/scratch/epigenetique/workflows/RASflow_RPBS/" for RPBS cluster.
+MAINPATH: "" # leave "" empty for IFB core cluster, "/scratch/epigenetique/workflows/RASflow_RPBS/" for RPBS cluster.

@@ -163,36 +163,109 @@ Receiving objects: 100% (203/203), 8.37 MiB | 6.08 MiB/s, done.
 Resolving deltas: 100% (74/74), done.
 Checking out files: 100% (100/100), done.
 [username@clust-slurm-client YourProjectName]$ cd RASflow_IFB
-[username@clust-slurm-client RASflow_IFB]$ ll
-total 5,0M
-drwxrwxr-x 2 mhennion mhennion 1,1M Jul 24 16:51 workflow
--rw-rw-r-- 1 mhennion mhennion  247 Jul 24 16:51 cluster.yml
-drwxrwxr-x 2 mhennion mhennion 978K Jul 24 16:51 configs
--rw-rw-r-- 1 mhennion mhennion 6,3K Jul 24 16:51 main_cluster.py
-drwxrwxr-x 2 mhennion mhennion 988K Jul 24 16:51 scripts
-drwxrwxr-x 2 mhennion mhennion 2,0M Jul 24 16:51 Tuto_pictures
--rw-rw-r-- 1 mhennion mhennion 1006 Jul 24 16:51 Unlock.sh
--rw-rw-r-- 1 mhennion mhennion 1,6K Jul 24 16:51 Workflow.sh
--rw-rw-r-- 1 mhennion mhennion  35K Jul 24 16:51 LICENSE
--rw-rw-r-- 1 mhennion mhennion  52K Jul 24 16:51 README.md
+[username@clust-slurm-client YourProjectName]$ RASflow_IFB : tree
+.
+├── cluster.yml
+├── configs
+│   ├── config_main.yaml
+│   └── metadata.tsv
+├── LICENSE
+├── main_cluster.py
+├── scripts
+│   ├── combine2group_genome.py
+│   ├── combine2group_trans.R
+│   ├── dea_genome.R
+│   ├── dea_trans.R
+│   ├── formatCount.sh
+│   ├── opencsv-1.8.jar
+│   ├── pca.R
+│   ├── plotscale_0.1.6.tar.gz
+│   ├── qlt_ctr.sh
+│   ├── sumgenescod.class
+│   ├── sumgenescod.java
+│   └── visualize.R
+├── Unlock.sh
+├── workflow
+│   ├── align_count_genome.rules
+│   ├── dea_genome.rules
+│   ├── env.yaml
+│   ├── quality_control.rules
+│   ├── trim.rules
+│   ├── visualize.rules
+│   ├── workflow_chart.jpg
+│   ├── workflow_chart.pdf
+│   └── workflow_chart.xml
+└── Workflow.sh
+
 ```
 RASflow is launched as a python script named `main_cluster.py` which calls the workflow manager named [snakemake](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html). Snakemake will execute rules that are defined in `workflow/xxx.rules` and distribute the corresponding jobs to the computing nodes via [Slurm](https://ifb-elixirfr.gitlab.io/cluster/doc/slurm_user_guide/). 
+<img src="Tuto_pictures/cluster_chart.pdf.png" alt="drawing" width="500"/>
+
 
  On the cluster the main python script is launched via the shell script `Workflow.sh`, which basically contains only one command (+ information about the job). 
 
-<img src="Tuto_pictures/cluster_chart.pdf.png" alt="drawing" width="500"/>
-
 ```bash
-[...]
+
+##SBATCH --output=RASflow-%j.out
+
+### Limit run time "days-hours:minutes:seconds"
+#SBATCH --time=24:00:00
+
+### Requirements
+#SBATCH --partition=fast
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --mem-per-cpu=5GB
+
+### Email
+##SBATCH --mail-user=email@address
+##SBATCH --mail-type=ALL
+
+################################################################################
+
+echo '########################################'
+echo 'Date:' $(date --iso-8601=seconds)
+echo 'User:' $USER
+echo 'Host:' $HOSTNAME
+echo 'Job Name:' $SLURM_JOB_NAME
+echo 'Job Id:' $SLURM_JOB_ID
+echo 'Directory:' $(pwd)
+echo '########################################'
+echo 'RASflow_IFB version: v0.2.dev'
+echo '-------------------------'
+echo 'Main module versions:'
+
+
+start0=`date +%s`
+
 # modules loading
+module purge
 module load conda snakemake slurm-drmaa
+conda --version
+python --version
+echo 'snakemake' && snakemake --version
+
+echo '-------------------------'
+echo 'PATH:'
+echo $PATH
+echo '-------------------------'
 
 # remove display to make qualimap run:
 unset DISPLAY
 
 # What you actually want to launch
 python main_cluster.py ifb
-[...]
+
+# move logs
+mkdir -p slurm_output
+mv *.out slurm_output
+
+echo '########################################'
+echo 'Job finished' $(date --iso-8601=seconds)
+end=`date +%s`
+runtime=$((end-start0))
+minute=60
+echo "---- Total runtime $runtime s ; $((runtime/minute)) min ----"
 ```
 There are **2 files that you have to modify** before running your analysis (`metadata.tsv` and `config_main.yaml` in the `configs` folder), and eventually some others not mandatory. To modify the text files on the cluster you can use **vi**, **emacs**, **nano** or **gedit** (the last one being easier to use).  
 
@@ -680,7 +753,7 @@ TRIM5: final length.
 Nota: I will probably modify that part to be more computationally efficient. 
 
 
-### Mapping and counting reads in genes
+### Mapping and counting
 
 At this step you have to provide the path to HISAT2 index as well as a GTF annotation file. 
 Some reference files are shared between users. Before dowloading a new reference, check what is available at `/shared/bank/`. 
@@ -850,7 +923,7 @@ data/YourProjectName/
 ```yaml
 FINALOUTPUT: /shared/projects/YourProjectName/RASflow_IFB/output
 ```
-```
+```bash
 [username@clust-slurm-client RASflow_IFB]$ tree -L 2 output/YourProjectName/
 ├── fastqc_after_trimming
 │   ├── report_quality_control_after_trimming_data
