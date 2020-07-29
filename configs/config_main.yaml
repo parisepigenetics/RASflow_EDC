@@ -11,6 +11,9 @@ QC: yes  # "yes" or "no"
 ## Do you need to do trimming?
 TRIMMED: yes  # "yes" or "no"? 
 
+## Do you need to do mapping
+MAPPING: yes # "yes" or "no"
+
 ## Which mapping reference do you want to use? Genome or transcriptome?
 REFERENCE: genome  # "genome" or "transcriptome", I haven't implemented transcriptome yet.
 

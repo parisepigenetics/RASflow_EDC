@@ -27,6 +27,10 @@ print("Is quality control required?\n", qc)
 trim = config["TRIMMED"]
 print("Is trimming required?\n", trim)
 
+## Do you need to do mapping?
+mapping = config["MAPPING"]
+print("Is mapping required?\n", mapping)
+
 ## Which mapping reference do you want to use? Genome or transcriptome?
 reference = config["REFERENCE"]
 print("Which mapping reference will be used?\n", reference)
@@ -80,19 +84,22 @@ else:
     else:
         print("Trimming is not required")
 
-    print("Start mapping using ", reference, " as reference!")
 
-    if reference == "transcriptome":
+    if mapping =='yes' and reference == "transcriptome":
+        print("Start mapping using ", reference, " as reference!")
         start_time = time.time()
         os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem} -J {cluster.name}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs=30 -s "+MainPath+"workflow/quantify_trans.rules 2> logs/"+time_string+"_quantify_trans.txt")
         end_time = time.time()
         file_main_time.write("Time of running transcripts quantification: " + spend_time(start_time, end_time) + "\n")
-    elif reference == "genome":
+        print("Mapping is done! ("+spend_time(start_time, end_time)+")")
+
+    if mapping =='yes' and reference == "genome":
+        print("Start mapping using ", reference, " as reference!")
         start_time = time.time()
         os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem} -J {cluster.name}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs=30 -s "+MainPath+"workflow/align_count_genome.rules 2> logs/"+time_string+"_align_count_genome.txt")
         end_time = time.time()
         file_main_time.write("Time of running genome alignment: " + spend_time(start_time, end_time) + "\n")
-    print("Mapping is done! ("+spend_time(start_time, end_time)+")")
+        print("Mapping is done! ("+spend_time(start_time, end_time)+")")
 
     if dea=='yes':
         print("Start doing DEA!")

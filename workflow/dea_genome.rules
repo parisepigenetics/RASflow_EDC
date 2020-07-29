@@ -20,13 +20,30 @@ if tool == "edgeR" :
     rule all:
         input:
             normControl = output_path + "/Norm_edgeR/" + control + "_gene_norm.tsv",
-            dea = output_path + "/DEA_edgeR/" + "dea_" + control + "_" + treat + ".tsv"
+            dea = output_path + "/DEA_edgeR/" + "dea_" + control + "_" + treat + ".tsv",
+            pca = input_path + "/PCA.pdf"
 
 elif tool == "DESeq2" :
     rule all:
         input:
             normControl = output_path + "/Norm_DESeq2/" + control + "_gene_norm.tsv",
-            dea = output_path + "/DEA_DESeq2/" + "dea_" + control + "_" + treat + ".tsv"
+            dea = output_path + "/DEA_DESeq2/" + "dea_" + control + "_" + treat + ".tsv",
+            pca = input_path + "/PCA.pdf"
+
+
+rule PCA:
+    input:
+        countF = expand(input_path + "/{sample}_count.tsv", sample=samples)
+    output:
+        pca = input_path + "/PCA.pdf"
+    conda:
+        "env.yaml"
+    params:
+        input_path = input_path,
+        mp = main_path
+    shell:
+        "Rscript {params.mp}scripts/pca.R {params.input_path}"
+
 
 rule combineSamples:
     input:
