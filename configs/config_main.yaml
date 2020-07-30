@@ -17,9 +17,6 @@ MAPPING: yes # "yes" or "no"
 ## Which mapping reference do you want to use? Genome or transcriptome?
 REFERENCE: genome  # "genome" or "transcriptome", I haven't implemented transcriptome yet.
 
-## alignment quality control
-alignmentQC: yes  # "yes" or "no" to specify whether you want to do alignment QC
-
 ## Do you want to do Differential Expression Analysis (DEA)?
 DEA: yes  # "yes" or "no"
 
@@ -65,30 +62,30 @@ TRANS: /shared/.. # not yet implemented
 
 # ================== Configuration for alignment to genome and feature count ==================
 
+## aligner
+ALIGNER: hisat2 # "STAR" or "hisat2"
+
 ## genome and annotation files
-INDEXPATH: /shared/bank/homo_sapiens/hg38/hisat2 # folder containing index files
-INDEXBASE: genome # base of the name of the index files (ie genome.1.ht2)
-ANNOTATION: /shared/projects/YourProjectName/RASflow_IFB/gtf/gencode.v34.annotation.gtf # GTF file 
+INDEXPATH: /shared/bank/homo_sapiens/hg38/hisat2 # index/STAR # folder containing index files
+INDEXBASE: genome # for hisat2, base of the name of the index files (ie genome.1.ht2)
+ANNOTATION: /shared/projects/lxactko_analyse/RASflow/gtf/gencode.v34.annotation_modifiedXACT_v3.gtf # GTF file 
 
 ## bigwig option
 BWSTRANDED: both # "no": bw merging forward and reverse reads, "yes": get 2 bw files, one forward and one reverse; "both": get the two bw per strand as well as the merge one. 
 
+## tool for feature count
+COUNTER: featureCounts # "featureCounts" or "htseq-count" or "STARcount" (only with STAR aligner, --quantMode GeneCounts option)
+
 ## counting options
 ATTRIBUTE: gene_id  # the attribute used in annotation file. It's usually "gene_id", but double check that since it may also be "gene", "ID"...
-STRAND: reverse # "no", "yes", "reverse". For ht-seq counts: For stranded=no, a read is considered overlapping with a feature regardless of whether it is mapped to the same or the opposite strand as the feature. For stranded=yes and single-end reads, the read has to be mapped to the same strand as the feature. For paired-end reads, the first read has to be on the same strand and the second read on the opposite strand. For stranded=reverse, these rules are reversed.
+STRAND: reverse # "no", "yes", "reverse". For ht-seq or STAR counts: For stranded=no, a read is considered overlapping with a feature regardless of whether it is mapped to the same or the opposite strand as the feature. For stranded=yes and single-end reads, the read has to be mapped to the same strand as the feature. For paired-end reads, the first read has to be on the same strand and the second read on the opposite strand. For stranded=reverse, these rules are reversed.
 FEATURE: transcript # "exon" or "transcript"
 
-
-## aligner
-ALIGNER: hisat2
-
-## tool for feature count
-COUNTER: featureCounts # "featureCounts" or "htseq-count"
 
 # ================== Configuration for DEA ==================
 
 ## Do you want to use edgeR or DESeq2 to do DEA?
-DEATOOL: edgeR  # "edgeR" or "DESeq2"? DESeq2 is recommended for transcriptome-based DEA
+DEATOOL: DESeq2 # "edgeR" or "DESeq2"? DESeq2 is recommended for transcriptome-based DEA
 
 ## Is your experiment designed in a pair-wise way?
 PAIR: no  # Is this a pair test or not? (yes or no). For instance 2 samples from the same patient taken at different times.

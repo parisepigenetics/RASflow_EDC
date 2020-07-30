@@ -10,9 +10,13 @@ trim:
   mem: 6000
   name: trimming
 
-alignment:
+hisat2:
   mem: 7000
-  name: alignment
+  name: hisat2
+
+star:
+  mem: 40000
+  name: star
 
 alignmentQC:
   mem: 7000
@@ -67,3 +71,6 @@ trimend:
 
 getReads:
   name: getReads
+
+starCount:
+  name: starCount

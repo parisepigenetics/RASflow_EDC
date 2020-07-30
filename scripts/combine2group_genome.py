@@ -16,8 +16,8 @@ def load_globals():
 
     groups = np.array(pd.read_table(config["METAFILE"], header = 0)['group'])
 
-    input_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/countFile_"+config["COUNTER"]
-    output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea_"+config["COUNTER"]
+    input_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/" + config["ALIGNER"] + "/countFile_"+config["COUNTER"]
+    output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/" + config["ALIGNER"] + "/dea_"+config["COUNTER"]
 
 
 def main():
