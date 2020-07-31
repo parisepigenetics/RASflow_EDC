@@ -10,16 +10,18 @@
     + [FASTQ names](#fastq-names)
   * [Connect to IFB core cluster](#connect-to-ifb-core-cluster)
   * [RASflow installation and description](#rasflow-installation-and-description)
+  * [Preparing the run](#preparing-the-run)
     + [1. **metadata.tsv**](#1---metadatatsv--)
     + [2. **config_main.yaml**](#2---config-mainyaml--)
     + [3. **Workflow.sh** [Facultative]](#3---workflowsh----facultative-)
     + [4. **env.yaml** [Facultative]](#4---envyaml----facultative-)
+  * [Running the workflow](#running-the-workflow)
   * [Running your analysis step by step](#running-your-analysis-step-by-step)
-    + [QC](#qc)
+    + [FASTQ quality control](#fastq-quality-control)
     + [Description of the log files](#description-of-the-log-files)
     + [FastQC results](#fastqc-results)
     + [Trimming](#trimming)
-    + [Mapping and counting reads in genes](#mapping-and-counting-reads-in-genes)
+    + [Mapping and counting](#mapping-and-counting)
     + [Differential expression analysis and visualization](#differential-expression-analysis-and-visualization)
   * [Workflow results](#workflow-results)
     + [Trimmed reads](#trimmed-reads)
@@ -30,7 +32,7 @@
     + [Mapping QC](#mapping-qc)
     + [Count Tables](#count-tables)
     + [DEA results](#dea-results)
-      - [regionReport](#regionreport)
+      - [Visualization](#visualization)
   * [How to follow your jobs](#how-to-follow-your-jobs)
     + [Running jobs](#running-jobs)
     + [Information about past jobs](#information-about-past-jobs)
@@ -45,7 +47,6 @@
     + [Make aliases](#make-aliases)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-
 
 
 
