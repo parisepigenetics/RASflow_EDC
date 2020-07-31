@@ -5,8 +5,8 @@ key = config["KEY"]
 input_path = config["READSPATH"]
 samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
 end = config["END"]
-intermediate_path = config["OUTPUTPATH"] + "/" + config["PROJECT"]
-final_path = config["FINALOUTPUT"] + "/" + config["PROJECT"]
+intermediate_path = config["BIGDATAPATH"] + "/" + config["PROJECT"]
+final_path = config["RESULTPATH"] + "/" + config["PROJECT"]
 
 rule end:
     input:

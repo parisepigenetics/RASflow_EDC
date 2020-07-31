@@ -166,7 +166,7 @@ pair.test <- yaml.file$PAIR
 meta.file <- yaml.file$METAFILE
 counter <- yaml.file$COUNTER
 mapper <- yaml.file$ALIGNER
-output.path <- file.path(yaml.file$FINALOUTPUT, project, mapper, paste("/dea_",counter,sep = ''))
+output.path <- file.path(yaml.file$RESULTPATH, project, mapper, paste("/dea_",counter,sep = ''))
 
 # extract the metadata
 meta.data <- read.csv(meta.file, header = TRUE, sep = '\t')

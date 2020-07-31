@@ -6,8 +6,8 @@ samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
 key = config["KEY"]
 input_path = config["READSPATH"]
 end = config["END"]
-intermediate_path = config["OUTPUTPATH"] + "/" + config["PROJECT"] + "/trim"
-final_path = config["FINALOUTPUT"] + "/" + config["PROJECT"]
+intermediate_path = config["BIGDATAPATH"] + "/" + config["PROJECT"] + "/trim"
+final_path = config["RESULTPATH"] + "/" + config["PROJECT"]
 trim3 = config["TRIM3"]
 trim5 = config["TRIM5"]
 

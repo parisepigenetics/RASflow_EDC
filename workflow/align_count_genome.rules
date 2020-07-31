@@ -4,16 +4,16 @@ configfile: "configs/config_main.yaml"
 samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
 trimmed = config["TRIMMED"]
 if trimmed == "yes" or trimmed == True:  
-    input_path = config["OUTPUTPATH"] + "/" + config["PROJECT"] + "/trim"
+    input_path = config["BIGDATAPATH"] + "/" + config["PROJECT"] + "/trim"
 else:
     input_path = config["READSPATH"]
 key = config["KEY"]
 end = config["END"]
 mapper = config["ALIGNER"]
-intermediate_path = config["OUTPUTPATH"] + "/" + config["PROJECT"] + "/" + mapper
+intermediate_path = config["BIGDATAPATH"] + "/" + config["PROJECT"] + "/" + mapper
 index_path = config["INDEXPATH"]
 index_base = config["INDEXBASE"]
-final_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/" + mapper
+final_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/" + mapper
 counter = config["COUNTER"]
 bwStranded = config["BWSTRANDED"]
 main_path = config["MAINPATH"]

@@ -6,8 +6,8 @@ configfile: "configs/config_main.yaml"
 
 counter = config["COUNTER"]
 mapper = config["ALIGNER"]
-input_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/" + mapper + "/countFile_"+counter
-output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/" + mapper + "/dea_"+counter
+input_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/" + mapper + "/countFile_"+counter
+output_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/" + mapper + "/dea_"+counter
 
 
 samples = np.array(pd.read_table(config["METAFILE"], header = 0)['sample'])

@@ -34,9 +34,9 @@ READSPATH: /shared/projects/YourProjectName/Raw_fastq
 ## the meta file describing the experiment settings
 METAFILE: /shared/projects/YourProjectName/RASflow_IFB/configs/metadata.tsv
 
-## paths for intermediate outputs and final outputs
-OUTPUTPATH: /shared/projects/YourProjectName/RASflow_IFB/data # intermediate output. do not upload to github
-FINALOUTPUT: /shared/projects/YourProjectName/RASflow_IFB/output
+## paths for intermediate final results
+BIGDATAPATH: /shared/projects/YourProjectName/RASflow_IFB/data # for big files
+RESULTPATH: /shared/projects/YourProjectName/RASflow_IFB/results
 
 ## is the sequencing paired-end or single-end?
 END: pair  # "pair" or "single"

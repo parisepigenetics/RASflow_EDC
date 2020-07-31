@@ -11,9 +11,9 @@ main_path = config["MAINPATH"]
 mapper = config["ALIGNER"]
 
 if reference == "genome":
-    norm_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/" + mapper + "/dea_"+counter+"/Norm_"+tool
-    dea_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/" + mapper + "/dea_"+counter+"/DEA_"+tool
-    output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/" + mapper + "/dea_"+counter+"/visualization_"+tool
+    norm_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/" + mapper + "/dea_"+counter+"/Norm_"+tool
+    dea_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/" + mapper + "/dea_"+counter+"/DEA_"+tool
+    output_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/" + mapper + "/dea_"+counter+"/visualization_"+tool
 
 
 rule end:

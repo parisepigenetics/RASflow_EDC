@@ -3,23 +3,23 @@
 ################################ Slurm options #################################
 
 ### Job name
-##SBATCH --job-name=RASflow
-
-### Output
-##SBATCH --output=RASflow-%j.out
+#SBATCH --job-name=STARindex
 
 ### Limit run time "days-hours:minutes:seconds"
 #SBATCH --time=24:00:00
 
 ### Requirements
 #SBATCH --partition=fast
-#SBATCH --nodes=1
+#SBATCH --nodes=20
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem-per-cpu=5GB
+#SBATCH --mem-per-cpu=40GB
 
 ### Email
 ##SBATCH --mail-user=email@address
 ##SBATCH --mail-type=ALL
+
+### Output
+#SBATCH --output=STARindex-%j.out
 
 ################################################################################
 
@@ -31,34 +31,15 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_IFB version: v0.3.dev'
-echo '-------------------------'
-echo 'Main module versions:'
-
 
 start0=`date +%s`
 
 # modules loading
-module purge
-module load conda snakemake slurm-drmaa
-conda --version
-python --version
-echo 'snakemake' && snakemake --version
+module load star/2.7.5a
 
-echo '-------------------------'
-echo 'PATH:'
-echo $PATH
-echo '-------------------------'
+# index hg38 with star
+STAR  --runThreadN 20 --runMode genomeGenerate --genomeDir $2 --genomeFastaFiles $1
 
-# remove display to make qualimap run:
-unset DISPLAY
-
-# What you actually want to launch
-python main_cluster.py ifb
-
-# move logs
-mkdir -p slurm_output
-mv *.out slurm_output
 
 echo '########################################'
 echo 'Job finished' $(date --iso-8601=seconds)
