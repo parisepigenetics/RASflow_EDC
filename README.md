@@ -1,9 +1,12 @@
 # Tutorial RASflow on IFB core cluster
 
-[short introduction]
+<small>Maintained by [Magali Hennion](mailto:hennion@ens.fr). Last update : 02/09/2020.</small>
 
+RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhang](https://doi.org/10.1186/s12859-020-3433-x). It has been modified to run effectively on IFB core cluster and to fit our specific needs. Moreover, several tools were added. If you encounter troubles or need additional tools or features, you can create an issue on the [GitHub repository](https://github.com/parisepigenetics/RASflow_IFB/issues), or email directly [Magali](mailto:hennion@ens.fr). 
+
+---
 ## Table of content
-
+  * [Your analysis in a nutshell](#your-analysis-in-a-nutshell)
   * [Resources](#resources)
   * [Get an account on IFB core cluster and create a project](#get-an-account-on-ifb-core-cluster-and-create-a-project)
   * [Transfer your data](#transfer-your-data)
@@ -50,6 +53,23 @@
 
 
 
+
+---
+## Your analysis in a nutshell
+- Get an [account](#get-an-account-on-ifb-core-cluster-and-create-a-project) on IFB core cluster and create a project
+- [Transfer your data](#transfer-your-data) to the cluster
+- [Clone](#rasflow-installation-and-description) RASflow_IFB [repository](https://github.com/parisepigenetics/RASflow_IFB)
+- [Modify](#preparing-the-run) `metadata.tsv` and `config_main.yaml`
+- Run the [workflow](#running-the-workflow) typing `sbatch Workflow.sh`
+- Look at the [results](#workflow-results)
+
+Here is a simplified scheme of the workflow as implemented on the IFB cluster. The main steps are indicated in the blue boxes. RASflow will allow you to choose which steps you want to execute for your project. In the green circles are the input files you have to give for the different steps. 
+
+<img src="Tuto_pictures/workflow_chart.pdf.png" alt="drawing" width="600"/>
+
+---
+---
+
 ## Resources
 
 - IFB  
@@ -62,6 +82,21 @@
   - RASflow [git repository](https://github.com/zhxiaokang/RASflow)    
   - [Tutorial](https://github.com/zhxiaokang/RASflow/blob/master/Tutorial.pdf)
 
+- Tools implemented
+  - [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+  - [MultiQC](https://multiqc.info/docs/)
+  - [Trim Galore](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/)
+  - [HISAT2](https://ccb.jhu.edu/software/hisat2/manual.shtml)
+  - [STAR](https://github.com/alexdobin/STAR/blob/master/doc/STARmanual.pdf)
+  - [Samtools](http://www.htslib.org/doc/samtools.html)
+  - [deepTools](https://deeptools.readthedocs.io/en/develop/)
+  - [Qualimap](http://qualimap.bioinfo.cipf.es/doc_html/index.html)
+  - featureCounts ([SubReads](http://subread.sourceforge.net/)) 
+  - [HTseq-count](https://htseq.readthedocs.io/en/master/count.html)
+  - [edgeR](https://bioconductor.org/packages/release/bioc/manuals/edgeR/man/edgeR.pdf) 
+  - [DESeq2](https://bioconductor.org/packages/release/bioc/manuals/DESeq2/man/DESeq2.pdf)
+
+---
 
 ---
 
@@ -75,7 +110,7 @@ Once your account is active, you have to connect to [my.cluster.france-bioinform
 ---
 
 ## Transfer your data
-Once your project is created you can access it at `/shared/projects/YourProjectName`. This is where you should transfer your data before doing your analysis. 
+Once your project is created you can access it on IFB core cluster at `/shared/projects/YourProjectName`. This is where you should transfer your data before doing your analysis. 
 
 ### FASTQ names
 The workflow is expecting gzip-compressed FASTQ files with names formatted as   
@@ -130,12 +165,12 @@ You can now go to your project using `cd`
 ```
 [username@clust-slurm-client ~]$ cd /shared/projects/YourProjectName
 ```
-and check the files in `Raw_fastq`
+and check the files in `Raw_fastq` using `ls` or `ll` command. 
 ```
 [username@clust-slurm-client YourProjectName]$ ll Raw_fastq
 ```
 
-Check that the transfer went fine using md5sum
+Check that the transfer went fine using md5sum.
 ```
 [username@clust-slurm-client YourProjectName]$ cd Raw_fastq
 [username@clust-slurm-client Raw_fastq]$ md5sum -c fastq.md5
@@ -145,12 +180,8 @@ Check that the transfer went fine using md5sum
 
 ## RASflow installation and description
 
-Here is a simplified scheme of the workflow as implemented on the IFB cluster. The main steps are indicated in the blue boxes. RASflow will allow you to choose which steps you want to execute for your project. In the green circles are the input files you have to give for the different steps. 
-
-<img src="Tuto_pictures/workflow_chart.pdf.png" alt="drawing" width="600"/>
-
 In order to install RASflow, you  have to clone the RASflow_IFB GitHub repository to your IFB project. For now the repository is private, so you need to have a GitHub account and to be a member of [EDC repository](https://github.com/parisepigenetics) to have access. If you're not, please let me know and I will add you. You will have to enter your GitHub username and password to clone the repository. You can then look at the files using `tree` or `ls`. 
-```
+```bash
 [username@clust-slurm-client Raw_fastq]$ cd .. #to go back at the root of your project directory
 [username@clust-slurm-client YourProjectName]$ git clone https://github.com/parisepigenetics/RASflow_IFB
 Cloning into 'RASflow_IFB'...
@@ -721,7 +752,7 @@ total 38537
 -rw-rw----+ 1 username username  645532 May 11 15:16 Sample1_reverse_fastqc.html
 -rw-rw----+ 1 username username  871080 May 11 15:16 Sample1_reverse_fastqc.zip
 ```
-Those are individual fastQC reports. MultiQC is called after FastQC, so you will also find `report_quality_control.html` that is a summary for all the samples. 
+Those are individual fastQC reports. [MultiQC](https://multiqc.info/docs/) is called after FastQC, so you will also find `report_quality_control.html` that is a summary for all the samples. 
 You can copy those reports to your computer to read them, by typing (in a new local terminal):
 ```
 You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourEXAMPLE/RASflow_IFB/results/EXAMPLE/fastqc PathTo/WhereYouWantToSave/
@@ -886,7 +917,7 @@ and
 
 ### Differential expression analysis and visualization
 
-Finally you have to set the parameters for the differential expression analysis. You have to define the comparisons you want to do (pairs of conditions). 
+Finally you have to set the parameters for the differential expression analysis. You have to define the comparisons you want to do (pairs of conditions) and to choose if you want to use [edgeR](https://bioconductor.org/packages/release/bioc/manuals/edgeR/man/edgeR.pdf) or [DESeq2](https://bioconductor.org/packages/release/bioc/manuals/DESeq2/man/DESeq2.pdf).
 
 ```yaml
 # ================== Configuration for DEA ==================
