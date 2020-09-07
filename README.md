@@ -42,14 +42,18 @@ RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhan
     + [Cancelling a job](#cancelling-a-job)
     + [Check the whole pipeline](#check-the-whole-pipeline)
   * [Common errors](#common-errors)
+    + [Error starting gedit](#error-starting-gedit)
+    + [Initial QC fails](#initial-qc-fails)
     + [Memory](#memory)
     + [Folder locked](#folder-locked)
     + [Storage space](#storage-space)
   * [Good practice](#good-practice)
   * [Tricks](#tricks)
     + [Make aliases](#make-aliases)
+    + [Quickly change fastq names](#quickly-change-fastq-names)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
 
 
 
