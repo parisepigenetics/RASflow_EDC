@@ -403,6 +403,15 @@ END: pair  # "pair" or "single"
 ## number of cores you want to allocate to this workflow
 NCORE: 30  # Use command "getconf _NPROCESSORS_ONLN" to check the number of cores/CPU on your machine
 ```
+Nota: it is possible to replace all the occurences of `YourProjectName` by your actual project name at once. You can either
+- open config_main.yaml with **gedit** and use `Find and Replace...` (menu or Ctrl+H)
+- open with **vi** and type `:%s/YourProjectName/BestProjectEver/g`
+- use the command line `sed`
+```
+[username@clust-slurm-client RASflow_IFB]$ sed -i 's/YourProjectName/BestProjectEver/g' configs/config_main.yaml 
+```
+
+
 3. Configuration of the specific tools  
 Here you precise parameters that are specific to one of the steps of the workflow. See detailed description in [step by step analysis](#running-your-analysis-step-by-step).
 
