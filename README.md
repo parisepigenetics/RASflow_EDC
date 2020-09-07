@@ -1,6 +1,6 @@
 # Tutorial RASflow on IFB core cluster
 
-<small>Maintained by [Magali Hennion](mailto:hennion@ens.fr). Last update : 02/09/2020.</small>
+<small>Maintained by [Magali Hennion](mailto:hennion@ens.fr). Last update : 07/09/2020.</small>
 
 RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhang](https://doi.org/10.1186/s12859-020-3433-x). It has been modified to run effectively on IFB core cluster and to fit our specific needs. Moreover, several tools were added. If you encounter troubles or need additional tools or features, you can create an issue on the [GitHub repository](https://github.com/parisepigenetics/RASflow_IFB/issues), or email directly [Magali](mailto:hennion@ens.fr). 
 
@@ -116,6 +116,8 @@ Once your project is created you can access it on IFB core cluster at `/shared/p
 The workflow is expecting gzip-compressed FASTQ files with names formatted as   
 - SampleName_R1.fastq.gz and SampleName_R2.fastq.gz for pair-end data, 
 - SampleName.fastq.gz for single-end data. 
+
+If your files are not fitting this format, please see [how to correct a batch of FASTQ files](#quickly-change-fastq-names). 
 
 It is recommended to check the md5sum for big files. If your raw FASTQ files are on your computer in `PathTo/RNAseqProject/Fastq/`, you can type in a terminal: 
 ```
@@ -311,6 +313,8 @@ echo "---- Total runtime $runtime s ; $((runtime/minute)) min ----"
 
 There are **2 files that you have to modify** before running your analysis (`metadata.tsv` and `config_main.yaml` in the `configs` folder), and eventually some others not mandatory. To modify the text files on the cluster you can use **vi**, **emacs**, **nano** or **gedit** (the last one being easier to use). Never copy/past code to word processor (like Microsoft Word or LibreOffice Writer), use only text editors.  
 
+Nota: in order to use **gedit**, be sure that you included `-X` when connecting to the cluster (`-X` option is necessary to run graphical applications remotely). See [here](#error-starting-gedit). 
+
 ### 1. **metadata.tsv**
 
 The experimental description is set up in `config/metadata.tsv`: 
@@ -350,7 +354,7 @@ PROJECT: EXAMPLE
 # ================== Control of the workflow ==================
 
 ## Do you need to do quality control?
-QC: yes  # "yes" or "no"
+QC: yes  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
 
 ## Do you need to do trimming?
 TRIMMED: yes  # "yes" or "no"? 
@@ -364,6 +368,8 @@ DEA: yes  # "yes" or "no"
 ## Do you want to visualize the results of DEA?
 VISUALIZE: yes  # "yes" or "no"
 ```
+**Nota: if `QC` is set to `yes`, the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set `QC` to `no`.**  
+
 2. Shared parameters   
 Here you define where the FASTQ files are stored, where is the file describing the experimental set up, the name and localization of the folders where the results will be saved. The results are separated into two folders (see [Workflow results](#workflow-results)).  
 - the big files : trimmed FASTQ, bam files are in an intermediate folder defined at `BIGDATAPATH`
@@ -548,7 +554,7 @@ PROJECT: EXAMPLE
 ```yaml
 # ================== Control of the workflow ==================
 ## Do you need to do quality control?
-QC: yes  # "yes" or "no"
+QC: yes  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
 ```
 The rest of the part `Control of the workflow` will be **ignored**. The software will stop after the QC to give you the opportunity to decide if trimming is necessary or not. 
 
@@ -775,7 +781,7 @@ If you put `TRIMMED: yes`, [Trim Galore](https://github.com/FelixKrueger/TrimGal
 # ================== Control of the workflow ==================
 
 ## Do you need to do quality control?
-QC: no  # "yes" or "no"
+QC: no  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
 
 ## Do you need to do trimming?
 TRIMMED: "yes"  # "yes" or "no"?  
@@ -1286,6 +1292,34 @@ And you can check the problem using the external jobid, here 9726359:
 
 ## Common errors
 
+### Error starting gedit
+If you encounter an error starting gedit
+```
+[unsername @ clust-slurm-client 16:04]$ ~ : gedit toto.txt
+(gedit:6625): Gtk-WARNING **: cannot open display: 
+```
+Be sure to include `-X` when connecting to the cluster (`-X` option is necessary to run graphical applications remotely).
+Use : 
+```
+You@YourComputer:~$ ssh -X unsername@core.cluster.france-bioinformatique.fr
+```
+or 
+```
+You@YourComputer:~$ ssh -X -o "ServerAliveInterval 10" unsername@core.cluster.france-bioinformatique.fr
+```
+The option `-o "ServerAliveInterval 10"` is facultative, it keeps the connection alive even if you're not using your shell for a while. 
+
+
+### Initial QC fails
+
+If you don't get MultiQC `report_quality_control.html` report in `results/EXAMPLE/fastqc`, you may have some fastq files not fitting the required format:
+- SampleName_R1.fastq.gz and SampleName_R2.fastq.gz for pair-end data, 
+- SampleName.fastq.gz for single-end data.
+
+Please see [how to correct a batch of FASTQ files](#quickly-change-fastq-names). 
+
+
+
 ### Memory 
 I set up the memory necessary for each rule, but it is possible that big datasets induce a memory excess error. In that case the job stops and you get in the corresponding Slurm output something like this: 
 
@@ -1385,3 +1419,43 @@ alias sa="sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State"
 alias ll="ls -lht --color=always"
 ```
 It will work next time you connect to the server. When you type `sa`, you will get the command `sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State` running. 
+
+### Quickly change fastq names
+
+It is possible to quickly rename all your samples using `mv`. For instance if your samples are named with dots instead of underscores and without `R`: 
+```
+[username@clust-slurm-client Raw_fastq]$ ls
+D192T27.1.fastq.gz  
+D192T27.2.fastq.gz  
+D192T28.1.fastq.gz  
+D192T28.2.fastq.gz  
+D192T29.1.fastq.gz  
+D192T29.2.fastq.gz  
+D192T30.1.fastq.gz  
+D192T30.2.fastq.gz  
+D192T31.1.fastq.gz  
+D192T31.2.fastq.gz  
+D192T32.1.fastq.gz  
+D192T32.2.fastq.gz  
+```
+You can modify them using `mv` and a loop on sample numbers. 
+```
+[username@clust-slurm-client Raw_fastq]$ for i in `seq 27 32`; do mv D192T$i\.1.fastq.gz D192T$i\_R1.fastq.gz; done
+[username@clust-slurm-client Raw_fastq]$ for i in `seq 27 32`; do mv D192T$i\.2.fastq.gz D192T$i\_R2.fastq.gz; done
+```
+Now sample names are OK:
+```
+[username@clust-slurm-client Raw_fastq]$ ls
+D192T27_R1.fastq.gz  
+D192T27_R2.fastq.gz  
+D192T28_R1.fastq.gz  
+D192T28_R2.fastq.gz  
+D192T29_R1.fastq.gz  
+D192T29_R2.fastq.gz  
+D192T30_R1.fastq.gz  
+D192T30_R2.fastq.gz  
+D192T31_R1.fastq.gz  
+D192T31_R2.fastq.gz  
+D192T32_R1.fastq.gz  
+D192T32_R2.fastq.gz  
+```
