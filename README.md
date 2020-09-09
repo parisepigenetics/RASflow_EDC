@@ -51,8 +51,10 @@ RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhan
   * [Tricks](#tricks)
     + [Make aliases](#make-aliases)
     + [Quickly change fastq names](#quickly-change-fastq-names)
+  * [Running your analysis on RPBS cluster](#running-your-analysis-on-rpbs-cluster)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+cotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 
 
@@ -1472,3 +1474,75 @@ D192T31_R2.fastq.gz
 D192T32_R1.fastq.gz  
 D192T32_R2.fastq.gz  
 ```
+
+
+## Running your analysis on RPBS cluster
+
+The exact same version of the workflow is installed on RPBS cluster. You don't have to clone the GitHub repository. Here is a quick tutorial with only the differences with IFB cluster.
+
+- Transfer your data to `/home/joule/RPBSusername` 
+```
+You@YourComputer:~/PathTo/RNAseqProject$ rsync -avP  Fastq/ RPBSusername@goliath.sdv.univ-paris-diderot.fr:/home/joule/RPBSusername/YourProjectName/Raw_fastq
+```
+
+Nota: you should not use `/scratch` to store data. 
+
+- Login to RPBS cluster:
+```
+username@YourComputer:~$ ssh RPBSusername@goliath.sdv.univ-paris-diderot.fr
+```
+
+- Go to your user folder on `scratch`:
+``` 
+[RPBSusername @ goliath hh:mm]$ ~ : cd /scratch/user/RPBSusername
+```
+It is important to launch the workflow from `scratch` as this is where the conda environnement is built. [This will change with the cluster upgrade]. 
+
+- Create your working directory (named as you want, I put `RASflow` as an example) and copy the `user` files into it:
+```
+[RPBSusername @ goliath hh:mm]$ RPBSusername : mkdir RASflow
+[RPBSusername @ goliath hh:mm]$ RPBSusername : cp -pr /scratch/epigenetique/workflows/RASflow_RPBS/user/* RASflow
+```
+- Go to your folder and modify the configuration files according to your experiment. In principle you only need to modify `configs/metadata.tsv` and `configs/config_main.yaml`:
+```
+[RPBSusername @ goliath hh:mm]$ RPBSusername : cd RASflow
+[RPBSusername @ goliath hh:mm]$ RASflow : ls -l 
+total 16
+-rw-r--r-- 1 hennion umr7216  247 Jul 23 17:05 cluster.yml
+drwxr-xr-x 2 hennion umr7216 4096 Jul 24 09:35 configs
+-rw-r--r-- 1 hennion umr7216 1059 Jul 24 10:05 Unlock.sh
+-rwxr-xr-x 1 hennion umr7216 1275 Jul 24 10:15 Workflow.sh
+[RPBSusername @ goliath hh:mm]$ RASflow : ls -l configs/
+total 12K
+-rw-r--r-- 1 hennion umr7216  315 Jul 24 10:40 metadata.tsv
+-rw-r--r-- 1 hennion umr7216 5,0K Jul 24 10:40 config_main.yaml
+```
+Please save the outputs in your user directory on `joule`:
+```yaml
+# ================== Shared parameters for some or all of the sub-workflows ==================
+
+## key file if the data is stored remotely, otherwise leave it empty
+KEY: 
+
+## the path to fastq files
+READSPATH: /home/joule/RPBSusername/Raw_fastq
+
+## the meta file describing the experiment settings
+METAFILE: /scratch/user/RPBSusername/RASflow/configs/metadata.tsv
+
+## is the sequencing paired-end or single-end?
+END: pair  # "pair" or "single"
+
+## number of cores you want to allocate to this workflow
+NCORE: 30  # Use command "getconf _NPROCESSORS_ONLN" to check the number of cores/CPU on your machine
+
+## paths for intermediate outputs and final outputs
+OUTPUTPATH: /home/joule/RPBSusername/RASflow/data # intermediate output. do not upload to github
+FINALOUTPUT: /home/joule/RPBSusername/RASflow/output
+```
+
+- Run the workflow:
+```
+[RPBSusername @ goliath hh:mm]$ RASflow : sbatch Workflow.sh
+```
+
