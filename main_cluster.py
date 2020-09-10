@@ -72,6 +72,8 @@ if qc=='yes':
         end_time = time.time()
         file_main_time.write("Time of running QC: " + spend_time(start_time, end_time) + "\n")
         print("Quality control is done!\n Please check the report and decide whether trimming is needed\n Please remember to turn off the QC in the config file!")
+        file_main_time.write("Finish time: " + time.ctime() + "\n")
+        file_main_time.close()
         os._exit(0)
 else:
     if trim=='yes':

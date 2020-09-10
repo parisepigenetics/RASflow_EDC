@@ -6,7 +6,6 @@ library(EnhancedVolcano)
 library(gplots)
 library(RColorBrewer)
 
-
 # ====================== load parameters in config file ======================
 
 # passing the params from command line
@@ -14,10 +13,6 @@ args <- commandArgs(TRUE)
 norm.path <- args[1]
 dea.path <- args[2]
 out.path <- args[3]
-main.path <- args[4]
-
-if (!require("plotscale")) install.packages('scripts/plotscale_0.1.6.tar.gz', repos = NULL, type="source")
-
 
 # load the config file
 yaml.file <- yaml.load_file('configs/config_main.yaml')
@@ -79,17 +74,19 @@ plot.volcano.heatmap <- function(name.control, name.treat) {
   # volcano plot
   if (dea.tool == 'edgeR') {
   #  fig.volcano <- EnhancedVolcano(dea.table, lab = gene.dea, xlab = bquote(~Log[2]~ "fold change"), x = 'logFC', y = 'FDR', pCutoff = 10e-5, col = c("grey30", "orange2", "royalblue", "red2"),
-   #                              FCcutoff = 1, xlim = c(-5, 5), ylim = c(0, 10), transcriptPointSize = 1.5, title = NULL, subtitle = NULL)  
-  fig.volcano <- EnhancedVolcano(dea.table, lab = gene.dea, xlab = bquote(~Log[2]~ "fold change"), x = 'logFC', y = 'FDR', pCutoff = 10e-5, col = c("grey30", "orange2", "royalblue", "red2"),
-                                 FCcutoff = 1, title = NULL, subtitle = NULL)
-
+   #                              FCcutoff = 1, xlim = c(-5, 5), ylim = c(0, 10), transcriptPointSize = 1.5, title = NULL, subtitle = NULL) 
+  xlabel <- 'logFC' 
+  ylabel <- 'FDR'
   } else if (dea.tool == 'DESeq2') {
-    fig.volcano <- EnhancedVolcano(dea.table, lab = gene.dea, xlab = bquote(~Log[2]~ "fold change"), x = 'log2FoldChange', y = 'padj', pCutoff = 10e-5, col = c("grey30", "orange2", "royalblue", "red2"),
-                                 FCcutoff = 1, title = NULL, subtitle = NULL)
+    xlabel <- 'log2FoldChange'
+    ylabel <- 'padj'
   }
-  
-  as.pdf(fig.volcano, width = 9, height = 6, scaled = TRUE, file = file.path(out.path, paste('volcano_plot_', name.control, '_', name.treat, '.pdf', sep = '')))
- 
+  fig.volcano <- EnhancedVolcano(dea.table, lab = gene.dea, xlab = bquote(~Log[2]~ "fold change"), x = xlabel, y = ylabel, pCutoff = 10e-5, col = c("grey30", "orange2", "royalblue", "red2"),
+                                 FCcutoff = 1, title = dea.tool, subtitle = paste(name.control, 'vs', name.treat, sep = ' '))
+  pdf(file = file.path(out.path, paste('volcano_plot_', name.control, '_', name.treat, '.pdf', sep = '')), width = 9, height = 7)
+  print(fig.volcano)
+  dev.off()
+
   # heatmap
   norm.table.control <- read.table(norm.control, header = TRUE, row.names = 1)
   norm.table.treat <- read.table(norm.treat, header = TRUE, row.names = 1)
