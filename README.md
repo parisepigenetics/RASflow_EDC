@@ -54,11 +54,6 @@ RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhan
   * [Running your analysis on RPBS cluster](#running-your-analysis-on-rpbs-cluster)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-cotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-
-
-
-
 
 ---
 ## Your analysis in a nutshell
@@ -126,14 +121,18 @@ The workflow is expecting gzip-compressed FASTQ files with names formatted as
 If your files are not fitting this format, please see [how to correct a batch of FASTQ files](#quickly-change-fastq-names). 
 
 It is recommended to check the md5sum for big files. If your raw FASTQ files are on your computer in `PathTo/RNAseqProject/Fastq/`, you can type in a terminal: 
+
 ```
 You@YourComputer:~$ cd PathTo/RNAseqProject
 You@YourComputer:~/PathTo/RNAseqProject$ md5sum Fastq/* > Fastq/fastq.md5
 ```
+
 You can then copy the Fastq folder to the cluster using `rsync`, replacing `username` by your IFB login: 
+
 ```
 You@YourComputer:~/PathTo/RNAseqProject$ rsync -avP  Fastq/ username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/Raw_fastq
 ```
+
 In this example the FASTQ files are copied from `PathTo/RNAseqProject/Fastq/` on your computer into a folder named `Raw_fastq` in your project folder on IFB core cluster. Feel free to name your folders as you want! 
 You will be asked to enter your password, and then the transfer will begin. If it stops before the end, rerun the last command, it will only add the incomplete/missing files. 
 
@@ -146,6 +145,7 @@ It's time to go to the cluster! You can connect to IFB server typing the followi
 ```bash
 You@YourComputer:~/PathTo/RNAseqProject$ ssh -o "ServerAliveInterval 10" -X username@core.cluster.france-bioinformatique.fr
 ```
+
 You will have to enter your password, and then you'll be connected to your home directory. Here you can run small tests, but everything related to a specific project should be done in the corresponding folder. 
 
 ```
@@ -169,16 +169,20 @@ Last login: Tue May  5 16:30:23 2020 from 78.250.99.64
 ############################################################################
 [username@clust-slurm-client ~]$ 
 ```
+
 You can now go to your project using `cd`
+
 ```
 [username@clust-slurm-client ~]$ cd /shared/projects/YourProjectName
 ```
 and check the files in `Raw_fastq` using `ls` or `ll` command. 
+
 ```
 [username@clust-slurm-client YourProjectName]$ ll Raw_fastq
 ```
 
 Check that the transfer went fine using md5sum.
+
 ```
 [username@clust-slurm-client YourProjectName]$ cd Raw_fastq
 [username@clust-slurm-client Raw_fastq]$ md5sum -c fastq.md5
@@ -188,7 +192,8 @@ Check that the transfer went fine using md5sum.
 
 ## RASflow installation and description
 
-In order to install RASflow, you  have to clone the RASflow_IFB GitHub repository to your IFB project. For now the repository is private, so you need to have a GitHub account and to be a member of [EDC repository](https://github.com/parisepigenetics) to have access. If you're not, please let me know and I will add you. You will have to enter your GitHub username and password to clone the repository. You can then look at the files using `tree` or `ls`. 
+In order to install RASflow, you  have to clone the RASflow_IFB GitHub repository to your IFB project. For now the repository is private, so you need to have a GitHub account and to be a member of [EDC repository](https://github.com/parisepigenetics) to have access. If you're not, please let me know and I will add you. You will have to enter your GitHub username and password to clone the repository. You can then look at the files using `tree` or `ls`.
+
 ```bash
 [username@clust-slurm-client Raw_fastq]$ cd .. #to go back at the root of your project directory
 [username@clust-slurm-client YourProjectName]$ git clone https://github.com/parisepigenetics/RASflow_IFB
@@ -236,8 +241,8 @@ Checking out files: 100% (100/100), done.
 │   ├── workflow_chart.pdf
 │   └── workflow_chart.xml
 └── Workflow.sh
-
 ```
+
 RASflow is launched as a python script named `main_cluster.py` which calls the workflow manager named [snakemake](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html). Snakemake will execute rules that are defined in `workflow/xxx.rules` and distribute the corresponding jobs to the computing nodes via [Slurm](https://ifb-elixirfr.gitlab.io/cluster/doc/slurm_user_guide/). 
 
 <img src="Tuto_pictures/cluster_chart.pdf.png" alt="drawing" width="500"/>
@@ -324,6 +329,7 @@ Nota: in order to use **gedit**, be sure that you included `-X` when connecting 
 ### 1. **metadata.tsv**
 
 The experimental description is set up in `config/metadata.tsv`: 
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ cat configs/metadata.tsv 
 sample	group	subject
@@ -360,13 +366,16 @@ PROJECT: EXAMPLE
 # ================== Control of the workflow ==================
 
 ## Do you need to do quality control?
-QC: yes  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
+QC: no  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
 
 ## Do you need to do trimming?
 TRIMMED: yes  # "yes" or "no"? 
 
+## Do you need to do mapping?
+MAPPING: yes # "yes" or "no"
+
 ## Which mapping reference do you want to use? Genome or transcriptome?
-REFERENCE: genome  # "genome" or "transcriptome", I haven't implemented transcriptome yet. 
+REFERENCE: genome  # "genome" or "transcriptome", I haven't implemented transcriptome yet.
 
 ## Do you want to do Differential Expression Analysis (DEA)?
 DEA: yes  # "yes" or "no"
@@ -374,6 +383,7 @@ DEA: yes  # "yes" or "no"
 ## Do you want to visualize the results of DEA?
 VISUALIZE: yes  # "yes" or "no"
 ```
+
 **Nota: if `QC` is set to `yes`, the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set `QC` to `no`.**  
 
 2. Shared parameters   
@@ -405,10 +415,12 @@ END: pair  # "pair" or "single"
 ## number of cores you want to allocate to this workflow
 NCORE: 30  # Use command "getconf _NPROCESSORS_ONLN" to check the number of cores/CPU on your machine
 ```
+
 Nota: it is possible to replace all the occurences of `YourProjectName` by your actual project name at once. You can either
 - open config_main.yaml with **gedit** and use `Find and Replace...` (menu or Ctrl+H)
 - open with **vi** and type `:%s/YourProjectName/BestProjectEver/g`
 - use the command line `sed`
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ sed -i 's/YourProjectName/BestProjectEver/g' configs/config_main.yaml 
 ```
@@ -457,6 +469,7 @@ FEATURE: transcript # "exon" or "transcript"
 
 [...]
 ```
+
 ### 3. **Workflow.sh** [Facultative] 
 
 In `Workflow.sh`, you can modify the **Job name** and the **Output** folder to save Slurm outputs. If you don't change this file, Slurm outputs will be saved in a `slurm_output` folder that will be created in your working directory. The line is read if it starts with one `#` and is not used if it starts with 2 (or more) `#`. For instance here
@@ -474,7 +487,9 @@ In `Workflow.sh`, you can modify the **Job name** and the **Output** folder to s
 ##SBATCH --output=RASflow-%j.out
 [...]
 ```
+
 the default names `slurm-xxx` will be used, whereas here
+
 ```bash
 #!/bin/bash
 
@@ -487,6 +502,7 @@ the default names `slurm-xxx` will be used, whereas here
 #SBATCH --output=TheFolderIwant/RASflow-%j.out
 [...]
 ```
+
 the job name will be `RASflow` and Slurm output (only for the snakemake commands, not for the jobs launched by snakemake) will go to `TheFolderIwant/RASflow-%j.out`.
 
 ### 4. **env.yaml** [Facultative]
@@ -541,11 +557,14 @@ dependencies:
   - bioconductor-regionreport=1.22.0
   - star=2.7.5a
 ```
+
 ## Running the workflow
 When the configuration files are ready, you can start the run by `sbatch Workflow.sh`.
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ sbatch Workflow.sh
 ```
+
 Please see below detailed explanation. 
 
 ---------------
@@ -561,19 +580,24 @@ Prerequisite:
 Now you have to check in `config/config_main.yaml` that: 
 
 - you gave a project name
+
 ```yaml
 # Project name
 PROJECT: EXAMPLE
 ```
+
 - In `Control of the workflow`, QC is set to `yes`: 
+
 ```yaml
 # ================== Control of the workflow ==================
 ## Do you need to do quality control?
 QC: yes  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
 ```
+
 The rest of the part `Control of the workflow` will be **ignored**. The software will stop after the QC to give you the opportunity to decide if trimming is necessary or not. 
 
 - The shared parameters are correct (paths to the FASTQ files, metadata.tsv, result folders, single or paired-end data). 
+
 ```yaml
 ## the path to fastq files
 READSPATH: /shared/projects/YourProjectName/Raw_fastq
@@ -591,16 +615,21 @@ END: pair  # "pair" or "single"
 ## number of cores you want to allocate to this workflow
 NCORE: 30  # Use command "getconf _NPROCESSORS_ONLN" to check the number of cores/CPU on your machine
 ```
+
 When this is done, you can start the QC by running:
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ sbatch Workflow.sh
 ```
+
 Nota: The first time you run this command, the Conda environment will be made. This takes ~30 min as it dowloads and installs all the tools you'll need. 
 
 You can check if your job is running using squeue.
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ squeue -u username
 ```
+
 You should also check Slurm output files. 
 
 ### Description of the log files 
@@ -614,6 +643,7 @@ Where to find those outputs and what do they contain?
 
 1. main script : Slurm output is in `slurm_output` (default) or in the specified folder if you modified `Workflow.sh`. It contains global information about your run. 
 Typically the main job output looks like :
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ cat slurm_output/Logs-9385967.out 
 ########################################
@@ -651,6 +681,7 @@ RASflow is done!
 Job finished 2020-06-15T15:50:43+0200
 ---- Total runtime 632 s ; 10 min ----
 ```
+
 2. snakefiles. There are 5 snakefiles (visible in the `workflow` folder) that correspond to the different steps of the analysis:
   - quality_control.rules (QC)
   - trim.rules (reads trimming/filtering)
@@ -665,6 +696,7 @@ Here is a description of one of those files (splitted):
 
 ---
 - Building the DAG (directed acyclic graph): Define the jobs that will be launched and in which order.
+
 ```
 Building DAG of jobs...
 Using shell: /usr/bin/bash
@@ -678,7 +710,9 @@ Job counts:
 	1	trimstart
 	5
 ```
+
 - Start the first job (or jobs if there are several independant jobs). The rule is indicated, with the expected outputs. For the first steps one job is started per sample. 
+
 ```
 [Tue May 12 17:48:20 2020]
 rule getReads:
@@ -688,9 +722,11 @@ rule getReads:
 
 Submitted DRMAA job 4 with external jobid 7908074.
 ```
+
 You have here the corresponding **job ID**. You can follow that particular job in `slurm-7908074.out`. 
 
 - End of that job, start of the next one:
+
 ```
 [Tue May 12 17:48:30 2020]
 Finished job 4.
@@ -705,7 +741,9 @@ rule trimstart:
 
 Submitted DRMAA job 3 with external jobid 7908075.
 ```
+
 - At the end of the job, it removes temporary files if any:
+
 ```
 Removing temporary output file /shared/projects/lxactko_analyse/RASflow/data/LXACT_1-test/trim/reads/Test_forward.fastq.gz.
 Removing temporary output file /shared/projects/lxactko_analyse/RASflow/data/LXACT_1-test/trim/reads/Test_reverse.fastq.gz.
@@ -713,7 +751,9 @@ Removing temporary output file /shared/projects/lxactko_analyse/RASflow/data/LXA
 Finished job 3.
 2 of 5 steps (40%) done
 ```
+
 - And so on... Finally:
+
 ```
 [Tue May 12 17:51:10 2020]
 Finished job 0.
@@ -724,6 +764,7 @@ Complete log: /shared/mfs/data/projects/lxactko_analyse/RASflow/.snakemake/log/2
 ---
 
 An extra log file named `20200615_1540_running_time.txt` stores running times.  
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ cat logs/20200615_1540_running_time.txt 
 
@@ -735,7 +776,9 @@ Time of running DEA genome based: 0:01:32
 Time of running visualization: 0:00:01
 Finish time: Mon Jun 15 15:50:43 2020
 ```
+
 3. individual tasks: every job generate a `slurm-JOBID.out` file. It is localised in the working directory as long as the workflow is running. It is then moved to the `slurm_output` folder. Slurm output specifies the rule, the sample (or samples) involved, and gives outputs specific to the tool:  
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ cat slurm_output/slurm-8080372.out 
 Building DAG of jobs...
@@ -762,9 +805,11 @@ Activating conda environment: /shared/mfs/data/projects/lxactko_analyse/RASflow/
 Finished job 0.
 1 of 1 steps (100%) done
 ```
+
 ### FastQC results
 
 If everything goes fine, fastQC results will be in `results/EXAMPLE/fastqc/`. For every sample you will have something like:
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ ll results/EXAMPLE/fastqc
 total 38537
@@ -773,11 +818,14 @@ total 38537
 -rw-rw----+ 1 username username  645532 May 11 15:16 Sample1_reverse_fastqc.html
 -rw-rw----+ 1 username username  871080 May 11 15:16 Sample1_reverse_fastqc.zip
 ```
+
 Those are individual fastQC reports. [MultiQC](https://multiqc.info/docs/) is called after FastQC, so you will also find `report_quality_control.html` that is a summary for all the samples. 
 You can copy those reports to your computer to read them, by typing (in a new local terminal):
+
 ```
 You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourEXAMPLE/RASflow_IFB/results/EXAMPLE/fastqc PathTo/WhereYouWantToSave/
 ```
+
 It's time to decide if you need trimming or not. 
 If you have no sequence bias, and little amount of adapters, trimming is not necessary and you can proceed directly to the [mapping step](#mapping-and-counting).
 
@@ -808,6 +856,7 @@ TRIMMED: "yes"  # "yes" or "no"?
 TRIM3: 91 #  integer or "no", hard-clip sequences from their 5' end, keep the N 3' end bases (remove start of the sequences) , put "no" if don't want trimming 
 TRIM5: 91 #  integer or "no", hard-clip sequences from their 3' end, keep the N 5' end bases (remove end of the sequences) , the trimming of the beginning of the read is done first. This number should be smaller than or equal to TRIM3 (it is the final length of the sequences). 
 ```
+
 !! The number you indicate is the number of bases **to keep** !!  
 Of note, this trimming is done before the adapter removal and read filtering.  
 - If you don't want to trim a fixed number of bases, put "no" for TRIM3 (TRIM5 won't be used then).  
@@ -824,6 +873,7 @@ Nota: I will probably modify that part to be more computationally efficient.
 
 At this step you have to choose the aligner you want ([HISAT2](http://daehwankimlab.github.io/hisat2/manual/) or [STAR](https://github.com/alexdobin/STAR/blob/master/doc/STARmanual.pdf)), to provide the path to corresponding genome index as well as to a GTF annotation file. 
 Some reference files are shared between cluster users. Before downloading a new reference, check what is available at `/shared/bank/`. 
+
 ```bash
 [username@clust-slurm-client ~]$ tree -L 2 /shared/bank/homo_sapiens/
 /shared/bank/homo_sapiens/
@@ -860,9 +910,11 @@ Some reference files are shared between cluster users. Before downloading a new 
 
 30 directories, 0 files
 ```
+
 If you don't find what you need, you can ask for it on [IFB community support](https://community.france-bioinformatique.fr/). In case you don't have a quick answer, you can download or produce the indexes you need in your folder (and remove it when it's available in the common banks). 
 
 **HISAT2 indexes** can be found [here](http://daehwankimlab.github.io/hisat2/download/). Right click on the file you need and copy the link. Then paste the link to `wget`. When downloading is over, you have to decompress the file. 
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ wget https://cloud.biohpc.swmed.edu/index.php/s/hg38/download
 --2020-05-25 11:03:21--  https://cloud.biohpc.swmed.edu/index.php/s/hg38/download
@@ -878,7 +930,9 @@ Saving to: ‘download’
 [username@clust-slurm-client index]$ mv download hg38.tar.gz
 [username@clust-slurm-client index]$ tar -zxvf hg38.tar.gz 
 ```
+
 **STAR indexes** depend on STAR version. STAR 2.7.5a is used here, the indexes should be made with version 2.7.5a or 2.7.4a to be compatible. If you dont find the indexes you need, you can generate them from your genome FASTA. To do so, you can run `StarIndex.sh` giving the path to your genome FASTA file (here `/shared/bank/homo_sapiens/hg38/fasta/hg38.fa` and to the output directory where the index will be saved (here `index/STAR_2.7.5a/hg38`). 
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ sbatch StarIndex.sh /shared/bank/homo_sapiens/hg38/fasta/hg38.fa index/STAR_2.7.5a/hg38
 ```
@@ -918,6 +972,7 @@ ATTRIBUTE: gene_id  # the attribute used in annotation file. It's usually "gene_
 STRAND: "reverse" # "no", "yes", "reverse". For ht-seq counts: For stranded=no, a read is considered overlapping with a feature regardless of whether it is mapped to the same or the opposite strand as the feature. For stranded=yes and single-end reads, the read has to be mapped to the same strand as the feature. For paired-end reads, the first read has to be on the same strand and the second read on the opposite strand. For stranded=reverse, these rules are reversed.
 FEATURE: transcript # "exon" or "transcript"
 ```
+
 For an easy visualisation on a genome browser, BigWig files are generated. You can choose if you want to separate forward and reverse reads setting `BWSTRANDED`. 
 
 If you use STAR, count tables are generated during the mapping step (`with --quantMode GeneCounts option`). If you want to use them for DEA, you have to set `COUNTER` to STARcount. 
@@ -928,10 +983,13 @@ Two other counters are available:
 - featureCounts ([SubReads package](http://subread.sourceforge.net/)) 
 
 Both are now running with default parameters. I will implement more parameters. Beside the methode that is a bit different, HTseq-count is much slower at the moment (several hours for a human RNAseq sample) than featureCounts (~10 min). This is because HTseq count is not parallelizable yet. featureCounts is very fast, but needs a lot of free storage space (I measure at least 150 Go) that is used temporarily. As at the moment the default projet quota in 500 Go you might be exceeding the space you have (and may or may not get error messages). So if featureCounts fails, try removing files to get more space, or ask to increase your quota on [Community support](https://community.cluster.france-bioinformatique.fr). To see the space you have you can run:
+
 ``` 
 [username@clust-slurm-client RASflow_IFB]$ du -h --max-depth=1 /shared/projects/YourProjectName/
 ```
+
 and
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ mfsgetquota -H /shared/projects/YourProjectName/
 ```
@@ -959,6 +1017,7 @@ FILTER: yes  # Filter out low expressed transcripts/genes or not? (yes or no). I
 ```
 
 When this file is fully adapted to your experimental set up and needs, you can start the workflow by running:
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ sbatch Workflow.sh
 ```
@@ -969,10 +1028,12 @@ When this file is fully adapted to your experimental set up and needs, you can s
 
 The results are separated into two folders : 
 - the big files : trimmed FASTQ and bam files are in the data folder defined in `configs/config_main.yaml` at `BIGDATAPATH`
+
 ```yaml
 ## paths for intermediate and final results
 BIGDATAPATH: /shared/projects/YourProjectName/RASflow_IFB/data # for big files
 ```
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ tree -L 2 data/EXAMPLE/
 data/EXAMPLE/
@@ -989,9 +1050,11 @@ data/EXAMPLE/
 ```
 
 - the small files: QC reports, count tables, BigWig, DEA reports, etc. are in the final result folder defined in `configs/config_main.yaml` at `RESULTPATH`
+
 ```yaml
 RESULTPATH: /shared/projects/YourProjectName/RASflow_IFB/results
 ```
+
 ```bash
 [username@clust-slurm-client RASflow_IFB]$ tree -L 2 results/EXAMPLE/
 ├── fastqc_after_trimming
@@ -1007,10 +1070,13 @@ RESULTPATH: /shared/projects/YourProjectName/RASflow_IFB/results
 
 8 directories, 2 files
 ```
+
 This way you can get all the results on your computer by running (from your computer):
+
 ```
 You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/results/EXAMPLE/ PathTo/WhereYouWantToSave/
 ```
+
 and the huge files will stay on the server. You can of course download them as well if you have space (and this is recommended for the long term). 
 
 ### Trimmed reads
@@ -1022,6 +1088,7 @@ In this examples the trim FASTQ files will be stored in `/shared/projects/YourPr
 
 #### Trimming report
 In the same folder, you'll find trimming reports such as `Sample1_forward.fq.gz_trimming_report.txt` for each samples. If you have trimmed a fixed number of bases, the trimming report will have a name related to the intermediate file (not conserved) generated after that initial trimming: such as `Sample1_forward.91bp_3prime.fq.gz_trimming_report.txt`. You'll find information about the tools and parameters, as well as trimming statistics:
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ cat data/LXACT_1/trim/D197-D192T27_forward.91bp_3prime.fq.gz_trimming_report.txt
 
@@ -1087,6 +1154,7 @@ RUN STATISTICS FOR INPUT FILE: /shared/projects/lxactko_analyse/RASflow/data/LXA
 =============================================
 76953098 sequences processed in total
 ```
+
 This information is summarized in the MultiQC report, see  below. 
 
 #### FastQC of trimmed reads
@@ -1106,9 +1174,11 @@ The mapped reads are stored as sorted bam in the data folder, in our example in 
 ### BigWig
 To facilitate visualization on a genome browser, [BigWig](https://deeptools.readthedocs.io/en/develop/content/tools/bamCoverage.html) files are generated (window size of 50 bp). There are in `results/EXAMPLE/ALIGNER/bw`. If you have generated stranded BigWig, they are in  `results/EXAMPLE/ALIGNER/bw_str`. 
 If not already done, you can specifically get the BigWig files on your computer running:
+
 ```
 You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/results/EXAMPLE/ALIGNER/bw_str PathTo/WhereYouWantToSave/
 ```
+
 ![igv_RF.png](Tuto_pictures/igv_RF.png)
 
 
@@ -1122,9 +1192,11 @@ You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/sha
 - ...  
 
 If not already done, you can get the files on your computer running:
+
 ```
 You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/results/EXAMPLE/ALIGNER/alignmentQC PathTo/WhereYouWantToSave/
 ```
+
 Once again **MultiQC** aggregates the results of all the samples and you can have a quick overview by looking at `results/EXAMPLE/ALIGNER/report_align_count_COUNTER.html`. 
 
 ### Count Tables
@@ -1134,6 +1206,7 @@ The count tables can be found in `results/EXAMPLE/ALIGNER/countFile_COUNTER/`. T
 `GeneID  counts`
 
 The `.summary` contains information about the reads that couldn't be attributed to a feature:
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ cat results/EXAMPLE/hisat2/countFile_htseq-count/D197-D192T27_table.tsv.summary
 __no_feature	2577896
@@ -1162,6 +1235,7 @@ MultiQC is run after the counting and you can find a report named `report_count_
 ### DEA results
 
 DEA results are in `results/EXAMPLE/ALIGNER/dea_COUNTER`.
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ tree results/EXAMPLE/hisat2/dea_featureCounts/
 results/EXAMPLE/hisat2/dea_featureCounts/
@@ -1248,6 +1322,7 @@ Additional figures can be found in `results/EXAMPLE/ALIGNER/dea_COUNTER/visualiz
 ### Running jobs
 
 You can check the jobs that are running using `squeue`.
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ squeue -u username
 ```
@@ -1274,6 +1349,7 @@ The `sacct` command gives you information about past and running jobs. The docum
 9875773.bat+      batch 2020-07-27T16:04:35   00:00:42     59360K     2000Mn  COMPLETED 
 9875774             DEA 2020-07-27T16:05:25   00:05:49                2000Mn    RUNNING 
 ```
+
 Here you have the job ID and name, its starting time, its running time, the maximum RAM used, the memory you requested (it has to be higher than MaxRSS, otherwise the job fails, but not much higher to allow the others to use the resource), and job status (failed, completed, running). 
 
 **Add `-S MMDD` to have older jobs (default is today only).** 
@@ -1281,24 +1357,32 @@ Here you have the job ID and name, its starting time, its running time, the maxi
 ```
 [username@clust-slurm-client RASflow_IFB]$ sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State -S 0518
 ```
+
 ### Cancelling a job
 If you want to cancel a job: scancel job number
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ scancel 8016984
 ```
-Nota: when snakemake is working on a folder, this folder is locked so that you can't start another DAG and create a big mess. If you cancel the main job, snakemake won't be able to unlock the folder (see [below](#error)). 
+
+Nota: when snakemake is working on a folder, this folder is locked so that you can't start another DAG and create a big mess. If you cancel the main job, snakemake won't be able to unlock the folder (see [below](#folder-locked)). 
 
 ### Check the whole pipeline
 To quickly check if everything went fine, you can run :
+
 ```
 [username @ clust-slurm-client RASflow_IFB]$ cat logs/20200710_1013_* | grep error
 ```
+
 replacing `20200710_1013` by the date (YYYYMMDD) and time (HHMM) of the start of the run. You will immediately see if something went wrong, for instance: 
+
 ```
 Error executing rule plot on cluster (jobid: 1, external: 9726359, jobscript: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/tmp.ntswueat/snakejob.plot.1.sh). For error details see the cluster log and the log files of the involved rule(s).
 Exiting because a job execution failed. Look above for error message
 ```
+
 And you can check the problem using the external jobid, here 9726359: 
+
 ```
 [username @ clust-slurm-client RASflow_IFB]$ cat slurm_output/slurm-9726359.out
 ```
@@ -1309,19 +1393,25 @@ And you can check the problem using the external jobid, here 9726359:
 
 ### Error starting gedit
 If you encounter an error starting gedit
+
 ```
 [unsername @ clust-slurm-client 16:04]$ ~ : gedit toto.txt
 (gedit:6625): Gtk-WARNING **: cannot open display: 
 ```
+
 Be sure to include `-X` when connecting to the cluster (`-X` option is necessary to run graphical applications remotely).
 Use : 
+
 ```
 You@YourComputer:~$ ssh -X unsername@core.cluster.france-bioinformatique.fr
 ```
+
 or 
+
 ```
 You@YourComputer:~$ ssh -X -o "ServerAliveInterval 10" unsername@core.cluster.france-bioinformatique.fr
 ```
+
 The option `-o "ServerAliveInterval 10"` is facultative, it keeps the connection alive even if you're not using your shell for a while. 
 
 
@@ -1344,7 +1434,9 @@ slurmstepd: error: Exceeded job memory limit
 slurmstepd: error: *** JOB 8430179 ON cpu-node-13 CANCELLED AT 2020-05-20T09:58:05 ***
 Will exit after finishing currently running jobs.
 ```
+
 In that case, you can increase the memory request by modifying in `cluster.yml` the `mem` entry corresponding to the rule that failed. 
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ cat cluster.yml 
 __default__:
@@ -1376,11 +1468,10 @@ BigWig:
   name: BigWig
 ...
 ```
+
 If the rule that failed is not listed here, you can add it respecting the format. And restart your workflow. 
-<a name="error">
 
 ### Folder locked
-</a>
 
 When snakemake is working on a folder, this folder is locked so that you can't start another DAG and create a big mess. If you cancel the main job, snakemake won't be able to unlock the folder and next time you run `Workflow.sh`, you will get the following error:
 
@@ -1389,18 +1480,23 @@ Error: Directory cannot be locked. Please make sure that no other Snakemake proc
 /shared/mfs/data/projects/lxactko_analyse/RASflow
 If you are sure that no other instances of snakemake are running on this directory, the remaining lock was likely caused by a kill signal or a power loss. It can be removed with the --unlock argument.
 ```
+
 In order to remove the lock, run:
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ sbatch Unlock.sh
 ```
+
 Then you can restart your workflow. 
 
 
 ### Storage space
 Sometimes you may reach the quota you have for your project. To check the quota, run: 
+
 ```
 [username@clust-slurm-client RASflow_IFB]$ mfsgetquota -H /shared/projects/YourProjectName/
 ```
+
 In principle it should raise an error, but sometimes it doesn't and it's hard to find out what is the problem. So if a task fails with no error (typically mapping or counting), try to make more space (or ask for more space on [Community support](https://community.cluster.france-bioinformatique.fr)) before trying again. 
 
 ---
@@ -1433,11 +1529,13 @@ alias qq="squeue -u username"
 alias sa="sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State"
 alias ll="ls -lht --color=always"
 ```
+
 It will work next time you connect to the server. When you type `sa`, you will get the command `sacct --format=JobID,JobName,Start,CPUTime,MaxRSS,ReqMeM,State` running. 
 
 ### Quickly change fastq names
 
 It is possible to quickly rename all your samples using `mv`. For instance if your samples are named with dots instead of underscores and without `R`: 
+
 ```
 [username@clust-slurm-client Raw_fastq]$ ls
 D192T27.1.fastq.gz  
@@ -1453,12 +1551,16 @@ D192T31.2.fastq.gz
 D192T32.1.fastq.gz  
 D192T32.2.fastq.gz  
 ```
+
 You can modify them using `mv` and a loop on sample numbers. 
+
 ```
 [username@clust-slurm-client Raw_fastq]$ for i in `seq 27 32`; do mv D192T$i\.1.fastq.gz D192T$i\_R1.fastq.gz; done
 [username@clust-slurm-client Raw_fastq]$ for i in `seq 27 32`; do mv D192T$i\.2.fastq.gz D192T$i\_R2.fastq.gz; done
 ```
+
 Now sample names are OK:
+
 ```
 [username@clust-slurm-client Raw_fastq]$ ls
 D192T27_R1.fastq.gz  
@@ -1481,6 +1583,7 @@ D192T32_R2.fastq.gz
 The exact same version of the workflow is installed on RPBS cluster. You don't have to clone the GitHub repository. Here is a quick tutorial with only the differences with IFB cluster.
 
 - Transfer your data to `/home/joule/RPBSusername` 
+
 ```
 You@YourComputer:~/PathTo/RNAseqProject$ rsync -avP  Fastq/ RPBSusername@goliath.sdv.univ-paris-diderot.fr:/home/joule/RPBSusername/YourProjectName/Raw_fastq
 ```
@@ -1488,22 +1591,28 @@ You@YourComputer:~/PathTo/RNAseqProject$ rsync -avP  Fastq/ RPBSusername@goliath
 Nota: you should not use `/scratch` to store data. 
 
 - Login to RPBS cluster:
+
 ```
 username@YourComputer:~$ ssh RPBSusername@goliath.sdv.univ-paris-diderot.fr
 ```
 
 - Go to your user folder on `scratch`:
+
 ``` 
 [RPBSusername @ goliath hh:mm]$ ~ : cd /scratch/user/RPBSusername
 ```
+
 It is important to launch the workflow from `scratch` as this is where the conda environnement is built. [This will change with the cluster upgrade]. 
 
 - Create your working directory (named as you want, I put `RASflow` as an example) and copy the `user` files into it:
+
 ```
 [RPBSusername @ goliath hh:mm]$ RPBSusername : mkdir RASflow
 [RPBSusername @ goliath hh:mm]$ RPBSusername : cp -pr /scratch/epigenetique/workflows/RASflow_RPBS/user/* RASflow
 ```
+
 - Go to your folder and modify the configuration files according to your experiment. In principle you only need to modify `configs/metadata.tsv` and `configs/config_main.yaml`:
+
 ```
 [RPBSusername @ goliath hh:mm]$ RPBSusername : cd RASflow
 [RPBSusername @ goliath hh:mm]$ RASflow : ls -l 
@@ -1517,7 +1626,9 @@ total 12K
 -rw-r--r-- 1 hennion umr7216  315 Jul 24 10:40 metadata.tsv
 -rw-r--r-- 1 hennion umr7216 5,0K Jul 24 10:40 config_main.yaml
 ```
+
 Please save the outputs in your user directory on `joule`:
+
 ```yaml
 # ================== Shared parameters for some or all of the sub-workflows ==================
 
@@ -1542,6 +1653,7 @@ FINALOUTPUT: /home/joule/RPBSusername/RASflow/output
 ```
 
 - Run the workflow:
+
 ```
 [RPBSusername @ goliath hh:mm]$ RASflow : sbatch Workflow.sh
 ```

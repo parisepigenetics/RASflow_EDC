@@ -19,19 +19,19 @@ star:
   name: star
 
 alignmentQC:
-  mem: 7000
+  mem: 10000
   name: aligQC
 
 BigWig:
-  mem: 80000
+  mem: 10000
   name: BigWig
 
 BigWigR:
-  mem: 80000
+  mem: 10000
   name: BigWigR
 
 BigWigF:
-  mem: 80000
+  mem: 10000
   name: BigWigF
 
 featureCount:
