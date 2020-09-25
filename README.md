@@ -6,7 +6,7 @@ RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhan
 
 ---
 ## Table of content
-  * [Your analysis in a nutshell](#your-analysis-in-a-nutshell)
+* [Your analysis in a nutshell](#your-analysis-in-a-nutshell)
   * [Resources](#resources)
   * [Get an account on IFB core cluster and create a project](#get-an-account-on-ifb-core-cluster-and-create-a-project)
   * [Transfer your data](#transfer-your-data)
@@ -14,14 +14,18 @@ RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhan
   * [Connect to IFB core cluster](#connect-to-ifb-core-cluster)
   * [RASflow installation and description](#rasflow-installation-and-description)
   * [Preparing the run](#preparing-the-run)
-    + [1. **metadata.tsv**](#1---metadatatsv--)
-    + [2. **config_main.yaml**](#2---config-mainyaml--)
-    + [3. **Workflow.sh** [Facultative]](#3---workflowsh----facultative-)
-    + [4. **env.yaml** [Facultative]](#4---envyaml----facultative-)
+    + [1. **metadata.tsv**](#1-metadatatsv)
+    + [2. **config_main.yaml**](#2-config-mainyaml)
+    + [3. **Workflow.sh** [Facultative]](#3-workflowsh-facultative)
+    + [4. **env.yaml** [Facultative]](#4-envyaml-facultative)
   * [Running the workflow](#running-the-workflow)
   * [Running your analysis step by step](#running-your-analysis-step-by-step)
     + [FASTQ quality control](#fastq-quality-control)
     + [Description of the log files](#description-of-the-log-files)
+      - [1. **Main script**](#1-main-script)
+      - [2. **Snakefiles**](#2-snakefiles)
+      - [3. **Individual tasks**](#3-individual-tasks)
+      - [4. **Configuration and timing**](#4-configuration-and-timing)
     + [FastQC results](#fastqc-results)
     + [Trimming](#trimming)
     + [Mapping and counting](#mapping-and-counting)
@@ -40,7 +44,7 @@ RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhan
     + [Running jobs](#running-jobs)
     + [Information about past jobs](#information-about-past-jobs)
     + [Cancelling a job](#cancelling-a-job)
-    + [Check the whole pipeline](#check-the-whole-pipeline)
+  * [Having errors?](#having-errors)
   * [Common errors](#common-errors)
     + [Error starting gedit](#error-starting-gedit)
     + [Initial QC fails](#initial-qc-fails)
@@ -635,32 +639,47 @@ You should also check Slurm output files.
 ### Description of the log files 
 
 The first job is the main script. This job will call one or several snakefiles (`.rules` files) that define small workflows of the individual steps. There are Slurm outputs at the 3 levels. 
-1. main script
-2. snakefiles
-3. individual tasks
+1. [Main script](#1-main-script)
+2. [Snakefiles](#2-snakefiles)
+3. [Individual tasks](#3-individual-tasks)
+
+The configuration of the run and the timing are also saved:
+
+4. [Configuration and timing](#4-configuration-and-timing)
 
 Where to find those outputs and what do they contain?
 
-1. main script : Slurm output is in `slurm_output` (default) or in the specified folder if you modified `Workflow.sh`. It contains global information about your run. 
+#### 1. **Main script**
+
+ Slurm output is in `slurm_output` (default) or in the specified folder if you modified `Workflow.sh`. It contains global information about your run. 
 Typically the main job output looks like :
 
 ```
-[username@clust-slurm-client RASflow_IFB]$ cat slurm_output/Logs-9385967.out 
+[username@clust-slurm-client RASflow_IFB]$ cat slurm_output/RASflow-13350656.out 
 ########################################
-Date: 2020-06-15T15:40:11+0200
+Date: 2020-09-25T10:57:14+0200
 User: mhennion
-Host: cpu-node-83
-Job Name: Logs
-Job Id: 9385967
-Directory: /shared/projects/lxactko_analyse/RASflow
+Host: cpu-node-60
+Job Name: RASflow
+Job Id: 13350656
+Directory: /shared/projects/bi4edc/RASflow_IFB
 ########################################
-Python 3.7.3
+RASflow_IFB version: v0.4
+-------------------------
+Main module versions:
+conda 4.8.4
+Python 3.8.3
 snakemake
 5.19.2
-conda 4.8.2
+-------------------------
+PATH:
+/shared/software/miniconda/envs/snakemake-5.19.2/bin:/shared/software/miniconda/bin:/shared/mfs/data/software/miniconda/bin:/shared/mfs/data/software/miniconda/condabin:/shared/software/sinteractive:/shared/software/modules/4.1.4/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/opt/go/1.14.4/bin:/opt/go/packages/bin:/shared/home/mhennion/.local/bin:/shared/home/mhennion/bin
+-------------------------
 Is quality control required?
  no
 Is trimming required?
+ yes
+Is mapping required?
  yes
 Which mapping reference will be used?
  genome
@@ -668,21 +687,27 @@ Is DEA required?
  yes
 Is visualization required?
  yes
-Start RASflow on project: LXACT_1-test
+Start RASflow on project: TIMING
 Start Trimming!
-Trimming is done!
+Trimming is done! (0:00:18)
 Start mapping using  genome  as reference!
+Mapping is done! (0:01:51)
 Start doing DEA!
-DEA is done!
+DEA is done! (0:00:17)
 Start visualization of DEA results!
-Visualization is done!
+Visualization is done! (0:07:03)
 RASflow is done!
 ########################################
-Job finished 2020-06-15T15:50:43+0200
----- Total runtime 632 s ; 10 min ----
+---- Errors ----
+There were no errors ! It's time to look at your results, enjoy!
+########################################
+Job finished 2020-09-25T11:06:50+0200
+---- Total runtime 576 s ; 9 min ----
 ```
+You can see at the end if this file if an error occured during the run. See [Errors](#having-errors).
 
-2. snakefiles. There are 5 snakefiles (visible in the `workflow` folder) that correspond to the different steps of the analysis:
+#### 2. **Snakefiles**
+ There are 5 snakefiles (visible in the `workflow` folder) that correspond to the different steps of the analysis:
   - quality_control.rules (QC)
   - trim.rules (reads trimming/filtering)
   - align_count_genome.rules (mapping and counting)
@@ -763,21 +788,8 @@ Complete log: /shared/mfs/data/projects/lxactko_analyse/RASflow/.snakemake/log/2
 
 ---
 
-An extra log file named `20200615_1540_running_time.txt` stores running times.  
-
-```
-[username@clust-slurm-client RASflow_IFB]$ cat logs/20200615_1540_running_time.txt 
-
-Project name: EXAMPLE
-Start time: Mon Jun 15 15:40:13 2020
-Time of running trimming: 0:00:12
-Time of running genome alignment: 0:08:43
-Time of running DEA genome based: 0:01:32
-Time of running visualization: 0:00:01
-Finish time: Mon Jun 15 15:50:43 2020
-```
-
-3. individual tasks: every job generate a `slurm-JOBID.out` file. It is localised in the working directory as long as the workflow is running. It is then moved to the `slurm_output` folder. Slurm output specifies the rule, the sample (or samples) involved, and gives outputs specific to the tool:  
+#### 3. **Individual tasks**
+Every job generate a `slurm-JOBID.out` file. It is localised in the working directory as long as the workflow is running. It is then moved to the `slurm_output` folder. Slurm output specifies the rule, the sample (or samples) involved, and gives outputs specific to the tool:  
 
 ```
 [username@clust-slurm-client RASflow_IFB]$ cat slurm_output/slurm-8080372.out 
@@ -805,6 +817,56 @@ Activating conda environment: /shared/mfs/data/projects/lxactko_analyse/RASflow/
 Finished job 0.
 1 of 1 steps (100%) done
 ```
+#### 4. **Configuration and timing**
+
+Two extra files can be found in the `logs` folder:
+
+- A log file named `20200615_1540_running_time.txt` stores **running times.**  
+
+```
+[username@clust-slurm-client RASflow_IFB]$ cat logs/20200615_1540_running_time.txt 
+
+Project name: EXAMPLE
+Start time: Mon Jun 15 15:40:13 2020
+Time of running trimming: 0:00:12
+Time of running genome alignment: 0:08:43
+Time of running DEA genome based: 0:01:32
+Time of running visualization: 0:00:01
+Finish time: Mon Jun 15 15:50:43 2020
+```
+
+- A log file named `20200925_1057_configuration.txt` keeps a track of the **configuration of the run** (`config_main.yaml` followed by `metadata.tsv`)
+```
+[username@clust-slurm-client RASflow_IFB]$: cat logs/20200925_1057_configuration.txt 
+ 
+# Please check the parameters, and adjust them according to your circumstance
+
+# Project name
+PROJECT: TIMING
+
+# ================== Control of the workflow ==================
+
+[...]
+MAINPATH: "" # leave "" empty for IFB core cluster, "/scratch/epigenetique/workflows/RASflow_RPBS/" for RPBS cluster.
+
+==========================================
+
+SAMPLE PLAN
+sample	group	subject
+D197-D192T27	J0_WT	1
+D197-D192T28	J0_WT	2
+D197-D192T29	J0_WT	3
+D197-D192T30	J0_KO	1
+D197-D192T31	J0_KO	2
+D197-D192T32	J0_KO	3
+D197-D192T33	J10_WT	1
+D197-D192T34	J10_WT	2
+D197-D192T35	J10_WT	3
+D197-D192T36	J10_KO	1
+D197-D192T37	J10_KO	2
+D197-D192T38	J10_KO	3
+```
+
 
 ### FastQC results
 
@@ -1225,9 +1287,7 @@ In addition, 2 PDF are generated:
 - `Heatmap.pdf` with a heatmap of sample distances 
 <img src="Tuto_pictures/SampleHeatmap.png" alt="drawing" width="600"/>
 
-Nota: I didn't manage to do all in one, I have to spend more time in generating a nice report.
-
-MultiQC is run after the counting and you can find a report named `report_count_htseq-count.html` or `report_count_featureCounts.html` in `results/EXAMPLE/ALIGNER/`, that will help you to check that everything went fine. 
+MultiQC is run after the counting, looking at `report_align_count_COUNTER.html` in `results/EXAMPLE/ALIGNER/` will help you to check that everything went fine. 
 
 ![htseq](Tuto_pictures/htseq_assignment_plot.png)
 
@@ -1313,7 +1373,8 @@ Additional figures can be found in `results/EXAMPLE/ALIGNER/dea_COUNTER/visualiz
 ![volcano_plot2_J0_WT_J10_WT.pdf.png](Tuto_pictures/volcano_plot2_J0_WT_J10_WT.pdf.png)
 - A heatmap of the 20 most regulated genes
 ![heatmap2_J0_WT_J10_WT_1.pdf.png](Tuto_pictures/heatmap2_J0_WT_J10_WT_1.pdf.png)
-
+- PCA plots (as in the report)
+- Sample-to-sample distance heatmaps (as in the report)
 
 ---
 
@@ -1367,24 +1428,97 @@ If you want to cancel a job: scancel job number
 
 Nota: when snakemake is working on a folder, this folder is locked so that you can't start another DAG and create a big mess. If you cancel the main job, snakemake won't be able to unlock the folder (see [below](#folder-locked)). 
 
-### Check the whole pipeline
-To quickly check if everything went fine, you can run :
+## Having errors? 
+To quickly check if everything went fine, you have to check the main log. If everything went fine you'll have :
 
 ```
-[username @ clust-slurm-client RASflow_IFB]$ cat logs/20200710_1013_* | grep error
+[username@clust-slurm-client RASflow_IFB]$ cat slurm_output/RASflow-13350656.out 
+########################################
+Date: 2020-09-25T10:57:14+0200
+User: mhennion
+Host: cpu-node-60
+Job Name: RASflow
+Job Id: 13350656
+Directory: /shared/projects/bi4edc/RASflow_IFB
+########################################
+RASflow_IFB version: v0.4
+[...]
+RASflow is done!
+########################################
+---- Errors ----
+There were no errors ! It's time to look at your results, enjoy!
+########################################
+Job finished 2020-09-25T11:06:50+0200
+---- Total runtime 576 s ; 9 min ----
 ```
 
-replacing `20200710_1013` by the date (YYYYMMDD) and time (HHMM) of the start of the run. You will immediately see if something went wrong, for instance: 
-
+If not, you'll see a summary of the errors: 
 ```
-Error executing rule plot on cluster (jobid: 1, external: 9726359, jobscript: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/tmp.ntswueat/snakejob.plot.1.sh). For error details see the cluster log and the log files of the involved rule(s).
+[username@clust-slurm-client RASflow_IFB]$ cat slurm_output/RASflow-13350559.out 
+########################################
+Date: 2020-09-25T09:54:19+0200
+User: mhennion
+Host: cpu-node-14
+Job Name: RASflow
+Job Id: 13350559
+Directory: /shared/projects/bi4edc/RASflow_IFB
+########################################
+RASflow_IFB version: v0.4
+-------------------------
+[...]
+RASflow is done!
+########################################
+---- Errors ----
+logs/20200925_0954_visualize.txt	-        Rscript scripts/visualize.R /shared/projects/bi4edc/RASflow_IFB/results/TIMING/hisat2/dea_featureCounts/Norm_DESeq2 /shared/projects/bi4edc/RASflow_IFB/results/TIMING/hisat2/dea_featureCounts/DEA_DESeq2 /shared/projects/bi4edc/RASflow_IFB/results/TIMING/hisat2/countFile_featureCounts /shared/projects/bi4edc/RASflow_IFB/results/TIMING/hisat2/dea_featureCounts/visualization_DESeq2
+logs/20200925_0954_visualize.txt	-        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+logs/20200925_0954_visualize.txt	-
+logs/20200925_0954_visualize.txt	-Error executing rule plot on cluster (jobid: 1, external: 13350560, jobscript: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/tmp.sw9kh8we/snakejob.plot.1.sh). For error details see the cluster log and the log files of the involved rule(s).
+logs/20200925_0954_visualize.txt	-Job failed, going on with independent jobs.
+logs/20200925_0954_visualize.txt	:Exiting because a job execution failed. Look above for error message
+logs/20200925_0954_visualize.txt	-Complete log: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/log/2020-09-25T095521.037897.snakemake.log
+
+########################################
+Job finished 2020-09-25T10:02:22+0200
+---- Total runtime 483 s ; 8 min ----
+```
+
+And you can check the problem looking as the specific log file, here `logs/20200925_0954_visualize.txt` 
+```
+[username@clust-slurm-client RASflow_IFB]$ cat logs/20200925_0954_visualize.txt
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cluster nodes: 30
+Job counts:
+	count	jobs
+	1	end
+	1	plot
+	2
+
+[Fri Sep 25 09:55:21 2020]
+rule plot:
+    input: ...
+    output: ...
+    jobid: 1
+
+Submitted DRMAA job 1 with external jobid 13350560.
+[Fri Sep 25 10:02:12 2020]
+Error in rule plot:
+    jobid: 1
+    output: ...
+    conda-env: ...
+    shell:
+        Rscript scripts/visualize.R ...
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error executing rule plot on cluster (jobid: 1, external: 13350560, jobscript: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/tmp.sw9kh8we/snakejob.plot.1.sh). For error details see the cluster log and the log files of the involved rule(s).
+Job failed, going on with independent jobs.
 Exiting because a job execution failed. Look above for error message
+Complete log: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/log/2020-09-25T095521.037897.snakemake.log
 ```
-
-And you can check the problem using the external jobid, here 9726359: 
+You can have the description of the error in the SLURM output corresponding to the external jobid, here 13350560: 
 
 ```
-[username @ clust-slurm-client RASflow_IFB]$ cat slurm_output/slurm-9726359.out
+[username @ clust-slurm-client RASflow_IFB]$ cat slurm_output/slurm-13350560.out
 ```
 
 ---
@@ -1437,7 +1571,7 @@ Will exit after finishing currently running jobs.
 
 In that case, you can increase the memory request by modifying in `cluster.yml` the `mem` entry corresponding to the rule that failed. 
 
-```
+```yaml
 [username@clust-slurm-client RASflow_IFB]$ cat cluster.yml 
 __default__:
   mem: 2000
@@ -1657,4 +1791,5 @@ FINALOUTPUT: /home/joule/RPBSusername/RASflow/output
 ```
 [RPBSusername @ goliath hh:mm]$ RASflow : sbatch Workflow.sh
 ```
-
+- After the run  
+Once you're done, you have to transfer all your data to **goliath.** 
