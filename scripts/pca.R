@@ -16,16 +16,17 @@ metafile <- yaml.file$METAFILE
 
 
 # load count files
-countload <-function(input_path, col.nb){
-    message("loading gene counts ...")
+countload <-function(input_path){
+    message(paste("loading gene counts from", input_path, "...", sep=" "))
     exprs.in <-list.files(path=input_path,pattern="count.tsv",full.names=TRUE,recursive=TRUE)
     counts.exprs <-lapply(exprs.in, read.csv, sep="\t", header=FALSE,row.names=1, check.names=FALSE)
-    counts.exprs <-data.frame(lapply(counts.exprs, "[", col.nb))
+    counts.exprs <-data.frame(lapply(counts.exprs, "[", 1))
     colnames(counts.exprs) <-basename(exprs.in)
+    message("Done")
     counts.exprs
 }
 
-d <- countload(counts.path,1)
+d <- countload(counts.path)
 
 ## rename columns
 if (lengths(strsplit(as.character(colnames(d)), "\\_"))[1] == 2) {
@@ -34,11 +35,11 @@ if (lengths(strsplit(as.character(colnames(d)), "\\_"))[1] == 2) {
 
 message("size of the table")
 message("number of genes")
-dim(d)[1]
+message(dim(d)[1])
 message("number of samples")
-dim(d)[2]
+message(dim(d)[2])
 message("number of counts per sample")
-colSums(d)
+print(colSums(d))
 
 
 ## adding the experimental plan

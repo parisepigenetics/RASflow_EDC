@@ -66,7 +66,7 @@ TRANS: /shared/.. # not yet implemented
 ALIGNER: hisat2 # "STAR" or "hisat2"
 
 ## genome and annotation files
-INDEXPATH: /shared/bank/homo_sapiens/hg38/hisat2 # index/STAR # folder containing index files
+INDEXPATH: /shared/bank/homo_sapiens/hg38/hisat2 # folder containing index files
 INDEXBASE: genome # for hisat2, base of the name of the index files (ie genome.1.ht2)
 ANNOTATION: /shared/projects/lxactko_analyse/RASflow/gtf/gencode.v34.annotation_modifiedXACT_v3.gtf # GTF file 
 

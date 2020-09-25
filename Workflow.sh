@@ -3,10 +3,12 @@
 ################################ Slurm options #################################
 
 ### Job name
-##SBATCH --job-name=RASflow
+#SBATCH --job-name=RASflow
 
 ### Output
-##SBATCH --output=RASflow-%j.out
+#SBATCH --output=RASflow-%j.out  # both STDOUT and STDERR
+##SBATCH -o slurm.%N.%j.out  # STDOUT file with the Node name and the Job ID
+##SBATCH -e slurm.%N.%j.err  # STDERR file with the Node name and the Job ID
 
 ### Limit run time "days-hours:minutes:seconds"
 #SBATCH --time=24:00:00
@@ -31,7 +33,7 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_IFB version: v0.3.dev'
+echo 'RASflow_IFB version: v0.4'
 echo '-------------------------'
 echo 'Main module versions:'
 

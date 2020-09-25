@@ -4,6 +4,7 @@ import yaml
 import os
 import time
 import sys
+import subprocess
 
 server = sys.argv[1]
 if server == "rpbs": 
@@ -54,6 +55,10 @@ file_main_time = open("logs/"+time_string+"_running_time.txt", "a+")
 file_main_time.write("\nProject name: " + project + "\n")
 file_main_time.write("Start time: " + time.ctime() + "\n")
 
+# save the configuration
+metadata = config["METAFILE"]
+os.system("(echo && echo \"==========================================\" && echo && echo \"SAMPLE PLAN\") | cat configs/config_main.yaml - "+metadata+" > logs/"+time_string+"_configuration.txt")
+
 def spend_time(start_time, end_time):
     seconds = end_time - start_time
     hours = seconds // 3600
@@ -65,7 +70,6 @@ def spend_time(start_time, end_time):
 
 
 if qc=='yes':
-    # Double check that the user really wants to do QC instead of forgetting to change the param after doing QC
         print("Start Quality Control!")
         start_time = time.time()
         os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem} -J {cluster.name}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs=30 --latency-wait 40 -s "+MainPath+"workflow/quality_control.rules 2> logs/"+time_string+"_quality_control.txt")
@@ -143,3 +147,13 @@ else:
 
 file_main_time.write("Finish time: " + time.ctime() + "\n")
 file_main_time.close()
+
+print("########################################")
+print("---- Errors ----")
+returned_output = subprocess.check_output(["grep -A 5 -B 5 'error message\|error:\|Errno' logs/"+time_string+"*;exit 0"], shell=True)
+if returned_output == b'' : 
+    print("There were no errors ! It's time to look at your results, enjoy!")
+else : 
+    decode = returned_output.decode("utf-8")
+    print(decode.replace(".txt",".txt\t"))
+
