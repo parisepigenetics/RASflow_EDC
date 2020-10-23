@@ -5,66 +5,52 @@ configfile: "configs/config_main.yaml"
 
 
 counter = config["COUNTER"]
-input_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/countFile_"+counter
-output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea_"+counter
+mapper = config["ALIGNER"]
+tool = config["DEATOOL"]
+input_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/mapping_" + mapper + "/counting_"+counter
+output_path = input_path + "/DEA_"+tool+"/" 
 
 
 samples = np.array(pd.read_table(config["METAFILE"], header = 0)['sample'])
 groups = np.unique(np.array(pd.read_table(config["METAFILE"], header = 0)['group']))
 control = config["CONTROL"][0]
 treat = config["TREAT"][0]
-tool = config["DEATOOL"]
+main_path = config["MAINPATH"]
 
-
-if tool == "edgeR" :
-    rule all:
-        input:
-            normControl = output_path + "/Norm_edgeR/" + control + "_gene_norm.tsv",
-            dea = output_path + "/DEA_edgeR/" + "dea_" + control + "_" + treat + ".tsv"
-
-elif tool == "DESeq2" :
-    rule all:
-        input:
-            normControl = output_path + "/Norm_DESeq2/" + control + "_gene_norm.tsv",
-            dea = output_path + "/DEA_DESeq2/" + "dea_" + control + "_" + treat + ".tsv"
-
-rule combineSamples:
+rule all:
+    input: 
+        dea = output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
+        glimma = output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html",
+        norm = output_path + "Tables/"+ control + "_" + treat + "_NormCounts.tsv",
+        pca = input_path + "/PCA.pdf",
+        volcano = output_path + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf"
+       
+rule PCA:
     input:
-        sampleCount = expand(input_path + "/{sample}_count.tsv", sample = samples),
-        metafile = config["METAFILE"]
+        countF = expand(input_path +"/countTables/{sample}_count.tsv", sample=samples)
     output:
-        groupCount = expand(output_path + "/countGroup/{group}_gene_count.tsv", group = groups)
+        pca = input_path + "/PCA.pdf"
     conda:
         "env.yaml"
     params:
-        path = output_path + "countFile"
+        input_path = input_path,
+        mp = main_path
     shell:
-        "python scripts/combine2group_genome.py"
+        "Rscript {params.mp}scripts/pca.R {params.input_path}"
 
-if tool == "edgeR" : 
-    rule DEA:
-        input:
-            groupCount = expand(output_path + "/countGroup/{group}_gene_count.tsv", group = groups)
-        output:
-            normControl = output_path + "/Norm_edgeR/" + control + "_gene_norm.tsv",
-            normTreat = output_path + "/Norm_edgeR/" + treat + "_gene_norm.tsv",
-            dea = output_path + "/DEA_edgeR/" + "dea_" + control + "_" + treat + ".tsv",
-            deg = output_path + "/DEA_edgeR/" + "deg_" + control + "_" + treat + ".tsv"
-        conda:
-            "env.yaml"
-        shell:
-            "Rscript scripts/dea_genome.R"
-            
-if tool == "DESeq2" : 
-    rule DEA:
-        input:
-            groupCount = expand(output_path + "/countGroup/{group}_gene_count.tsv", group = groups)
-        output:
-            normControl = output_path + "/Norm_DESeq2/" + control + "_gene_norm.tsv",
-            normTreat = output_path + "/Norm_DESeq2/" + treat + "_gene_norm.tsv",
-            dea = output_path + "/DEA_DESeq2/" + "dea_" + control + "_" + treat + ".tsv",
-            deg = output_path + "/DEA_DESeq2/" + "deg_" + control + "_" + treat + ".tsv"
-        conda:
-            "env.yaml"
-        shell:
-            "Rscript scripts/dea_genome.R"
+rule DEA:
+    input:
+        groupCount = expand(input_path + "/countTables/{group}_counts.tsv", group = groups)
+    output:
+        dea = output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
+        glimma = output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html",
+        norm = output_path + "Tables/"+ control + "_" + treat + "_NormCounts.tsv",
+        volcano = output_path + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf"
+    conda:
+        "env.yaml"
+    params:
+        mp = main_path,
+        output_path = output_path,
+        counts_path = input_path + "/countTables/"
+    shell:
+        "Rscript {params.mp}scripts/dea_genome.R {params.counts_path} {params.output_path}"

@@ -10,15 +10,13 @@ def load_globals():
     global samples; global groups; global config; global input_path; global output_path
 
     with open('configs/config_main.yaml') as yamlfile:
-        config = yaml.load(yamlfile)
+        config = yaml.load(yamlfile,Loader=yaml.BaseLoader)
     
     samples = np.array(pd.read_table(config["METAFILE"], header = 0)['sample'])
 
     groups = np.array(pd.read_table(config["METAFILE"], header = 0)['group'])
 
-    input_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/countFile_"+config["COUNTER"]
-    output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea_"+config["COUNTER"]
-
+    input_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/mapping_" + config["ALIGNER"] + "/counting_"+config["COUNTER"] + "/countTables/"
 
 def main():
 
@@ -42,15 +40,15 @@ def combine_group(name_group, id_list):
     group_count['ID'] = id_list
 
     for sample in samples_group:
-        group_count["sample_" + str(sample)] = np.array(pd.read_table(input_path + "/" + str(sample) + "_count.tsv", header = None))[:, 1]
+        group_count["sample_" + str(sample)] = np.array(pd.read_table(input_path + str(sample) + "_count.tsv", header = None))[:, 1]
     
     # write to file
-    group_count.to_csv(output_path + "/countGroup/" + str(name_group) + "_gene_count.tsv", sep = "\t", header = True, index = False)
+    group_count.to_csv(input_path + str(name_group) + "_counts.tsv", sep = "\t", header = True, index = False)
 
 def get_id_list():
 
     # extract the id list from the count file
-    id_list = np.array(pd.read_table(input_path + '/' + str(samples[0]) + "_count.tsv", header = None))[:, 0]
+    id_list = np.array(pd.read_table(input_path + str(samples[0]) + "_count.tsv", header = None))[:, 0]
     return id_list
 
 

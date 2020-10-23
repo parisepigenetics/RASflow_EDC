@@ -1,31 +1,76 @@
 __default__:
   mem: 2000
+  name: snakejob
 
 qualityControl:
   mem: 6000
+  name: QC
 
 trim:
   mem: 6000
+  name: trimming
 
-alignment:
+hisat2:
   mem: 7000
+  name: hisat2
+
+star:
+  mem: 40000
+  name: star
 
 alignmentQC:
-  mem: 7000
+  mem: 10000
+  name: aligQC
 
 BigWig:
-  mem: 80000
+  mem: 10000
+  name: BigWig
 
 BigWigR:
-  mem: 80000
+  mem: 10000
+  name: BigWigR
 
 BigWigF:
-  mem: 80000
+  mem: 10000
+  name: BigWigF
 
 featureCount:
   mem: 10000
+  name: featureCount
 
 htseqCount:
   mem: 50000
+  name: htseqCount
 
+plot:
+  name: visualization
 
+BamIndex:
+  name: BamIndex
+
+PCA:
+  name: PCA
+
+summaryReport:
+  name: multiQC
+
+MappingReport:
+  name: multiQC
+
+DEA:
+  name: DEA
+
+quantify:
+  name: quantTrans
+
+trimstart:
+  name: trimStart
+
+trimend:
+  name: trimEnd
+
+getReads:
+  name: getReads
+
+starCount:
+  name: starCount

@@ -19,7 +19,7 @@
 ##SBATCH --mail-type=ALL
 
 ### Output
-#SBATCH --output=/shared/projects/lxactko_analyse/RASflow/slurm_output/Unlock-%j.out
+#SBATCH --output=Unlock-%j.out
 
 ################################################################################
 
@@ -32,10 +32,13 @@ echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
 
-start0=`date +%s`
-
 # modules loading
 module load snakemake/5.7.4 python slurm-drmaa
 
 # unlock 
 snakemake --unlock --drmaa -s workflow/quality_control.rules
+
+mkdir -p slurm_output
+mv Unlock-* slurm_output
+
+echo "Working directory unlocked"

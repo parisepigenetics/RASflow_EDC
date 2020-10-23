@@ -6,43 +6,34 @@ control = config["CONTROL"][0]
 treat = config["TREAT"][0]
 tool = config["DEATOOL"]
 reference = config["REFERENCE"]
-gene_level = config["GENE_LEVEL"]
+counter = config["COUNTER"]
+mapper = config["ALIGNER"]
+main_path = config["MAINPATH"]
 
-if reference == "transcriptome" and gene_level:
-    norm_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/trans/dea/countGroup"
-    if tool == "DESeq2": 
-        dea_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/trans/dea/DEA_DESeq2/gene-level"
-        output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/trans/dea/visualization_DESeq2"
-    if tool == "edgeR": 
-        dea_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/trans/dea/DEA_edgeR/gene-level"
-        output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/trans/dea/visualization_edgeR"
-
-
-elif reference == "genome":
-    norm_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea/countGroup"
-    if tool == "DESeq2":
-        dea_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea/DEA_DESeq2"
-        output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea/visualization_DESeq2"
-    if tool == "edgeR":
-        dea_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea/DEA_edgeR"
-        output_path = config["FINALOUTPUT"] + "/" + config["PROJECT"] + "/genome/dea/visualization_edgeR"
-
+if reference == "genome":
+    dea_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/mapping_" + mapper + "/counting_"+counter+"/DEA_"+tool+"/Tables"
+    output_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/mapping_" + mapper + "/counting_"+counter+"/DEA_"+tool+"/Report/plots"
+    count_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/mapping_" + mapper + "/counting_"+counter+"/countTables"
 
 rule end:
         input:
             volcano = output_path + "/volcano_plot_" + control + "_" + treat + ".pdf",
-            heatmap = output_path + "/heatmap_" + control + "_" + treat + ".pdf"
+            heatmap = output_path + "/heatmapTop_" + control + "_" + treat + ".pdf",
+            pca = output_path + "/PCA_" + control + "_" + treat + ".pdf"
 
 rule plot:
         input:
-            norm_path = norm_path,
-            dea_path = dea_path
+            dea_path = dea_path,
+            count_path = count_path
         output:
             volcano = output_path + "/volcano_plot_" + control + "_" + treat + ".pdf",
-            heatmap = output_path + "/heatmap_" + control + "_" + treat + ".pdf"
+            heatmap = output_path + "/heatmapTop_" + control + "_" + treat + ".pdf",
+            pca = output_path + "/PCA_" + control + "_" + treat + ".pdf"
         conda:
             "env.yaml"
         params:
-            output_path = directory(output_path)
+            output_path = directory(output_path),
+            mp = main_path
         shell:
-            "Rscript scripts/visualize.R {input.norm_path} {input.dea_path} {params.output_path}"
+            "Rscript {params.mp}scripts/visualize.R {input.dea_path} {input.count_path} {params.output_path}"
+            

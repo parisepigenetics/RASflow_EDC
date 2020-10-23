@@ -3,10 +3,12 @@
 ################################ Slurm options #################################
 
 ### Job name
-##SBATCH --job-name=QC
+#SBATCH --job-name=RASflow
 
 ### Output
-##SBATCH --output=/shared/projects/YourProjectName/RASflow_IFB/slurm_output/QC-%j.out
+#SBATCH --output=RASflow-%j.out  # both STDOUT and STDERR
+##SBATCH -o slurm.%N.%j.out  # STDOUT file with the Node name and the Job ID
+##SBATCH -e slurm.%N.%j.err  # STDERR file with the Node name and the Job ID
 
 ### Limit run time "days-hours:minutes:seconds"
 #SBATCH --time=24:00:00
@@ -31,7 +33,7 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_IFB version: v0.2'
+echo 'RASflow_IFB version: v0.4'
 echo '-------------------------'
 echo 'Main module versions:'
 
@@ -39,17 +41,26 @@ echo 'Main module versions:'
 start0=`date +%s`
 
 # modules loading
-module load snakemake python conda slurm-drmaa
+module purge
+module load conda snakemake slurm-drmaa
+conda --version
 python --version
 echo 'snakemake' && snakemake --version
-conda --version
+
 echo '-------------------------'
+echo 'PATH:'
+echo $PATH
+echo '-------------------------'
+
 # remove display to make qualimap run:
 unset DISPLAY
 
 # What you actually want to launch
-python /shared/projects/YourProjectName/RASflow_IFB/main_cluster.py
+python main_cluster.py ifb
 
+# move logs
+mkdir -p slurm_output
+mv *.out slurm_output
 
 echo '########################################'
 echo 'Job finished' $(date --iso-8601=seconds)
