@@ -1,4 +1,4 @@
-# load the libraries
+# load the librariesdea.path
 library(yaml)
 library(hash)
 library(mygene)
@@ -12,10 +12,9 @@ library(DESeq2)
 
 # passing the params from command line
 args <- commandArgs(TRUE)
-norm.path <- args[1]
-dea.path <- args[2]
-counts.path <- args[3]
-out.path <- args[4]
+dea.path <- args[1]
+counts.path <- args[2]
+out.path <- args[3]
 
 # load the config file
 yaml.file <- yaml.load_file('configs/config_main.yaml')
@@ -43,10 +42,9 @@ num.comparison <- num.control
 plot.volcano.heatmap <- function(name.control, name.treat) {
   message(paste("---------------","Comparing groups", name.control, "and",  name.treat, "---------------", sep=" "))
   file.dea.table <- paste(dea.path, "/dea_", name.control, "_", name.treat, ".tsv", sep = "")
-  norm.control <- paste(norm.path, "/", name.control, "_gene_norm.tsv", sep = "")  # normalized table of control
-  norm.treat <- paste(norm.path, "/", name.treat, "_gene_norm.tsv", sep = "")  # normalized table of treat
-
+  norm <- paste(dea.path, "/", name.control, '_', name.treat, '_NormCounts.tsv', sep = "")
   dea.table <- read.table(file.dea.table, header = TRUE, row.names = 1)
+    
   # sort the dea table: ascending of FDR then descending of absolute valued of logFC
   if (dea.tool == 'edgeR') {
     dea.table <- dea.table[order(dea.table$FDR, -abs(dea.table$logFC), decreasing = FALSE), ]  
@@ -94,14 +92,22 @@ plot.volcano.heatmap <- function(name.control, name.treat) {
   dev.off()
 
   # heatmap
-  norm.table.control <- read.table(norm.control, header = TRUE, row.names = 1)
-  norm.table.treat <- read.table(norm.treat, header = TRUE, row.names = 1)
+  #norm.table.control <- read.table(norm.control, header = TRUE, row.names = 1)
+  #norm.table.treat <- read.table(norm.treat, header = TRUE, row.names = 1)
+  
+  norm.table <- read.table(norm, header = TRUE, row.names = 1)
+    
+  #num.control <- dim(norm.table.control)[2]
+  #num.treat <- dim(norm.table.treat)[2]
 
-  num.control <- dim(norm.table.control)[2]
-  num.treat <- dim(norm.table.treat)[2]
-
-  norm.table <- cbind(norm.table.control, norm.table.treat)
+  #norm.table <- cbind(norm.table.control, norm.table.treat)
   groups <- c(name.control, name.treat)
+  splan.control <- splan[splan$group %in% c(name.control), ]
+  #samples.control <- row.names(splan.control)
+  splan.treat <- splan[splan$group %in% c(name.treat), ]
+  #samples.treat <- row.names(splan.treat)
+  num.control <- nrow(splan.control) 
+  num.treat <- nrow(splan.treat)  
 
   # instead using all genes, only use the top 20 genes in dea.table
   id2 <- row.names(dea.table)
@@ -121,13 +127,9 @@ plot.volcano.heatmap <- function(name.control, name.treat) {
   }
 
   palette <- c("#000000ac", "#9d9d9dff")
-  palette.group <- c(rep(palette[1], num.control), rep(palette[2], num.treat))
+  palette.group <- c(rep(palette[1], num.control), rep(palette[2], num.treat)) # number of cotr/treat samples -> need metadata
 
   ## draw heatmap
- # pdf(file = file.path(out.path, paste('heatmap_', name.control, '_', name.treat, '.pdf', sep = '')), width = 15, height = 12, title = 'Heatmap using the top features')
-  #heatmap(as.matrix(norm.table.deg), ColSideColors = palette.group, margins = c(9,5.5), labRow = gene.norm.table, cexRow = 1.9, cexCol = 1.9)
-  #legend("topleft", title = 'Group', legend=groups, text.font = 15,
-  #       col = palette, fill = palette, cex=1.8)
 
   pdf(file = file.path(out.path, paste('heatmapTop_', name.control, '_', name.treat, '.pdf', sep = '')), width = 15, height = 15, title = 'Heatmap using the top features')
   heatmap.2(as.matrix(norm.table.deg), col=brewer.pal(11,"RdBu"),scale="row", trace="none", ColSideColors = palette.group, margins = c(20,18), labRow = gene.norm.table, cexRow = 1.9, cexCol = 1.9)

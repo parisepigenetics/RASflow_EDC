@@ -40,10 +40,6 @@ print("Which mapping reference will be used?\n", reference)
 dea = config["DEA"]
 print("Is DEA required?\n", dea)
 
-## Do you want to visualize the results of DEA?
-visualize = config["VISUALIZE"]
-print("Is visualization required?\n", visualize)
-
 # Start the workflow
 print("Start RASflow on project: " + project)
 
@@ -121,11 +117,10 @@ else:
             file_main_time.write("Time of running DEA genome based: " + spend_time(start_time, end_time) + "\n")
         print("DEA is done! ("+spend_time(start_time, end_time)+")")
 
-        if visualize=='yes':
-            # Visualization can only be done on gene-level
-            if reference == "genome":
+        # Visualization can only be done on gene-level
+        if reference == "genome":
                 pass
-            elif reference == "transcriptome":
+        elif reference == "transcriptome":
                 gene_level = config["GENE_LEVEL"]
                 if gene_level:
                     pass
@@ -133,15 +128,14 @@ else:
                     print("Sorry! RASflow currently can only visualize on gene-level")
                     os._exit(1)
 
-            print("Start visualization of DEA results!")
-            start_time = time.time()
-            os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem} -J {cluster.name}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs=30 -s "+MainPath+"workflow/visualize.rules 2> logs/"+time_string+"_visualize.txt")
-            end_time = time.time()
-            file_main_time.write("Time of running visualization: " + spend_time(start_time, end_time) + "\n")
-            print("Visualization is done! ("+spend_time(start_time, end_time)+")")
-            print("RASflow is done!")
-        else:
-            print("Visualization is not required and RASflow is done!")
+        print("Start visualization of DEA results!")
+        start_time = time.time()
+        #os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem} -J {cluster.name}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs=30 -s "+MainPath+"workflow/visualize.rules 2> logs/"+time_string+"_visualize.txt")
+        end_time = time.time()
+        file_main_time.write("Time of running visualization: " + spend_time(start_time, end_time) + "\n")
+        print("Visualization is done! ("+spend_time(start_time, end_time)+")")
+        print("RASflow is done!")
+        
     else:
         print("DEA is not required and RASflow is done!")
 

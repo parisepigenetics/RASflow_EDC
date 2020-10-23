@@ -1,6 +1,9 @@
 # Tutorial RASflow on IFB core cluster
 
-<small>Maintained by [Magali Hennion](mailto:hennion@ens.fr). Last update : 07/09/2020.</small>
+<br>
+<br>
+
+<small>Maintained by [Magali Hennion](mailto:hennion@ens.fr). Last update : 25/09/2020.</small>
 
 RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhang](https://doi.org/10.1186/s12859-020-3433-x). It has been modified to run effectively on IFB core cluster and to fit our specific needs. Moreover, several tools were added. If you encounter troubles or need additional tools or features, you can create an issue on the [GitHub repository](https://github.com/parisepigenetics/RASflow_IFB/issues), or email directly [Magali](mailto:hennion@ens.fr). 
 

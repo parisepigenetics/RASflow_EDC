@@ -20,9 +20,6 @@ REFERENCE: genome  # "genome" or "transcriptome", I haven't implemented transcri
 ## Do you want to do Differential Expression Analysis (DEA)?
 DEA: yes  # "yes" or "no"
 
-## Do you want to visualize the results of DEA?
-VISUALIZE: yes  # "yes" or "no"
-
 # ================== Shared parameters for some or all of the sub-workflows ==================
 
 ## key file if the data is stored remotely, otherwise leave it empty

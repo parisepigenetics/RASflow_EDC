@@ -11,10 +11,9 @@ mapper = config["ALIGNER"]
 main_path = config["MAINPATH"]
 
 if reference == "genome":
-    norm_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/" + mapper + "/dea_"+counter+"/Norm_"+tool
-    dea_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/" + mapper + "/dea_"+counter+"/DEA_"+tool
-    output_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/" + mapper + "/dea_"+counter+"/visualization_"+tool
-    count_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/" + mapper + "/countFile_"+counter
+    dea_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/mapping_" + mapper + "/counting_"+counter+"/DEA_"+tool+"/Tables"
+    output_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/mapping_" + mapper + "/counting_"+counter+"/DEA_"+tool+"/Report/plots"
+    count_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/mapping_" + mapper + "/counting_"+counter+"/countTables"
 
 rule end:
         input:
@@ -24,7 +23,6 @@ rule end:
 
 rule plot:
         input:
-            norm_path = norm_path,
             dea_path = dea_path,
             count_path = count_path
         output:
@@ -37,5 +35,5 @@ rule plot:
             output_path = directory(output_path),
             mp = main_path
         shell:
-            "Rscript {params.mp}scripts/visualize.R {input.norm_path} {input.dea_path} {input.count_path} {params.output_path}"
+            "Rscript {params.mp}scripts/visualize.R {input.dea_path} {input.count_path} {params.output_path}"
             
