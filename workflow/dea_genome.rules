@@ -37,7 +37,21 @@ rule PCA:
         mp = main_path
     shell:
         "Rscript {params.mp}scripts/pca.R {params.input_path}"
-
+        
+        
+rule combineSamples:
+    input:
+        countF = expand(input_path +"/countTables/{sample}_count.tsv", sample=samples)
+    output:
+        groupCount = expand(input_path + "/countTables/{group}_counts.tsv", group = groups)
+    conda:
+        "env.yaml"
+    params:
+        mp = main_path
+    shell:
+        "python {params.mp}scripts/combine2group_genome.py"
+        
+        
 rule DEA:
     input:
         groupCount = expand(input_path + "/countTables/{group}_counts.tsv", group = groups)

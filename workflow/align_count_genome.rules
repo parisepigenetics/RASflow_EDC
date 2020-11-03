@@ -25,18 +25,14 @@ if bwStranded == "no" or bwStranded==False:
         input:
             report = final_path + "/report_align_count_"+counter+".html",
             bw = expand(final_path + "/bw/{sample}.bw", sample = samples),
-            pca = final_path + "/counting_"+ counter + "/PCA.pdf",
-            groupCount = expand(final_path + "/counting_"+ counter + "/countTables/{group}_counts.tsv", group = groups)
-
+            pca = final_path + "/counting_"+ counter + "/PCA.pdf"
 if bwStranded == "yes" or bwStranded==True:
     rule end:
         input:
             pca = final_path + "/counting_"+ counter + "/PCA.pdf",
             report = final_path + "/report_align_count_"+counter+".html",
             bw_fw = expand(final_path + "/bw_str/{sample}_fw.bw", sample=samples),
-            bw_rv = expand(final_path + "/bw_str/{sample}_rv.bw", sample=samples),
-            groupCount = expand(final_path + "/counting_"+ counter + "/countTables/{group}_counts.tsv", group = groups)
-
+            bw_rv = expand(final_path + "/bw_str/{sample}_rv.bw", sample=samples)
 if bwStranded == "both":
     rule end:
         input:
@@ -44,9 +40,7 @@ if bwStranded == "both":
             report = final_path + "/report_align_count_"+counter+".html",
             bw_fw = expand(final_path + "/bw_str/{sample}_fw.bw", sample=samples),
             bw_rv = expand(final_path + "/bw_str/{sample}_rv.bw", sample=samples),
-            bw = expand(final_path + "/bw/{sample}.bw", sample = samples),
-            groupCount = expand(final_path + "/counting_"+ counter + "/countTables/{group}_counts.tsv", group = groups)
-
+            bw = expand(final_path + "/bw/{sample}.bw", sample = samples)
 
 if end == "pair":
     rule getReads:
@@ -297,17 +291,6 @@ if counter == "STARcount":
             shell:
                 "grep N_ {input.counts} > {output.count_summary} && sed '/N_/ d' {input.counts} | awk '{{print $1\"\t\"$4}}' > {output.countF}"
 
-rule combineSamples:
-    input:
-        sampleCount = expand(final_path + "/counting_"+ counter + "/countTables/{sample}_count.tsv", sample = samples)
-    output:
-        groupCount = expand(final_path + "/counting_"+ counter + "/countTables/{group}_counts.tsv", group = groups)
-    conda:
-        "env.yaml"
-    params:
-        mp = main_path
-    shell:
-        "python {params.mp}scripts/combine2group_genome.py"
 
 rule PCA:
     input:

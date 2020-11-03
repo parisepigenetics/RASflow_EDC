@@ -144,7 +144,7 @@ file_main_time.close()
 
 print("########################################")
 print("---- Errors ----")
-returned_output = subprocess.check_output(["grep -A 5 -B 5 'error message\|error:\|Errno' logs/"+time_string+"*;exit 0"], shell=True)
+returned_output = subprocess.check_output(["grep -A 5 -B 5 'error message\|error:\|Errno\|MissingInputException' logs/"+time_string+"*;exit 0"], shell=True)
 if returned_output == b'' : 
     print("There were no errors ! It's time to look at your results, enjoy!")
 else : 
