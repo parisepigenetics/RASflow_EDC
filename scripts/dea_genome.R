@@ -15,6 +15,7 @@ library(DEFormats)
 # ====================== define the function of DEA ======================
 
 DEA <- function(control, treat) {
+  message("###############################################################################################")
   message(paste("---------------","Comparing groups", control, "and",  treat, "---------------", sep=" "))  
   count.control <- read.table(paste(counts_path, control, '_counts.tsv', sep = ''), header = TRUE, row.names = 1)
   count.treat <- read.table(paste(counts_path, treat, '_counts.tsv', sep = ''), header = TRUE, row.names = 1)
@@ -165,8 +166,10 @@ DEA <- function(control, treat) {
     ## saveRDS(object = dds, file = paste(output.path, '/DEA_DESeq2/dds_', control, '_', treat, '.rds', sep = ''))      
 
     ## make a report
+    gc()  # I added this command because I add an error "reached elapsed time limit" for some datasets
     report <- DESeq2Report(dds, "DESeq2-report", outdir = paste(output.path,'Report/regionReport/', control, '_', treat, sep = ''),intgroup = c("group"))
     message(paste("---------------","Report for DEA between ", control, "and",  treat, "exported ---------------", sep=" "))
+    #message(paste("---------------","skipping Report for DEA between ", control, "and",  treat, " ---------------", sep=" "))
 
     ## export the results
     contrast <- c("group",treat,control)

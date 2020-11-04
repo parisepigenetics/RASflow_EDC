@@ -128,12 +128,6 @@ else:
                     print("Sorry! RASflow currently can only visualize on gene-level")
                     os._exit(1)
 
-        print("Start visualization of DEA results!")
-        start_time = time.time()
-        #os.system("snakemake -k --cluster-config cluster.yml --drmaa \" --mem={cluster.mem} -J {cluster.name}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs=30 -s "+MainPath+"workflow/visualize.rules 2> logs/"+time_string+"_visualize.txt")
-        end_time = time.time()
-        file_main_time.write("Time of running visualization: " + spend_time(start_time, end_time) + "\n")
-        print("Visualization is done! ("+spend_time(start_time, end_time)+")")
         print("RASflow is done!")
         
     else:
@@ -144,10 +138,13 @@ file_main_time.close()
 
 print("########################################")
 print("---- Errors ----")
-returned_output = subprocess.check_output(["grep -A 5 -B 5 'error message\|error:\|Errno\|MissingInputException' logs/"+time_string+"*;exit 0"], shell=True)
+returned_output = subprocess.check_output(["grep -A 5 -B 5 'error message\|error:\|Errno\|MissingInputException\|SyntaxError' logs/"+time_string+"*;exit 0"], shell=True)
 if returned_output == b'' : 
     print("There were no errors ! It's time to look at your results, enjoy!")
 else : 
     decode = returned_output.decode("utf-8")
     print(decode.replace(".txt",".txt\t"))
 
+
+os.system("chmod -R 777 results 2>/dev/null")
+os.system("chmod -R 777 configs 2>/dev/null")
