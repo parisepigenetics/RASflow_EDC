@@ -1,6 +1,6 @@
 # Tutorial RASflow on IFB core cluster
 
-<small>Maintained by [Magali Hennion](mailto:hennion@ens.fr). Last update : 25/09/2020.</small>
+<small>Maintained by [Magali Hennion](mailto:hennion@ens.fr). Last update : 06/11/2020.</small>
 
 RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhang](https://doi.org/10.1186/s12859-020-3433-x). It has been modified to run effectively on IFB core cluster and to fit our specific needs. Moreover, several tools were added. If you encounter troubles or need additional tools or features, you can create an issue on the [GitHub repository](https://github.com/parisepigenetics/RASflow_IFB/issues), or email directly [Magali](mailto:hennion@ens.fr). 
 
@@ -37,9 +37,8 @@ RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhan
     + [Mapped reads](#mapped-reads)
     + [BigWig](#bigwig)
     + [Mapping QC](#mapping-qc)
-    + [Count Tables](#count-tables)
+    + [Counting](#counting)
     + [DEA results](#dea-results)
-      - [Visualization](#visualization)
   * [How to follow your jobs](#how-to-follow-your-jobs)
     + [Running jobs](#running-jobs)
     + [Information about past jobs](#information-about-past-jobs)
@@ -383,9 +382,6 @@ REFERENCE: genome  # "genome" or "transcriptome", I haven't implemented transcri
 
 ## Do you want to do Differential Expression Analysis (DEA)?
 DEA: yes  # "yes" or "no"
-
-## Do you want to visualize the results of DEA?
-VISUALIZE: yes  # "yes" or "no"
 ```
 
 **Nota: if `QC` is set to `yes`, the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set `QC` to `no`.**  
@@ -685,8 +681,6 @@ Which mapping reference will be used?
  genome
 Is DEA required?
  yes
-Is visualization required?
- yes
 Start RASflow on project: TIMING
 Start Trimming!
 Trimming is done! (0:00:18)
@@ -694,8 +688,6 @@ Start mapping using  genome  as reference!
 Mapping is done! (0:01:51)
 Start doing DEA!
 DEA is done! (0:00:17)
-Start visualization of DEA results!
-Visualization is done! (0:07:03)
 RASflow is done!
 ########################################
 ---- Errors ----
@@ -707,12 +699,11 @@ Job finished 2020-09-25T11:06:50+0200
 You can see at the end if this file if an error occured during the run. See [Errors](#having-errors).
 
 #### 2. **Snakefiles**
- There are 5 snakefiles (visible in the `workflow` folder) that correspond to the different steps of the analysis:
+ There are 4 snakefiles (visible in the `workflow` folder) that correspond to the different steps of the analysis:
   - quality_control.rules (QC)
   - trim.rules (reads trimming/filtering)
   - align_count_genome.rules (mapping and counting)
   - dea_genome.rules (differential gene expression)
-  - visualize.rules (plots)
 
 The Slurm outputs of those different steps are stored in the `logs` folder and named as the date plus the corresponding snakefile: for instance
 `20200615_1540_trim.txt` or  `20200615_1540_align_count_genome.txt`. 
@@ -831,7 +822,6 @@ Start time: Mon Jun 15 15:40:13 2020
 Time of running trimming: 0:00:12
 Time of running genome alignment: 0:08:43
 Time of running DEA genome based: 0:01:32
-Time of running visualization: 0:00:01
 Finish time: Mon Jun 15 15:50:43 2020
 ```
 
@@ -973,7 +963,7 @@ Some reference files are shared between cluster users. Before downloading a new 
 30 directories, 0 files
 ```
 
-If you don't find what you need, you can ask for it on [IFB community support](https://community.france-bioinformatique.fr/). In case you don't have a quick answer, you can download or produce the indexes you need in your folder (and remove it when it's available in the common banks). 
+If you don't find what you need, you can ask for it on [IFB community support](https://community.france-bioinformatique.fr/). In case you don't have a quick answer, you can download (for instance [here](http://refgenomes.databio.org/)) or produce the indexes you need in your folder (and remove it when it's available in the common banks). 
 
 **HISAT2 indexes** can be found [here](http://daehwankimlab.github.io/hisat2/download/). Right click on the file you need and copy the link. Then paste the link to `wget`. When downloading is over, you have to decompress the file. 
 
@@ -1044,7 +1034,7 @@ Two other counters are available:
 
 - featureCounts ([SubReads package](http://subread.sourceforge.net/)) 
 
-Both are now running with default parameters. I will implement more parameters. Beside the methode that is a bit different, HTseq-count is much slower at the moment (several hours for a human RNAseq sample) than featureCounts (~10 min). This is because HTseq count is not parallelizable yet. featureCounts is very fast, but needs a lot of free storage space (I measure at least 150 Go) that is used temporarily. As at the moment the default projet quota in 500 Go you might be exceeding the space you have (and may or may not get error messages). So if featureCounts fails, try removing files to get more space, or ask to increase your quota on [Community support](https://community.cluster.france-bioinformatique.fr). To see the space you have you can run:
+Both are now running with default parameters. I will implement more parameters. Beside the methode that is a bit different, HTseq-count is much slower at the moment (several hours for a human RNAseq sample) than featureCounts (~10 min). This is because HTseq count is not parallelizable yet. featureCounts is very fast, but needs a lot of free storage space (I measure at least 150 Go to process ~100 Go of bam) that is used temporarily. As at the moment the default projet quota in 500 Go you might be exceeding the space you have (and may or may not get error messages). So if featureCounts fails, try removing files to get more space, or ask to increase your quota on [Community support](https://community.cluster.france-bioinformatique.fr). To see the space you have you can run:
 
 ``` 
 [username@clust-slurm-client RASflow_IFB]$ du -h --max-depth=1 /shared/projects/YourProjectName/
@@ -1119,16 +1109,22 @@ RESULTPATH: /shared/projects/YourProjectName/RASflow_IFB/results
 
 ```bash
 [username@clust-slurm-client RASflow_IFB]$ tree -L 2 results/EXAMPLE/
+├── fastqc
+│   ├── D197-D192T27_fw_fastqc.html
+│   ├── D197-D192T27_fw_fastqc.zip
+│   ├── D197-D192T27_rv_fastqc.html
+│   ├── D197-D192T27_rv_fastqc.zip
+|   ... 
 ├── fastqc_after_trimming
 │   ├── report_quality_control_after_trimming_data
 │   └── report_quality_control_after_trimming.html
-└── hisat2
+└── mapping_hisat2
+    ├── alignmentQC
     ├── bw
     ├── bw_str
-    ├── countFile_featureCounts
-    ├── dea_featureCounts
-    ├── report_count_featureCounts_data
-    └── report_count_featureCounts.html
+    ├── counting_featureCounts
+    ├── report_align_count_featureCounts_data
+    └── report_align_count_featureCounts.html
 
 8 directories, 2 files
 ```
@@ -1231,21 +1227,21 @@ As previously **MultiQC** gives a summary for all the samples. It can be found i
 Nota: I will modify to have all the fastQC results in this folder.
 
 ### Mapped reads
-The mapped reads are stored as sorted bam in the data folder, in our example in `data/EXAMPLE/ALIGNER/bamFileSort`, together with their `.bai` index. They can be visualized using a genome browser such as [IGV](http://software.broadinstitute.org/software/igv/home) but this is not very convenient as the files are heavy. [BigWig](https://deeptools.readthedocs.io/en/develop/content/tools/bamCoverage.html) files, that summarize the information converting the individual read positions into a number of reads per bin of a given size, are more adapted. 
+The mapped reads are stored as sorted bam in the data folder, in our example in `data/EXAMPLE/mapping_ALIGNER/bamFileSort`, together with their `.bai` index. They can be visualized using a genome browser such as [IGV](http://software.broadinstitute.org/software/igv/home) but this is not very convenient as the files are heavy. [BigWig](https://deeptools.readthedocs.io/en/develop/content/tools/bamCoverage.html) files, that summarize the information converting the individual read positions into a number of reads per bin of a given size, are more adapted. 
 
 ### BigWig
-To facilitate visualization on a genome browser, [BigWig](https://deeptools.readthedocs.io/en/develop/content/tools/bamCoverage.html) files are generated (window size of 50 bp). There are in `results/EXAMPLE/ALIGNER/bw`. If you have generated stranded BigWig, they are in  `results/EXAMPLE/ALIGNER/bw_str`. 
+To facilitate visualization on a genome browser, [BigWig](https://deeptools.readthedocs.io/en/develop/content/tools/bamCoverage.html) files are generated (window size of 50 bp). There are in `results/EXAMPLE/mapping_ALIGNER/bw`. If you have generated stranded BigWig, they are in  `results/EXAMPLE/mapping_ALIGNER/bw_str`. 
 If not already done, you can specifically get the BigWig files on your computer running:
 
 ```
-You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/results/EXAMPLE/ALIGNER/bw_str PathTo/WhereYouWantToSave/
+You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/results/EXAMPLE/mapping_ALIGNER/bw_str PathTo/WhereYouWantToSave/
 ```
 
 ![igv_RF.png](Tuto_pictures/igv_RF.png)
 
 
 ### Mapping QC
-[Qualimap](http://qualimap.bioinfo.cipf.es/) is used to check the mapping quality. You'll find qualimap reports in `results/EXAMPLE/ALIGNER/alignmentQC`. Those reports contain a lot of information:
+[Qualimap](http://qualimap.bioinfo.cipf.es/) is used to check the mapping quality. You'll find qualimap reports in `results/EXAMPLE/mapping_ALIGNER/alignmentQC`. Those reports contain a lot of information:
 - information about the mapper
 - number and % of mapped reads/pairs
 - number of indels and mismatches
@@ -1256,26 +1252,54 @@ You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/sha
 If not already done, you can get the files on your computer running:
 
 ```
-You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/results/EXAMPLE/ALIGNER/alignmentQC PathTo/WhereYouWantToSave/
+You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/results/EXAMPLE/mapping_ALIGNER/alignmentQC PathTo/WhereYouWantToSave/
 ```
 
-Once again **MultiQC** aggregates the results of all the samples and you can have a quick overview by looking at `results/EXAMPLE/ALIGNER/report_align_count_COUNTER.html`. 
+Once again **MultiQC** aggregates the results of all the samples and you can have a quick overview by looking at `results/EXAMPLE/mapping_ALIGNER/report_align_count_COUNTER.html`. 
 
-### Count Tables
+### Counting
 
-The count tables can be found in `results/EXAMPLE/ALIGNER/countFile_COUNTER/`. The `count.tsv` files are the tables
+Counting results are saved in `results/EXAMPLE/mapping_ALIGNER/counting_COUNTER`. 
+```
+[username@clust-slurm-client RASflow_IFB]$ tree results/EXAMPLE/mapping_hisat2/counting_featureCounts/
+results/EXAMPLE/mapping_hisat2/counting_featureCounts/
+├── countTables
+│   ├── D197-D192T27_count.tsv
+│   ├── D197-D192T27_table.tsv
+│   ├── D197-D192T27_table.tsv.summary
+│   ├── D197-D192T28_count.tsv
+│   ├── D197-D192T28_table.tsv
+│   ├── D197-D192T28_table.tsv.summary
+|   |...
+├── heatmap.pdf
+└── PCA.pdf
+```
 
-`GeneID  counts`
+The count tables can be found in `countTables` folder. The `count.tsv` files are the tables with raw, not normalized counts. 
+
+|GeneID | counts |
+|-------|--------|
+|-------|--------|
 
 The `.summary` contains information about the reads that couldn't be attributed to a feature:
 
 ```
-[username@clust-slurm-client RASflow_IFB]$ cat results/EXAMPLE/hisat2/countFile_htseq-count/D197-D192T27_table.tsv.summary
-__no_feature	2577896
-__ambiguous	7760223
-__too_low_aQual	2567823
-__not_aligned	350693
-__alignment_not_unique	7726115
+[username@clust-slurm-client RASflow_IFB]$ cat results/EXAMPLE/mapping_hisat2/featureCounts/countTables/D197-D192T27_table.tsv.summary
+Status	/shared/projects/bi4edc/RASflow_IFB/data/TIMING/hisat2/bamFileSort/D197-D192T27.sort.bam
+Assigned	51236995
+Unassigned_Unmapped	265300
+Unassigned_Read_Type	0
+Unassigned_Singleton	0
+Unassigned_MappingQuality	0
+Unassigned_Chimera	0
+Unassigned_FragmentLength	0
+Unassigned_Duplicate	0
+Unassigned_MultiMapping	21778669
+Unassigned_Secondary	0
+Unassigned_NonSplit	0
+Unassigned_NoFeatures	1791248
+Unassigned_Overlapping_Length	0
+Unassigned_Ambiguity	16081650
 ```
 
 In addition, 2 PDF are generated: 
@@ -1287,56 +1311,88 @@ In addition, 2 PDF are generated:
 - `Heatmap.pdf` with a heatmap of sample distances 
 <img src="Tuto_pictures/SampleHeatmap.png" alt="drawing" width="600"/>
 
-MultiQC is run after the counting, looking at `report_align_count_COUNTER.html` in `results/EXAMPLE/ALIGNER/` will help you to check that everything went fine. 
+MultiQC is run after the counting, looking at `report_align_count_COUNTER.html` in `results/EXAMPLE/mapping_ALIGNER/` will help you to check that everything went fine. 
 
 ![htseq](Tuto_pictures/htseq_assignment_plot.png)
 
 
 ### DEA results
 
-DEA results are in `results/EXAMPLE/ALIGNER/dea_COUNTER`.
+DEA results are in `results/EXAMPLE/mapping_ALIGNER/counting_COUNTER/DEA_DEATOOL`.
 
 ```
-[username@clust-slurm-client RASflow_IFB]$ tree results/EXAMPLE/hisat2/dea_featureCounts/
-results/EXAMPLE/hisat2/dea_featureCounts/
-├── countGroup
-│   ├── J0_KO_gene_count.tsv
-│   ├── J0_WT_gene_count.tsv
-|   ...
-├── DEA_edgeR
-│   ├── dea_J0_KO_J10_KO.tsv
-│   ├── dea_J0_WT_J0_KO.tsv
-|   ...
-├── Norm_edgeR
-│   ├── J0_KO_gene_norm.tsv
-│   ├── J0_WT_gene_norm.tsv
-│   ├── J10_KO_gene_norm.tsv
-│   └── J10_WT_gene_norm.tsv
-├── Report_edgeR
-│   ├── J0_KO_J10_KO
-│   │   ├── edgeRexploration.bib
-│   │   └── edgeRexploration.html
-│   ├── J0_WT_J0_KO
-│   │   ├── edgeRexploration.bib
-│   │   └── edgeRexploration.html
-│  ...
-└── visualization_edgeR
-    ├── heatmap_J0_KO_J10_KO.pdf
-    ├── heatmap_J0_WT_J0_KO.pdf
-    ├── volcano_plot_J0_KO_J10_KO.pdf
-    ├── volcano_plot_J0_WT_J0_KO.pdf
-    ...
+[username@clust-slurm-client RASflow_IFB]$ tree -L 2 results/EXAMPLE/mapping_hisat2/counting_featureCounts/DEA_DESeq2/
+results/EXAMPLE/mapping_hisat2/counting_featureCounts/DEA_DESeq2/
+├── Report
+│   ├── Glimma
+│   ├── plots
+│   └── regionReport
+└── Tables
+    ├── dea_J0_KO_J10_KO.tsv
+    ├── dea_J0_WT_J0_KO.tsv
+    ├── dea_J0_WT_J10_WT.tsv
+    ├── dea_J10_WT_J10_KO.tsv
+    ├── deg_J0_KO_J10_KO.tsv
+    ├── deg_J0_WT_J0_KO.tsv
+    ├── deg_J0_WT_J10_WT.tsv
+    ├── deg_J10_WT_J10_KO.tsv
+    ├── J0_KO_J10_KO_NormCounts.tsv
+    ├── J0_WT_J0_KO_NormCounts.tsv
+    ├── J0_WT_J10_WT_NormCounts.tsv
+    └── J10_WT_J10_KO_NormCounts.tsv
 ```
 
-- In `results/EXAMPLE/ALIGNER/dea_COUNTER/countGroup/` are raw count tables per group (`group_gene_count.tsv`).  
-- Normalized counts can be found in `Norm_DESeq2/` or `Norm_edgeR/`. 
-- In `results/EXAMPLE/ALIGNER/dea_COUNTER/DEA_DESeq2` or `DEA_edgeR`, you'll find the results for each pair of conditions: 
+- In `Tables` folder are normalized count tables (`..._NormCounts.tsv`), as well as 
+DEA results for each pair of conditions: 
     - dea_J0_WT_J0_KO.tsv contains differential expression for all genes
     - deg_J0_WT_J0_KO.tsv contains only the genes differentially expressed (FDR < 0.05)
 
-#### Visualization
 
-A report is generated by [regionReport](http://leekgroup.github.io/regionReport/reference/index.html) using `DESeq2Report()` or `edgeReport()` for each pair of conditions. Those reports can be found in `results/EXAMPLE/ALIGNER/dea_COUNTER/Report_DESeq2` or `Report_edgeR`. 
+- In `Report`, you'll find visual outputs and a summarizing report (ON GOING work). 
+
+```
+[username@clust-slurm-client RASflow_IFB]$ tree -L 2 results/EXAMPLE/mapping_hisat2/counting_featureCounts/DEA_DESeq2/Report/
+results/EXAMPLE/mapping_hisat2/counting_featureCounts/DEA_DESeq2/Report/
+├── Glimma
+│   ├── css
+│   ├── js
+│   ├── MDPlot_J0_KO_J10_KO.html
+│   ├── MDPlot_J0_WT_J0_KO.html
+│   ├── MDPlot_J0_WT_J10_WT.html
+│   ├── MDPlot_J10_WT_J10_KO.html
+│   ├── MDSPlot_J0_KO_J10_KO.html
+│   ├── MDSPlot_J0_WT_J0_KO.html
+│   ├── MDSPlot_J0_WT_J10_WT.html
+│   ├── MDSPlot_J10_WT_J10_KO.html
+│   ├── Volcano_J0_KO_J10_KO.html
+│   ├── Volcano_J0_WT_J0_KO.html
+│   ├── Volcano_J0_WT_J10_WT.html
+│   └── Volcano_J10_WT_J10_KO.html
+├── plots
+│   ├── heatmapTop_J0_KO_J10_KO.pdf
+│   ├── heatmapTop_J0_WT_J0_KO.pdf
+│   ├── heatmapTop_J0_WT_J10_WT.pdf
+│   ├── heatmapTop_J10_WT_J10_KO.pdf
+│   ├── PCA_J0_KO_J10_KO.pdf
+│   ├── PCA_J0_WT_J0_KO.pdf
+│   ├── PCA_J0_WT_J10_WT.pdf
+│   ├── PCA_J10_WT_J10_KO.pdf
+│   ├── SampleDistances_J0_KO_J10_KO.pdf
+│   ├── SampleDistances_J0_WT_J0_KO.pdf
+│   ├── SampleDistances_J0_WT_J10_WT.pdf
+│   ├── SampleDistances_J10_WT_J10_KO.pdf
+│   ├── volcano_plot_J0_KO_J10_KO.pdf
+│   ├── volcano_plot_J0_WT_J0_KO.pdf
+│   ├── volcano_plot_J0_WT_J10_WT.pdf
+│   └── volcano_plot_J10_WT_J10_KO.pdf
+└── regionReport
+    ├── J0_KO_J10_KO
+    ├── J0_WT_J0_KO
+    ├── J0_WT_J10_WT
+    └── J10_WT_J10_KO
+```
+
+In `regionReport` you'll find a report generated by [regionReport](http://leekgroup.github.io/regionReport/reference/index.html) using `DESeq2Report()` or `edgeReport()` for each pair of conditions. 
 
 Those files may help you to show your results to your collaborators. It contains interesting plots, such as 
 
@@ -1368,13 +1424,29 @@ and information about all the tools used to facilitate reproducibility.
 
 <img src="Tuto_pictures/repro.png" alt="drawing" width="500"/>
 
-Additional figures can be found in `results/EXAMPLE/ALIGNER/dea_COUNTER/visualization_DESeq2/` or `visualization_edgeR/`. You'll find for each pair of conditions:
+</br></br>
+Additional figures can be found in `plots` folder. You'll find for each pair of conditions:
 - Volcano plots representing differential expression 
 ![volcano_plot2_J0_WT_J10_WT.pdf.png](Tuto_pictures/volcano_plot2_J0_WT_J10_WT.pdf.png)
 - A heatmap of the 20 most regulated genes
 ![heatmap2_J0_WT_J10_WT_1.pdf.png](Tuto_pictures/heatmap2_J0_WT_J10_WT_1.pdf.png)
 - PCA plots (as in the report)
 - Sample-to-sample distance heatmaps (as in the report)
+
+Finally in `Glimma` folder, you'll find interactive plots made with [Glimma](https://github.com/Shians/Glimma) that will help you to explore the results: 
+- The MDS plot is an improved PCA representation
+![MDS-click.gif](Tuto_pictures/MDS-click.gif)
+- MD plots represent all the genes with the fold change as a function of the average expression. You can click on the points and see the corresponding normalised expression on the right.
+![point-click.gif](Tuto_pictures/point-click.gif)
+And search in the bar for your favorite gene.
+![table-search.gif](Tuto_pictures/table-search.gif)
+- Volcano plots, with the same functionalities as the MD plots.
+![volcano_glimma.png](Tuto_pictures/volcano_glimma.png)
+
+
+
+
+
 
 ---
 
@@ -1454,71 +1526,60 @@ Job finished 2020-09-25T11:06:50+0200
 
 If not, you'll see a summary of the errors: 
 ```
-[username@clust-slurm-client RASflow_IFB]$ cat slurm_output/RASflow-13350559.out 
+[username@clust-slurm-client RASflow_IFB]$ cat slurm_output/RASflow-13605306.out 
 ########################################
-Date: 2020-09-25T09:54:19+0200
+Date: 2020-11-04T09:21:28+0100
 User: mhennion
-Host: cpu-node-14
+Host: cpu-node-28
 Job Name: RASflow
-Job Id: 13350559
+Job Id: 13605306
 Directory: /shared/projects/bi4edc/RASflow_IFB
 ########################################
 RASflow_IFB version: v0.4
--------------------------
 [...]
 RASflow is done!
 ########################################
 ---- Errors ----
-logs/20200925_0954_visualize.txt	-        Rscript scripts/visualize.R /shared/projects/bi4edc/RASflow_IFB/results/TIMING/hisat2/dea_featureCounts/Norm_DESeq2 /shared/projects/bi4edc/RASflow_IFB/results/TIMING/hisat2/dea_featureCounts/DEA_DESeq2 /shared/projects/bi4edc/RASflow_IFB/results/TIMING/hisat2/countFile_featureCounts /shared/projects/bi4edc/RASflow_IFB/results/TIMING/hisat2/dea_featureCounts/visualization_DESeq2
-logs/20200925_0954_visualize.txt	-        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
-logs/20200925_0954_visualize.txt	-
-logs/20200925_0954_visualize.txt	-Error executing rule plot on cluster (jobid: 1, external: 13350560, jobscript: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/tmp.sw9kh8we/snakejob.plot.1.sh). For error details see the cluster log and the log files of the involved rule(s).
-logs/20200925_0954_visualize.txt	-Job failed, going on with independent jobs.
-logs/20200925_0954_visualize.txt	:Exiting because a job execution failed. Look above for error message
-logs/20200925_0954_visualize.txt	-Complete log: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/log/2020-09-25T095521.037897.snakemake.log
+logs/20201104_0921_dea_genome.txt	-        Rscript scripts/dea_genome.R /shared/projects/repeats/RASflow_IFB/results/H9/mapping_hisat2/counting_featureCounts/countTables/ /shared/projects/repeats/RASflow_IFB/results/H9/mapping_hisat2/counting_featureCounts/DEA_DESeq2/
+logs/20201104_0921_dea_genome.txt	-        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+logs/20201104_0921_dea_genome.txt	-
+logs/20201104_0921_dea_genome.txt	-Error executing rule DEA on cluster (jobid: 1, external: 13605307, jobscript: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/tmp.ig057qsd/snakejob.DEA.1.sh). For error details see the cluster log and the log files of the involved rule(s).
+logs/20201104_0921_dea_genome.txt	-Job failed, going on with independent jobs.
+logs/20201104_0921_dea_genome.txt	:Exiting because a job execution failed. Look above for error message
+logs/20201104_0921_dea_genome.txt	-Complete log: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/log/2020-11-04T092135.247706.snakemake.log
 
 ########################################
-Job finished 2020-09-25T10:02:22+0200
----- Total runtime 483 s ; 8 min ----
+Job finished 2020-11-04T09:25:23+0100
+---- Total runtime 235 s ; 3 min ----
 ```
 
-And you can check the problem looking as the specific log file, here `logs/20200925_0954_visualize.txt` 
+And you can check the problem looking as the specific log file, here `logs/20201104_0921_dea_genome.txt` 
 ```
-[username@clust-slurm-client RASflow_IFB]$ cat logs/20200925_0954_visualize.txt
-Building DAG of jobs...
-Using shell: /usr/bin/bash
-Provided cluster nodes: 30
-Job counts:
-	count	jobs
-	1	end
-	1	plot
-	2
-
-[Fri Sep 25 09:55:21 2020]
-rule plot:
+[Wed Nov  4 09:21:40 2020]
+rule DEA:
     input: ...
     output: ...
     jobid: 1
 
-Submitted DRMAA job 1 with external jobid 13350560.
-[Fri Sep 25 10:02:12 2020]
-Error in rule plot:
+Submitted DRMAA job 1 with external jobid 13605307.
+[Wed Nov  4 09:25:10 2020]
+Error in rule DEA:
     jobid: 1
     output: ...
-    conda-env: ...
+    conda-env: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/conda/43b54aba
     shell:
-        Rscript scripts/visualize.R ...
+        Rscript scripts/dea_genome.R /shared/...
         (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
 
-Error executing rule plot on cluster (jobid: 1, external: 13350560, jobscript: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/tmp.sw9kh8we/snakejob.plot.1.sh). For error details see the cluster log and the log files of the involved rule(s).
+Error executing rule DEA on cluster (jobid: 1, external: 13605307, jobscript: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/tmp.ig057qsd/snakejob.DEA.1.sh). For error details see the cluster log and the log files of the involved rule(s).
 Job failed, going on with independent jobs.
 Exiting because a job execution failed. Look above for error message
-Complete log: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/log/2020-09-25T095521.037897.snakemake.log
+Complete log: /shared/mfs/data/projects/bi4edc/RASflow_IFB/.snakemake/log/2020-11-04T092135.247706.snakemake.log
 ```
-You can have the description of the error in the SLURM output corresponding to the external jobid, here 13350560: 
+You can have the description of the error in the SLURM output corresponding to the external jobid, here 13605307: 
 
 ```
-[username @ clust-slurm-client RASflow_IFB]$ cat slurm_output/slurm-13350560.out
+[username @ clust-slurm-client RASflow_IFB]$ cat slurm_output/slurm-13605307.out
 ```
 
 ---
@@ -1714,7 +1775,7 @@ D192T32_R2.fastq.gz
 
 ## Running your analysis on RPBS cluster
 
-The exact same version of the workflow is installed on RPBS cluster. You don't have to clone the GitHub repository. Here is a quick tutorial with only the differences with IFB cluster.
+The exact same version of the workflow is installed on RPBS cluster [NOTA: this is not true since the 2nd lockdown, I'll do it when I come to the lab.]. You don't have to clone the GitHub repository. Here is a quick tutorial with only the differences with IFB cluster.
 
 - Transfer your data to `/home/joule/RPBSusername` 
 
