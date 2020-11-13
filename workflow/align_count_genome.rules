@@ -19,6 +19,9 @@ bwStranded = config["BWSTRANDED"]
 main_path = config["MAINPATH"]
 strand = config["STRAND"]
 
+if input_path[0] != "/": 
+    import os
+    input_path = os.getcwd()+"/"+input_path
 
 if bwStranded == "no" or bwStranded==False: 
     rule end:
@@ -67,12 +70,12 @@ else:
 if mapper == "hisat2":
 
     rule spliceSites:
-    output:
-        splicesites = intermediate_path + "/splicesites.txt"
-    conda:
-        "env.yaml"
-    shell:
-         "hisat2_extract_splice_sites.py {config[ANNOTATION]} > {output.splicesites}"
+        output:
+            splicesites = intermediate_path + "/splicesites.txt"
+        conda:
+            "env.yaml"
+        shell:
+            "hisat2_extract_splice_sites.py {config[ANNOTATION]} > {output.splicesites}"
 
     if end == "pair":
         rule hisat2:

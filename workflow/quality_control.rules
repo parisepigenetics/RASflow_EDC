@@ -8,6 +8,11 @@ end = config["END"]
 intermediate_path = config["BIGDATAPATH"] + "/" + config["PROJECT"]
 final_path = config["RESULTPATH"] + "/" + config["PROJECT"]
 
+if input_path[0] != "/": 
+    import os
+    input_path = os.getcwd()+"/"+input_path
+
+
 rule end:
     input:
         report = final_path + "/fastqc/report_quality_control.html"

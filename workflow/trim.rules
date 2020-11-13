@@ -11,6 +11,10 @@ final_path = config["RESULTPATH"] + "/" + config["PROJECT"]
 trim3 = config["TRIM3"]
 trim5 = config["TRIM5"]
 
+if input_path[0] != "/": 
+    import os
+    input_path = os.getcwd()+"/"+input_path
+
 def trimFiles(wildcards):
     if (end == "pair"):
         forward_trim = expand(intermediate_path + "/{sample}_R1_trimmed.fq.gz", sample = samples)

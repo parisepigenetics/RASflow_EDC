@@ -1,12 +1,12 @@
 # Please check the parameters, and adjust them according to your circumstance
 
 # Project name
-PROJECT: TestDataset
+PROJECT: Test1
 
 # ================== Control of the workflow ==================
 
 ## Do you need to do quality control?
-QC: yes  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
+QC: no  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
 
 ## Do you need to do trimming?
 TRIMMED: yes  # "yes" or "no"? 
@@ -64,7 +64,7 @@ ALIGNER: hisat2 # "STAR" or "hisat2"
 
 ## genome and annotation files
 INDEXPATH: TestDataset/hisat2_index  # /shared/bank/homo_sapiens/hg38/hisat2 # folder containing index files
-INDEXBASE: hg38_chr22 # for hisat2, base of the name of the index files (ie "genome" if the file format is as genome.1.ht2)
+INDEXBASE: hisat2_hg38_chr22 # for hisat2, base of the name of the index files (ie "genome" if the file format is as genome.1.ht2)
 ANNOTATION: TestDataset/gtf/gencode.v34.annotation_chr22.gtf # GTF file 
 
 ## bigwig option
