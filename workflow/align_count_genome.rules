@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 configfile: "configs/config_main.yaml"
 
 samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
@@ -20,8 +21,13 @@ main_path = config["MAINPATH"]
 strand = config["STRAND"]
 
 if input_path[0] != "/": 
-    import os
     input_path = os.getcwd()+"/"+input_path
+
+if intermediate_path[0] != "/": 
+    intermediate_path = os.getcwd()+"/"+intermediate_path
+
+if final_path[0] != "/": 
+    final_path = os.getcwd()+"/"+final_path
 
 if bwStranded == "no" or bwStranded==False: 
     rule end:

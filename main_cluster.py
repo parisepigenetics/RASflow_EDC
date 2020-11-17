@@ -5,6 +5,7 @@ import os
 import time
 import sys
 import subprocess
+import reporting
 
 server = sys.argv[1]
 if server == "rpbs": 
@@ -120,6 +121,7 @@ else:
             end_time = time.time()
             file_main_time.write("Time of running DEA genome based: " + spend_time(start_time, end_time) + "\n")
         print("DEA is done! ("+spend_time(start_time, end_time)+")")
+        reporting.main(time_string)
 
         # Visualization can only be done on gene-level
         if reference == "genome":
