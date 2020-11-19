@@ -26,7 +26,7 @@ countload <-function(input_path){
     counts.exprs
 }
 
-d <- countload(counts.path)
+d <- countload(paste(counts.path, "/countTables/", sep = ""))
 
 ## rename columns
 if (lengths(strsplit(as.character(colnames(d)), "\\_"))[1] == 2) {

@@ -309,7 +309,7 @@ rule PCA:
     conda:
         "env.yaml"
     params:
-        count_path = final_path + "/counting_"+ counter + "/countTables",
+        count_path = final_path + "/counting_"+ counter,
         mp = main_path
     shell:
         "Rscript {params.mp}scripts/pca.R {params.count_path}"
