@@ -1,10 +1,10 @@
 # load the libraries
 library(DESeq2)
-#if (!require("RColorBrewer")) install.packages("RColorBrewer")
 library(RColorBrewer)
 library(yaml)
-#if (!require("pheatmap")) {install.packages("pheatmap")}
 library(pheatmap)
+library(Glimma)
+library(limma)
 
 # passing the params from command line
 args <- commandArgs(TRUE)
@@ -69,9 +69,12 @@ pheatmap(sampleDistMatrix, clustering_distance_rows = sampleDists, clustering_di
 
 pdf(file = file.path(paste(counts.path,"/",'PCA.pdf', sep = "")), width = 15, height = 15, title = 'Exploratory analysis')
   par(mfrow = c(2,1))
-  boxplot(log2(1+d),las=2, ylab="raw counts (log2)", col="gray70", pch=16, main = "Raw counts per sample")
   # run PCA
   DESeq2::plotPCA(rld, intgroup =c("condition"), ntop=1000)
+  boxplot(log2(1+d),las=2, ylab="raw counts (log2)", col="gray70", pch=16, main = "Raw counts per sample")
   dev.off()
 
+## Glimma interactive MDS
+html <- 'MDSPlot'
+glMDSPlot(dds, groups=splan$group,path=counts.path, folder="Glimma",html=html, launch=FALSE)
 

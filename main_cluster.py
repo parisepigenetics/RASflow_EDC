@@ -152,5 +152,6 @@ else :
     print(decode.replace(".txt",".txt\t"))
 
 
-os.system("chmod -R 777 results 2>/dev/null")
-os.system("chmod -R 777 configs 2>/dev/null")
+# Save logs
+os.makedirs("logs", exist_ok=True)
+os.system("cp "+LogPath+time_string+"* logs/")
