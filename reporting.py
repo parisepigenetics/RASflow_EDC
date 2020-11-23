@@ -108,16 +108,17 @@ def main(time_string):
     <p> The mapping was done using %s. </p>
     <p>Mapping quality is assessed in <a href="mapping_%s/report_align_count_%s.html">mapping_%s/report_align_count_%s.html</a>. </p>
     <p>This report also contains an overview of feature counting that was perfomed by %s. </p>
-    <p>Raw count tables are available in <a href="mapping_%s/counting_%s/countTables/">mapping_%s/counting_%s/countTables/</a>.<br></p>
+    <p>Raw count tables are available in <a href="mapping_%s/counting_%s/countTables/">mapping_%s/counting_%s/countTables/</a> [Raw counts are not available in the online report].<br></p>
     <h2 id="exploratory-analysis-of-all-the-samples">Exploratory analysis of all the samples</h2>
-    <p>To assess the quality of the experiment and the reproducibility of the replicates, an 
-    <a href="mapping_%s/counting_%s/PCA.pdf">analysis in principal components</a> 
-    for all the samples is available, 
+    <p>To assess the quality of the experiment and the reproducibility of the replicates, please use the interactive 
+    <a href="mapping_%s/counting_%s/Glimma/MDSPlot.html">MDS plot</a>. 
+    <p> <embed type="text/html" src="mapping_%s/counting_%s/Glimma/MDSPlot.html" width="1000" height="900"> </p>
+    <p>A static <a href="mapping_%s/counting_%s/PCA.pdf">analysis in principal components</a> 
+    for all the samples is also available,  
     as well as a <a href="mapping_%s/counting_%s/heatmap.pdf">heatmap with clustering</a>.  </p>
-    <p><embed src= "mapping_%s/counting_%s/PCA.pdf" type="application/pdf" width= "700" height= "700">
-    <embed src= "mapping_%s/counting_%s/heatmap.pdf" type="application/pdf" width= "700" height= "700"><br></p>
+    <p><embed src= "mapping_%s/counting_%s/heatmap.pdf" type="application/pdf" width= "700" height= "700"><br></p>
     """ %(aligner,aligner, counter, aligner, counter,counter,\
-        aligner,counter,aligner,counter,aligner,counter,aligner, counter,aligner, counter,aligner, counter)
+        aligner,counter,aligner,counter,aligner,counter,aligner, counter,aligner, counter,aligner,counter,aligner, counter)
         f.write(message)
 
     if dea=='yes':
@@ -156,7 +157,7 @@ def main(time_string):
         can help you to identify problematic samples.</p>
         <p> <embed type="text/html" src="mapping_%s/counting_%s/DEA_%s/Report/Glimma/MDSPlot_%s_%s.html" width="1000" height="900"> </p>
         <p>DEA result tables (all genes or significantly differentially expressed genes) are stored in 
-        <a href="mapping_%s/counting_%s/DEA_%s/Tables">mapping_%s/counting_%s/DEA_%s/Tables</a>.</p>
+        <a href="mapping_%s/counting_%s/DEA_%s/Tables">mapping_%s/counting_%s/DEA_%s/Tables</a> [not available in the online report].</p>
         <p>Importantly, the results can be deeply explored thanks to <b>interactive</b>
         <a href="mapping_%s/counting_%s/DEA_%s/Report/Glimma/MDPlot_%s_%s.html">MD</a>
         and 
