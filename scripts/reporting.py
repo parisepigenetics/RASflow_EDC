@@ -2,6 +2,7 @@ import yaml
 import time
 import sys
 import os
+import tarfile
 
 def main(time_string):
     with open('configs/config_main.yaml') as yamlfile:
@@ -192,3 +193,40 @@ def main(time_string):
     f.write(message)
 
     f.close()
+    
+    dirName = resultpath+'/'+project
+    Tar = tarfile.open(dirName+"/report.tar.bz2", 'w:bz2')
+    
+    
+    Tar.add(dirName+"/report.html", "report.html")
+    # Define the folders that you want in the tar.bz2.
+    ToKeep = ["fastqc","fastqc_after_trimming", "logs", "report_align_count_featureCounts_data","Glimma","plots","regionReport"]	
+    ExtraFiles= ["report_quality_control_after_trimming.html","report_align_count_featureCounts.html", "heatmap.pdf", "PCA.pdf" ]	
+    ToKeepSub = []
+    for folderName, subfolders, filenames in os.walk(dirName):
+        if os.path.basename(folderName) in ToKeep:
+            ToKeepSub += subfolders	
+            for filename in filenames:	
+                #create complete filepath of file in directory
+                filePath = os.path.join(folderName, filename)
+                relativePath = filePath.replace(dirName, '')
+                # Add file to tar	
+                Tar.add(filePath, relativePath)	
+        else:	
+            for filename in filenames: 	
+                if filename in ExtraFiles:	
+                    filePath = os.path.join(folderName, filename)	
+                    relativePath = filePath.replace(dirName, '')
+                    # Add file to zip	
+                    Tar.add(filePath, relativePath)	
+                    	
+    for folderName, subfolders, filenames in os.walk(dirName):	
+        if os.path.basename(folderName) in ToKeepSub:
+            for filename in filenames:	
+                #create complete filepath of file in directory	
+                filePath = os.path.join(folderName, filename)	
+                relativePath = filePath.replace(dirName, '')	
+                # Add file to tar	
+                Tar.add(filePath, relativePath)	
+	
+    Tar.close()

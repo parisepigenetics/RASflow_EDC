@@ -5,7 +5,7 @@ import os
 import time
 import sys
 import subprocess
-import reporting
+import scripts.reporting as reporting
 
 server = sys.argv[1]
 if server == "rpbs": 
