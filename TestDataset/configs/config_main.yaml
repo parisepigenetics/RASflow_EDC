@@ -1,7 +1,7 @@
 # Please check the parameters, and adjust them according to your circumstance
 
 # Project name
-PROJECT: EXAMPLE
+PROJECT: Test1
 
 # ================== Control of the workflow ==================
 
@@ -26,14 +26,14 @@ DEA: yes  # "yes" or "no"
 KEY: 
 
 ## the path to fastq files
-READSPATH: /shared/projects/YourProjectName/Raw_fastq
+READSPATH: TestDataset/Raw_fastq  # for testing purpose we put here the relative paths, but we recommend to always use full paths such as /shared/projects/YourProjectName/Raw_Fastq
 
 ## the meta file describing the experiment settings
-METAFILE: /shared/projects/YourProjectName/RASflow_IFB/configs/metadata.tsv
+METAFILE: configs/metadata.tsv 
 
 ## paths for intermediate final results
-BIGDATAPATH: /shared/projects/YourProjectName/RASflow_IFB/data # for big files
-RESULTPATH: /shared/projects/YourProjectName/RASflow_IFB/results
+BIGDATAPATH: TestDataset/data # for big files
+RESULTPATH: TestDataset/results
 
 ## is the sequencing paired-end or single-end?
 END: pair  # "pair" or "single"
@@ -63,12 +63,12 @@ TRANS: /shared/.. # not yet implemented
 ALIGNER: hisat2 # "STAR" or "hisat2"
 
 ## genome and annotation files
-INDEXPATH: /shared/bank/homo_sapiens/hg38/hisat2 # folder containing index files
-INDEXBASE: genome # for hisat2, base of the name of the index files (ie genome.1.ht2)
-ANNOTATION: /shared/projects/lxactko_analyse/RASflow/gtf/gencode.v34.annotation_modifiedXACT_v3.gtf # GTF file 
+INDEXPATH: TestDataset/hisat2_index  # /shared/bank/homo_sapiens/hg38/hisat2 # folder containing index files
+INDEXBASE: hisat2_hg38_chr22 # for hisat2, base of the name of the index files (ie "genome" if the file format is as genome.1.ht2)
+ANNOTATION: TestDataset/gtf/gencode.v34.annotation_chr22.gtf # GTF file 
 
 ## bigwig option
-BWSTRANDED: both # "no": bw merging forward and reverse reads, "yes": get 2 bw files, one forward and one reverse; "both": get the two bw per strand as well as the merge one. 
+BWSTRANDED: yes # "no": bw merging forward and reverse reads, "yes": get 2 bw files, one forward and one reverse; "both": get the two bw per strand as well as the merge one. 
 
 ## tool for feature count
 COUNTER: featureCounts # "featureCounts" or "htseq-count" or "STARcount" (only with STAR aligner, --quantMode GeneCounts option)
@@ -88,8 +88,8 @@ DEATOOL: DESeq2 # "edgeR" or "DESeq2"? DESeq2 is recommended for transcriptome-b
 PAIR: no  # Is this a pair test or not? (yes or no). For instance 2 samples from the same patient taken at different times.
 
 ## the comparison(s) you want to do. If multiple comparisons, specify each pair (CONTROL & TREAT) in order respectively
-CONTROL: ["J0_WT","J0_WT","J10_WT","J0_KO"]
-TREAT: ["J0_KO","J10_WT","J10_KO","J10_KO"]
+CONTROL: ["J0_WT"]
+TREAT: ["J10_WT"]
 ## length of 'CONTROL' should agree with that of 'TREAT'
 ## what you fill in there should agree with the "group" column in metadata.tsv
 
@@ -103,4 +103,3 @@ FILTER: yes  # Filter out low expressed transcripts/genes or not? (yes or no) It
 # ================== Path to main scripts  ==================
 
 MAINPATH: "" # leave "" empty for IFB core cluster, "/scratch/epigenetique/workflows/RASflow_RPBS/" for RPBS cluster.
-
