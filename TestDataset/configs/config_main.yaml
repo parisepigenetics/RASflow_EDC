@@ -29,7 +29,7 @@ KEY:
 READSPATH: TestDataset/Raw_fastq  # for testing purpose we put here the relative paths, but we recommend to always use full paths such as /shared/projects/YourProjectName/Raw_Fastq
 
 ## the meta file describing the experiment settings
-METAFILE: configs/metadata.tsv 
+METAFILE: TestDataset/configs/metadata.tsv 
 
 ## paths for intermediate final results
 BIGDATAPATH: TestDataset/data # for big files
