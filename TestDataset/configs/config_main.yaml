@@ -6,7 +6,7 @@ PROJECT: Test1
 # ================== Control of the workflow ==================
 
 ## Do you need to do quality control?
-QC: no  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
+QC: yes  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
 
 ## Do you need to do trimming?
 TRIMMED: yes  # "yes" or "no"? 
@@ -26,10 +26,10 @@ DEA: yes  # "yes" or "no"
 KEY: 
 
 ## the path to fastq files
-READSPATH: TestDataset/Raw_fastq  # for testing purpose we put here the relative paths, but we recommend to use full paths such as /shared/projects/YourProjectName/Raw_Fastq
+READSPATH: TestDataset/Raw_fastq  # for testing purpose we put here the relative paths, but we recommend to always use full paths such as /shared/projects/YourProjectName/Raw_Fastq
 
 ## the meta file describing the experiment settings
-METAFILE: TestDataset/configs/metadata.tsv
+METAFILE: TestDataset/configs/metadata.tsv 
 
 ## paths for intermediate final results
 BIGDATAPATH: TestDataset/data # for big files

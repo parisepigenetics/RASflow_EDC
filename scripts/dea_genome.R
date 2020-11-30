@@ -115,8 +115,26 @@ DEA <- function(control, treat) {
       
     annotation <- data.frame(res.dea$table)  
     annotation$GeneID <- rownames(res.dea$table)
+    
       
-    DE <- c("downregulated", "notDE", "upregulated")[as.factor(res.dea$table$DE)]
+    DE <- res.dea$table$DE
+      ## in case there is no DEG or only Up or Down. 
+    if (nlevels(as.factor(DE)) == 3) {
+       DE <- c("downregulated", "notDE", "upregulated")[as.factor(DE)]
+       cols <- c("blue","red", "grey")
+    }
+    if (nlevels(as.factor(DE)) == 1) {
+       DE <- c("notDE")[as.factor(DE)]
+       cols <- c("grey")
+    }
+    if (nlevels(as.factor(DE)) == 2 && -1 %in% levels(as.factor(DE))) {
+       DE <- c("downregulated","notDE")[as.factor(DE)]
+       cols <- c("red", "grey")
+    }
+    if (nlevels(as.factor(DE)) == 2 && 1 %in% levels(as.factor(DE))) {
+       DE <- c("notDE", "upregulated")[as.factor(DE)]
+       cols <- c("blue", "grey")
+    }   
       
     status <- decideTestsDGE(res.dea)
       
@@ -189,11 +207,25 @@ DEA <- function(control, treat) {
     annotation <- data.frame(res.dea)  
     annotation$GeneID <- rownames(res.dea)
     
-    
-      
     status <- as.numeric(res.dea$padj<0.05)
+      
     DE <- ifelse(status == 0,0, sign(res.dea$log2FoldChange))  
-    DE <- c("downregulated", "notDE", "upregulated")[as.factor(DE)]
+    if (nlevels(as.factor(DE)) == 3) {
+       DE <- c("downregulated", "notDE", "upregulated")[as.factor(DE)]
+       cols <- c("blue","red", "grey")
+    }
+    if (nlevels(as.factor(DE)) == 1) {
+       DE <- c("notDE")[as.factor(DE)]
+       cols <- c("grey")
+    }
+    if (nlevels(as.factor(DE)) == 2 && -1 %in% levels(as.factor(DE))) {
+       DE <- c("downregulated","notDE")[as.factor(DE)]
+       cols <- c("red", "grey")
+    }
+    if (nlevels(as.factor(DE)) == 2 && 1 %in% levels(as.factor(DE))) {
+       DE <- c("notDE", "upregulated")[as.factor(DE)]
+       cols <- c("blue", "grey")
+    }  
       
     LogFC <- res.dea$log2FoldChange
     Pval <- -log10(res.dea$padj)
@@ -259,9 +291,10 @@ DEA <- function(control, treat) {
     glMDPlot(res.dea, status=status, counts=count.table.noNA, transform=transform, groups=group, samples=samples,anno=annotation, path=paste(output.path, "Report/", sep=""), folder="Glimma",html=html, launch=FALSE) 
     
     sample.cols <- c("darkgreen", "purple")[group]
-    cols <- c("blue","red", "grey")
+    
       
     html <- paste('Volcano_', control, '_', treat, sep = '')
+    message()
     glXYPlot(x=LogFC, y=Pval, xlab=xlab, ylab=ylab,anno=annotation,path=paste(output.path, "Report/", sep=""), folder="Glimma",html=html,status=anno$DE, cols=cols, side.main="GeneID",counts=count.table.noNA, groups=group, sample.cols=sample.cols, launch=FALSE)
     message(paste("---------------","Glimma interactive plots for DEA between", control, "and",  treat, "exported ---------------", sep=" "))
 

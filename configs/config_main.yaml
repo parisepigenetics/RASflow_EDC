@@ -103,3 +103,4 @@ FILTER: yes  # Filter out low expressed transcripts/genes or not? (yes or no) It
 # ================== Path to main scripts  ==================
 
 MAINPATH: "" # leave "" empty for IFB core cluster, "/scratch/epigenetique/workflows/RASflow_RPBS/" for RPBS cluster.
+
