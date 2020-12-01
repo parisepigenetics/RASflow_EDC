@@ -20,7 +20,7 @@ RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhan
     + [Check md5sum](#check-md5sum)
   * [Preparing the run](#preparing-the-run)
     + [1. **metadata.tsv**](#1-metadatatsv)
-    + [2. **config_main.yaml**](#2-config-mainyaml)
+    + [2. **config_main.yaml**](#2-configmainyaml) 
     + [3. **Workflow.sh** [Facultative]](#3-workflowsh-facultative)
     + [4. **env.yaml** [Facultative]](#4-envyaml-facultative)
   * [Running the workflow](#running-the-workflow)
@@ -57,6 +57,7 @@ RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhan
     + [Folder locked](#folder-locked)
     + [Storage space](#storage-space)
   * [Good practice](#good-practice)
+  * [Juggling with several projects](#juggling-with-several-projects)
   * [Tricks](#tricks)
     + [Make aliases](#make-aliases)
     + [Quickly change fastq names](#quickly-change-fastq-names)
@@ -1105,7 +1106,7 @@ You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/sha
 and the huge files will stay on the server. You can of course download them as well if you have space (and this is recommended for the long term). 
 
 ### Final report
-A report named `report.html` summarizes your experiment and your results. You'll find links to fastQC results, to mapping quality report, to exploratory analysis of all the samples and finally to pairwise differential expression analyses. Interactive plots are included in the report. They are very helpful to dig into the results. A compressed archive names `report.tar.bz2` is also generated and contains the report and the targets of the different links, excluding the count and DEA tables to make it small enough to be sent to your collaborator via email. An example of report is visible [here](https://parisepigenetics.github.io/umr7216bioinfofacility/pages/report/report.html). 
+A report named `report.html` summarizes your experiment and your results. You'll find links to fastQC results, to mapping quality report, to exploratory analysis of all the samples and finally to pairwise differential expression analyses. Interactive plots are included in the report. They are very helpful to dig into the results. A compressed archive names `report.tar.bz2` is also generated and contains the report and the targets of the different links, excluding the count and DEA tables to make it small enough to be sent to your collaborators. An example of report is visible [here](https://parisepigenetics.github.io/umr7216bioinfofacility/pages/report/report.html). 
 
 Detailed description of all the outputs of the workflow is included below. 
 
@@ -1673,6 +1674,20 @@ In principle it should raise an error, but sometimes it doesn't and it's hard to
 
 ---
 
+## Juggling with several projects
+If you work on several projects [as defined by IFB cluster documentation], you can either
+- have one independant installation of RASflow_IFB / project with its own Conda environment. To do that, git clone RASflow_IFB repository in each project. The Conda environment will be built again for each project, which takes ~30 min and uses ~12 G of space. 
+- have an independant RASflow_IFB folder, but share the Conda environment.  To do that, git clone RASflow_IFB repository in each project, but, before running any analysis, create a symbolic link of the `.snakemake` from your first project:
+```
+[username@clust-slurm-client PROJECT2]$ cd RASflow_IFB
+[username@clust-slurm-client RASflow_IFB]$ ln -s /shared/projects/YourFirstProjectName/RASflow_IFB/.snakemake/ .snakemake
+```
+- Have only one RASflow_IFB folder and start all your analysis from the same project, but reading input files and writing result files in a different project. 
+
+I will see with IFB core cluster people if this is possible to make it available as a module. 
+
+
+---
 ## Tricks 
 
 ### Make aliases
