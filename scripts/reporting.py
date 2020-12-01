@@ -24,7 +24,7 @@ def main(time_string):
     date_string = time.strftime("%d/%m/%Y", start_time)
 
 
-    f = open(resultpath+'/'+project+'/report.html','w')
+    f = open(resultpath+'/'+project+'/'+time_string+'_report.html','w')
 
 
     message = """
@@ -127,13 +127,13 @@ def main(time_string):
         if L>1 : 
             message="""
             <h2 id="pairwise-differential-expression-analyses">Pairwise differential expression analyses</h2>
-            <p>You have made """+str(L)+""" pairwise comparisons. Please see below the results for each comparison.</p>
-            """
+            <p>You have made """+str(L)+""" pairwise comparisons using %s. Please see below the results for each comparison.</p>
+            """ %(deatool)
         else:
             message="""
             <h2 id="pairwise-differential-expression-analyses">Pairwise differential expression analyses</h2>
-            <p>You have made one pairwise comparison. Please see below the results for this comparison.</p>
-            """
+            <p>You have made one pairwise comparison using %s. Please see below the results for this comparison.</p>
+            """ %(deatool)
 
         f.write(message)
 
@@ -144,7 +144,7 @@ def main(time_string):
             message="""
         <p><br></p>
         <h3 id="Comparison-between-%s-and-%s">Comparison between %s and %s</h3>
-        <p>The <a href="mapping_%s/counting_%s/DEA_%s/Report/regionReport/%s_%s/DESeq2Exploration.html">regionReport exploratory report</a> 
+        <p>The <a href="mapping_%s/counting_%s/DEA_%s/Report/regionReport/%s_%s/exploration.html">regionReport exploratory report</a> 
         is a good start to get an idea of the results.</p> 
         <p>To be easily shared and reused the <a href="mapping_%s/counting_%s/DEA_%s/Report/plots/PCA_%s_%s.pdf">PCA</a> 
         and the 
@@ -195,10 +195,10 @@ def main(time_string):
     f.close()
     
     dirName = resultpath+'/'+project
-    Tar = tarfile.open(dirName+"/report.tar.bz2", 'w:bz2')
+    Tar = tarfile.open(dirName+'/'+time_string+'_report.tar.bz2', 'w:bz2')
     
     
-    Tar.add(dirName+"/report.html", "report.html")
+    Tar.add(dirName+'/'+time_string+'_report.html', time_string+'_report.html')
     # Define the folders that you want in the tar.bz2.
     ToKeep = ["fastqc","fastqc_after_trimming", "logs", "report_align_count_featureCounts_data","Glimma","plots","regionReport"]	
     ExtraFiles= ["report_quality_control_after_trimming.html","report_align_count_featureCounts.html", "heatmap.pdf", "PCA.pdf" ]	

@@ -90,14 +90,17 @@ DEA <- function(control, treat) {
     res.dea <- glmLRT(fit)
     
     #Report
-    report <- edgeReport(dds, res.dea ,"edgeR Report",intgroup = "group", outdir = paste(output.path,'Report/regionReport/', control, '_', treat, sep = ''))
+    report <- edgeReport(dds, res.dea ,"edgeR Report",intgroup = "group", outdir = paste(output.path,'Report/regionReport/', control, '_', treat, sep = ''), output = "exploration")
     message(paste("---------------","Report for DEA between", control, "and",  treat, "exported ---------------", sep=" "))
 
     # the DEA result for all the genes
 
     toptag <- topTags(res.dea, n = nrow(dds$genes), p.value = 1)
     dea <- toptag$table  # just to add one more column of FDR
-    dea <- dea[order(dea$FDR, -abs(dea$logFC), decreasing = FALSE), ]  # sort the table: ascending of FDR then descending of absolute valued of logFC
+    dea.sorted <- dea[order(dea$FDR, -abs(dea$logFC), decreasing = FALSE), ]  # sort the table: ascending of FDR then descending of absolute valued of logFC
+  
+    dea <- data.frame(res.dea$table) #unsorted table for Volcano plots
+    dea$FDR <- p.adjust(dea$PValue,"BH")
 
     # differentially expressed genes
     toptag <- topTags(res.dea, n = nrow(dds$genes), p.value = 0.05)
@@ -185,7 +188,7 @@ DEA <- function(control, treat) {
 
     ## make a report
     gc()  # I added this command because I add an error "reached elapsed time limit" for some datasets
-    report <- DESeq2Report(dds, "DESeq2-report", outdir = paste(output.path,'Report/regionReport/', control, '_', treat, sep = ''),intgroup = c("group"))
+    report <- DESeq2Report(dds, "DESeq2-report", outdir = paste(output.path,'Report/regionReport/', control, '_', treat, sep = ''),intgroup = c("group"),output = "exploration")
     message(paste("---------------","Report for DEA between ", control, "and",  treat, "exported ---------------", sep=" "))
     #message(paste("---------------","skipping Report for DEA between ", control, "and",  treat, " ---------------", sep=" "))
 
@@ -195,7 +198,7 @@ DEA <- function(control, treat) {
     res.dea <- res.dea[complete.cases(res.dea), ]  # remove any rows with NA
 
     dea <- as.data.frame(res.dea)
-    dea <- dea[order(dea$padj, -abs(dea$log2FoldChange), decreasing = FALSE), ]  # sort the table: ascending of padj then descending of absolute valued of logFC
+    dea.sorted <- dea[order(dea$padj, -abs(dea$log2FoldChange), decreasing = FALSE), ]  # sort the table: ascending of padj then descending of absolute valued of logFC
     
     deg <- dea[dea$padj < 0.05, ]
     if (nrow(deg) > 1) {
@@ -248,7 +251,7 @@ DEA <- function(control, treat) {
     write.table(normalized_counts, paste(output.path, 'Tables/', control, '_', treat, '_NormCounts.tsv', sep = ''), quote = FALSE, sep = "\t")   
     
     # save the DEA result and DEGs to files
-    write.table(dea, paste(output.path, 'Tables/dea_', control, '_', treat, '.tsv', sep = ''), row.names = row.name, quote = FALSE, sep = '\t')
+    write.table(dea.sorted, paste(output.path, 'Tables/dea_', control, '_', treat, '.tsv', sep = ''), row.names = row.name, quote = FALSE, sep = '\t')
     write.table(deg, paste(output.path, 'Tables/deg_', control, '_', treat, '.tsv', sep = ''), row.names = row.name, quote = FALSE, sep = '\t') 
     message(paste("---------------","Tables for DEA between", control, "and",  treat, "exported ---------------", sep=" "))
       
@@ -291,8 +294,7 @@ DEA <- function(control, treat) {
     glMDPlot(res.dea, status=status, counts=count.table.noNA, transform=transform, groups=group, samples=samples,anno=annotation, path=paste(output.path, "Report/", sep=""), folder="Glimma",html=html, launch=FALSE) 
     
     sample.cols <- c("darkgreen", "purple")[group]
-    
-      
+          
     html <- paste('Volcano_', control, '_', treat, sep = '')
     message()
     glXYPlot(x=LogFC, y=Pval, xlab=xlab, ylab=ylab,anno=annotation,path=paste(output.path, "Report/", sep=""), folder="Glimma",html=html,status=anno$DE, cols=cols, side.main="GeneID",counts=count.table.noNA, groups=group, sample.cols=sample.cols, launch=FALSE)
@@ -315,7 +317,7 @@ DEA <- function(control, treat) {
     num.treat <- nrow(splan.treat)  
 
     # instead using all genes, only use the top 20 genes in dea.table
-    id2 <- row.names(dea)
+    id2 <- row.names(dea.sorted)
     index.deg <- which(row.names(normalized_counts) %in% id2[1:20])
     norm.table.deg <- normalized_counts[index.deg,]
 
