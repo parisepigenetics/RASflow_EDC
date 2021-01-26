@@ -14,24 +14,21 @@ counts.path <- args[1]
 yaml.file <- yaml.load_file('configs/config_main.yaml')
 metafile <- yaml.file$METAFILE
 
+## adding the experimental plan
+splan <-read.csv(metafile, sep="\t",row.names=1, header=TRUE)
 
 # load count files
-countload <-function(input_path){
+countload <-function(input_path, samples){
     message(paste("loading gene counts from", input_path, "...", sep=" "))
-    exprs.in <-list.files(path=input_path,pattern="count.tsv",full.names=TRUE,recursive=TRUE)
+    exprs.in <-lapply(samples, function(x) { paste(input_path,'/',x,"_count.tsv",sep="")})                                 
     counts.exprs <-lapply(exprs.in, read.csv, sep="\t", header=FALSE,row.names=1, check.names=FALSE)
     counts.exprs <-data.frame(lapply(counts.exprs, "[", 1))
-    colnames(counts.exprs) <-basename(exprs.in)
+    colnames(counts.exprs) <-samples
     message("Done")
     counts.exprs
 }
 
-d <- countload(paste(counts.path, "/countTables/", sep = ""))
-
-## rename columns
-if (lengths(strsplit(as.character(colnames(d)), "\\_"))[1] == 2) {
-    colnames(d) <- sapply(strsplit(as.character(colnames(d)), "\\_"),  "[", 1)
-}
+d <- countload(paste(counts.path, "/countTables/", sep = ""),rownames(splan))
 
 message("size of the table")
 message("number of genes")
@@ -41,9 +38,7 @@ message(dim(d)[2])
 message("number of counts per sample")
 print(colSums(d))
 
-
-## adding the experimental plan
-splan <-read.csv(metafile, sep="\t",row.names=1, header=TRUE)
+## Building DESeqDataSet
 dds <-DESeqDataSetFromMatrix(countData=d,DataFrame(condition=splan$group),~condition)
 
 ## Estimate size factors
@@ -76,5 +71,4 @@ pdf(file = file.path(paste(counts.path,"/",'PCA.pdf', sep = "")), width = 15, he
 
 ## Glimma interactive MDS
 html <- 'MDSPlot'
-glMDSPlot(dds, groups=dds$samples$group,path=counts.path, folder="Glimma",html=html, launch=FALSE) 
-
+glMDSPlot(dds, groups=dds$samples$group,path=counts.path, folder="Glimma",html=html, launch=FALSE)

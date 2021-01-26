@@ -78,7 +78,7 @@ def main(time_string):
     f.write(message)
 
 
-    if os.path.isfile("fastqc/report_quality_control.html"):
+    if os.path.isfile(resultpath+'/'+project+"/fastqc/report_quality_control.html"):
         message="""
     <h2 id="fastq-quality-control">Fastq quality control</h2>
     <p>A summary of the quality of the raw sequences can be found in <a href="fastqc/report_quality_control.html">fastqc/report_quality_control.html</a>. <br></p>
