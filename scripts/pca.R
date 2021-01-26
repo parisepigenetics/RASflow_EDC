@@ -76,5 +76,5 @@ pdf(file = file.path(paste(counts.path,"/",'PCA.pdf', sep = "")), width = 15, he
 
 ## Glimma interactive MDS
 html <- 'MDSPlot'
-glMDSPlot(dds, groups=splan$group,path=counts.path, folder="Glimma",html=html, launch=FALSE)
+glMDSPlot(dds, groups=dds$samples$group,path=counts.path, folder="Glimma",html=html, launch=FALSE) 
 

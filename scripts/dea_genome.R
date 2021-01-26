@@ -275,7 +275,7 @@ DEA <- function(control, treat) {
         h[[query]] <- paste(hash::values(h, keys = query), symbol, sep = ', ')
       }
       else {
-        if (is.na(symbol)) {  # if there's no hit for the query, keep the original id
+        if (is.null(symbol) || is.na(symbol)) {  # if there's no hit for the query, keep the original id
           h[[query]] <- query
         } 
         else {
@@ -323,8 +323,16 @@ DEA <- function(control, treat) {
 
     gene.id.norm.table <- rownames(norm.table.deg)
     gene.id.norm.table <- sapply(strsplit(as.character(gene.id.norm.table), "\\."),  "[", 1)
-    gene.symbol.norm.table <- queryMany(gene.id.norm.table, scopes = 'ensembl.gene', fields = 'symbol')$symbol
-
+    gene.symbol.norm.table <- tryCatch(
+        {   
+            queryMany(gene.id.norm.table, scopes = 'ensembl.gene', fields = 'symbol')$symbol
+        },
+        error=function(cond) {
+            message("queryMany gave no results, keeping previous IDs")
+            # Choose a return value in case of error
+            return(gene.id.norm.table)
+        }
+        )     
     # if can't find a symbol for the id, then keep the id as it is
     gene.norm.table <- gene.symbol.norm.table
     for (i in c(1:length(gene.norm.table))) {
