@@ -39,7 +39,7 @@ RESULTPATH: /shared/projects/YourProjectName/RASflow_IFB/results
 END: pair  # "pair" or "single"
 
 ## number of cores you want to allocate to this workflow
-NCORE: 30  # Use command "getconf _NPROCESSORS_ONLN" to check the number of cores/CPU on your machine
+NCORE: 24  # Use command "getconf _NPROCESSORS_ONLN" to check the number of cores/CPU on your machine
 
 # ================== Configuration for Quality Control ==================
 
