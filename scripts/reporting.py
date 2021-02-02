@@ -77,7 +77,6 @@ def main(time_string):
     """% (date_string, server,project,time_string,time_string)
     f.write(message)
 
-
     if os.path.isfile(resultpath+'/'+project+"/fastqc/report_quality_control.html"):
         message="""
     <h2 id="fastq-quality-control">Fastq quality control</h2>
@@ -123,6 +122,19 @@ def main(time_string):
         f.write(message)
 
     if dea=='yes':
+        if mapping != 'yes':
+            message="""
+    <h2 id="exploratory-analysis-of-all-the-samples">Exploratory analysis of all the samples</h2>
+    <p>To assess the quality of the experiment and the reproducibility of the replicates, please use the interactive 
+    <a href="mapping_%s/counting_%s/Glimma/MDSPlot.html">MDS plot</a>. 
+    <p> <embed type="text/html" src="mapping_%s/counting_%s/Glimma/MDSPlot.html" width="1000" height="900"> </p>
+    <p>A static <a href="mapping_%s/counting_%s/PCA.pdf">analysis in principal components</a> 
+    for all the samples is also available,  
+    as well as a <a href="mapping_%s/counting_%s/heatmap.pdf">heatmap with clustering</a>.  </p>
+    <p><embed src= "mapping_%s/counting_%s/heatmap.pdf" type="application/pdf" width= "700" height= "700"><br></p>
+    """%(aligner,counter,aligner, counter,aligner, counter,aligner,counter,aligner, counter)
+            f.write(message)
+            
         L = len(control)
         if L>1 : 
             message="""
