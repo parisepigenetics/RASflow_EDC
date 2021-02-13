@@ -11,6 +11,26 @@ final_path = config["RESULTPATH"] + "/" + config["PROJECT"]
 trim3 = config["TRIM3"]
 trim5 = config["TRIM5"]
 
+if trim5 and trim5 != "no" :    # trim 5end
+    if trim3 and trim3 != "no" : # trim also 3end
+        if end == "pair":
+            options = "--clip_R1  "+str(trim5)+" --clip_R2 "+str(trim5)+" --three_prime_clip_R1 "+str(trim3)+" --three_prime_clip_R2 "+str(trim3)
+        else :
+            options = "--clip_R1  "+str(trim5)+" --three_prime_clip_R1 "+str(trim3)
+    else: # no 3end, only 5end
+        if end == "pair":
+            options = "--clip_R1  "+str(trim5)+" --clip_R2 "+str(trim5)
+        else: 
+            options = "--clip_R1  "+str(trim5)
+else:
+    if trim3 and trim3 != "no" : # only 3end
+        if end == "pair":
+            options = "--three_prime_clip_R1 "+str(trim3)+" --three_prime_clip_R2 "+str(trim3)
+        else :
+            options = "--three_prime_clip_R1 "+str(trim3)
+    else: # no triming of a fix number of bases
+        options = ""
+
 if input_path[0] != "/": 
     import os
     input_path = os.getcwd()+"/"+input_path
@@ -38,84 +58,24 @@ if end == "pair":
         run:
             shell("ln -s {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.fw}"),
             shell("ln -s {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.rv}")
-    if trim3 and trim3 != "no" :
-        rule trimstart:
-            input:
-                fw = intermediate_path + "/reads/{sample}_forward.fastq.gz",
-                rv = intermediate_path + "/reads/{sample}_reverse.fastq.gz"
-            output:
-                shforward = temp(intermediate_path + "/{sample}_forward." + str(trim3) + "bp_3prime.fq.gz"),
-                shreverse = temp(intermediate_path + "/{sample}_reverse." + str(trim3) + "bp_3prime.fq.gz")
-            conda:
-                "env.yaml"
-            params:
-                outputpath = intermediate_path
-            shell:
-                "trim_galore --hardtrim3 {trim3} --j 4 --paired --basename {wildcards.sample} -o {params.outputpath} {input.fw} {input.rv}"
 
-
-        if trim5 != "no" and int(trim5) < int(trim3) :
-            rule trimend:
-                input:
-                    shforward = intermediate_path + "/{sample}_forward." + str(trim3) + "bp_3prime.fq.gz",
-                    shreverse = intermediate_path + "/{sample}_reverse." + str(trim3) + "bp_3prime.fq.gz"
-                output:
-                    endforward = temp(intermediate_path + "/{sample}_forward." + str(trim3) +"bp_3prime."+str(trim5) + "bp_5prime.fq.gz"), #Test_forward.91bp_3prime.89bp_5prime.fq.gz
-                    endreverse = temp(intermediate_path + "/{sample}_reverse." + str(trim3) + "bp_3prime."+str(trim5) + "bp_5prime.fq.gz")
-                conda:
-                    "env.yaml"
-                params:
-                    outputpath = intermediate_path
-                shell:
-                    "trim_galore --hardtrim5 {trim5} --j 4 --paired --basename {wildcards.sample} -o {params.outputpath} {input.shforward} {input.shreverse}"
-            rule trim:
-                input:
-                    endforward = temp(intermediate_path + "/{sample}_forward." + str(trim3) +"bp_3prime."+str(trim5) + "bp_5prime.fq.gz"), #Test_forward.91bp_3prime.89bp_5prime.fq.gz
-                    endreverse = temp(intermediate_path + "/{sample}_reverse." + str(trim3) + "bp_3prime."+str(trim5) + "bp_5prime.fq.gz")
-
-                output:
-                    read_trim_forward = intermediate_path + "/{sample}_R1_trimmed.fq.gz",
-                    read_trim_reverse = intermediate_path + "/{sample}_R2_trimmed.fq.gz"
-                conda:
-                    "env.yaml"
-                params:
-                    outputpath = intermediate_path,
-                    outputrename = intermediate_path+"/"
-                shell:
-                    "trim_galore --fastqc -j 4 --paired --basename {wildcards.sample} -o {params.outputpath} {input.endforward} {input.endreverse} && rename _val_1 _R1_trimmed {params.outputrename}{wildcards.sample}*  && rename _val_2 _R2_trimmed {params.outputrename}{wildcards.sample}*"
-        else: 
-            rule trim:
-                input:
-                    shforward = intermediate_path + "/{sample}_forward." + str(trim3) + "bp_3prime.fq.gz",
-                    shreverse = intermediate_path + "/{sample}_reverse." + str(trim3) + "bp_3prime.fq.gz"
-                output:
-                    read_trim_forward = intermediate_path + "/{sample}_R1_trimmed.fq.gz",
-                    read_trim_reverse = intermediate_path + "/{sample}_R2_trimmed.fq.gz"
-                conda:
-                    "env.yaml"
-                params:
-                    outputpath = intermediate_path,
-                    outputrename = intermediate_path+"/"
-                shell:
-                    "trim_galore --fastqc -j 4 --paired --basename {wildcards.sample} -o {params.outputpath} {input.shforward} {input.shreverse} && rename _val_1 _R1_trimmed {params.outputrename}{wildcards.sample}*  && rename _val_2 _R2_trimmed {params.outputrename}{wildcards.sample}*"
-    else:
-        rule trim:
-            input:
-                fw = intermediate_path + "/reads/{sample}_forward.fastq.gz",
-                rv = intermediate_path + "/reads/{sample}_reverse.fastq.gz"
-            output:
-                read_trim_forward = intermediate_path + "/{sample}_R1_trimmed.fq.gz",
-                read_trim_reverse = intermediate_path + "/{sample}_R2_trimmed.fq.gz"
-            conda:
-                "env.yaml"
-            params:
-                outputpath = intermediate_path,
-                outputrename = intermediate_path+"/"
-            shell:
-                "trim_galore --fastqc -j 4 --paired --basename {wildcards.sample} -o {params.outputpath} {input.fw} {input.rv} && rename _val_1 _R1_trimmed {params.outputrename}{wildcards.sample}*  && rename _val_2 _R2_trimmed {params.outputrename}{wildcards.sample}*"
-           
-
- 
+    rule trim:
+        input:
+            fw = intermediate_path + "/reads/{sample}_forward.fastq.gz",
+            rv = intermediate_path + "/reads/{sample}_reverse.fastq.gz"
+        output:
+            shforward = intermediate_path + "/{sample}_R1_trimmed.fq.gz",
+            shreverse = intermediate_path + "/{sample}_R2_trimmed.fq.gz"
+        conda:
+            "env.yaml"
+        params:
+            outputpath = intermediate_path,
+            outputrename = intermediate_path+"/"
+        shell:
+            "trim_galore {options} --fastqc --j 4 --paired --basename {wildcards.sample} -o {params.outputpath} {input.fw} {input.rv} && rename _val_1 _R1_trimmed {params.outputrename}{wildcards.sample}*  && rename _val_2 _R2_trimmed {params.outputrename}{wildcards.sample}*"
+    
+   
+   #### single end, to test
 else:
     rule getReads:
         output:
@@ -126,7 +86,7 @@ else:
         run:
             shell("ln -s {params.input_path}/{wildcards.sample}*.f*q.gz {output.read}")
             
-    rule trim:
+    rule trimS:
         input:
             read = intermediate_path + "/reads/{sample}.fastq.gz"
         output:
@@ -136,7 +96,7 @@ else:
         params:
             outputpath = intermediate_path
         shell:
-            "trim_galore --hardtrim3 {trim3} --fastqc -j 4 --basename {wildcards.sample} -o {params.outputpath} {input.read}"
+            "trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {params.outputpath} {input.read} && rename _val _trimmed {params.outputrename}{wildcards.sample}*"
 
 rule summaryReport:
     input:
@@ -149,4 +109,3 @@ rule summaryReport:
         path = intermediate_path
     shell:
         "multiqc {params.path} --filename {output.report}"
-

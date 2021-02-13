@@ -1,18 +1,27 @@
 __default__:
   mem: 2000
   name: snakejob
+  cpus: 1
 
 qualityControl:
   mem: 6000
   name: QC
+  cpus: 2
 
 trim:
   mem: 6000
   name: trimming
+  cpus: 8
+  
+trimS:
+  mem: 6000
+  name: trimming
+  cpus: 4
 
 hisat2:
   mem: 7000
   name: hisat2
+  cpus: 16
 
 star:
   mem: 40000
@@ -21,22 +30,27 @@ star:
 alignmentQC:
   mem: 10000
   name: aligQC
+  cpus: 8
 
 BigWig:
   mem: 10000
   name: BigWig
+  cpus: 8
 
 BigWigR:
   mem: 10000
   name: BigWigR
+  cpus: 8
 
 BigWigF:
   mem: 10000
   name: BigWigF
+  cpus: 8
 
 featureCount:
   mem: 10000
   name: featureCount
+  cpus: 8
 
 htseqCount:
   mem: 50000
@@ -62,12 +76,6 @@ DEA:
 
 quantify:
   name: quantTrans
-
-trimstart:
-  name: trimStart
-
-trimend:
-  name: trimEnd
 
 getReads:
   name: getReads

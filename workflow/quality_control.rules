@@ -46,21 +46,21 @@ if end == "pair":
         params:
             outputpath = final_path + "/fastqc"
         shell:
-            "fastqc -t $(({config[NCORE]}+0)) -o {params.outputpath} {input.fw} && "
-            "fastqc -t $(({config[NCORE]}+0)) -o {params.outputpath} {input.rv}"
+            "fastqc -t 2 -o {params.outputpath} {input.fw} {input.rv}"
             
     rule summaryReport:
         input:
             fastqc_fw = expand(final_path + "/fastqc/{sample}_fw_fastqc.html", sample = samples),
             fastqc_rv = expand(final_path + "/fastqc/{sample}_rv_fastqc.html", sample = samples)
         output:
-            report = final_path + "/fastqc/report_quality_control.html"
+            report = final_path + "/fastqc/report_quality_control.html",
+            folder = directory(final_path + "/fastqc/report_quality_control_data")
         conda:
             "env.yaml"
         params:
             path = final_path + "/fastqc"
         shell:
-            "multiqc {params.path} --filename {output.report}"
+            "rm -fr {output.report} {output.folder} && multiqc {params.path} --filename {output.report}"
             
 else:
     rule getReads:
@@ -82,17 +82,18 @@ else:
         params:
             outputpath = final_path + "/fastqc"
         shell:
-            "fastqc -t $(({config[NCORE]}+0)) -o {params.outputpath} {input.read}"
+            "fastqc -o {params.outputpath} {input.read}"
             
     rule summaryReport:
         input:
             fastqc = expand(final_path + "/fastqc/{sample}_fastqc.html", sample = samples)
         output:
-            report = final_path + "/fastqc/report_quality_control.html"
+            report = final_path + "/fastqc/report_quality_control.html",
+            folder = directory(final_path + "/fastqc/report_quality_control_data")
         conda:
             "env.yaml"
         params:
             path = final_path + "/fastqc"
         shell:
-            "multiqc {params.path} --filename {output.report}"
+            "rm -fr {output.report} {output.folder} && multiqc {params.path} --filename {output.report}"
     
