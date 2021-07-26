@@ -9,25 +9,41 @@ mapper = config["ALIGNER"]
 tool = config["DEATOOL"]
 input_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/mapping_" + mapper + "/counting_"+counter
 output_path = input_path + "/DEA_"+tool+"/" 
-
-
+repeats_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/mapping_" + mapper + "/repeats_"+counter
+repeats_output_path = repeats_path + "/DEA_"+tool+"/" 
 samples = np.array(pd.read_table(config["METAFILE"], header = 0)['sample'])
 groups = np.unique(np.array(pd.read_table(config["METAFILE"], header = 0)['group']))
 control = config["CONTROL"][0]
 treat = config["TREAT"][0]
 main_path = config["MAINPATH"]
+TEanalysis = config["REPEATS"]
+
+if TEanalysis == "yes" or TEanalysis==True: 
+    pca_repeats = repeats_path +"/PCA_TE.pdf"
+    volcano_repeats = repeats_output_path + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf"
+    dea_repeats = repeats_output_path + "Tables/dea_" + control + "_" + treat + ".tsv"
+    glimma_repeats = repeats_output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
+else :
+    pca_repeats = []
+    volcano_repeats = []
+    dea_repeats = []
+    glimma_repeats = []
 
 rule all:
     input: 
-        dea = output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
-        glimma = output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html",
-        norm = output_path + "Tables/"+ control + "_" + treat + "_NormCounts.tsv",
+        pca_repeats,
+        volcano_repeats,
+        dea_repeats,
+        glimma_repeats,
         pca = input_path + "/PCA.pdf",
-        volcano = output_path + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf"
+        volcano = output_path + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf",
+        dea = output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
+        glimma = output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
+
        
 rule PCA:
     input:
-        countF = expand(input_path +"/countTables/{sample}_count.tsv", sample=samples)
+        countF = expand(input_path +"/countTables/{sample}_countGenes.tsv", sample=samples)
     output:
         pca = input_path + "/PCA.pdf"
     conda:
@@ -36,30 +52,30 @@ rule PCA:
         input_path = input_path,
         mp = main_path
     shell:
-        "Rscript {params.mp}scripts/pca.R {params.input_path}"
+        "Rscript {params.mp}scripts/pca.R {params.input_path}  _countGenes.tsv"
         
         
 rule combineSamples:
     input:
-        countF = expand(input_path +"/countTables/{sample}_count.tsv", sample=samples)
+        countF = expand(input_path +"/countTables/{sample}_countGenes.tsv", sample=samples)
     output:
-        groupCount = expand(input_path + "/countTables/{group}_counts.tsv", group = groups)
+        groupCount = expand(input_path + "/countTables/{group}_countsGenes.tsv", group = groups)
     conda:
         "env.yaml"
     params:
+        input_path = input_path +"/countTables/",
         mp = main_path
     shell:
-        "python {params.mp}scripts/combine2group_genome.py"
+        "python {params.mp}scripts/combine2group_genome.py {params.input_path} _countGenes.tsv _countsGenes.tsv"
         
         
 rule DEA:
     input:
-        groupCount = expand(input_path + "/countTables/{group}_counts.tsv", group = groups)
+        groupCount = expand(input_path + "/countTables/{group}_countsGenes.tsv", group = groups)
     output:
+        volcano = output_path + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf",
         dea = output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
-        glimma = output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html",
-        norm = output_path + "Tables/"+ control + "_" + treat + "_NormCounts.tsv",
-        volcano = output_path + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf"
+        glimma = output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
     conda:
         "env.yaml"
     params:
@@ -67,4 +83,51 @@ rule DEA:
         output_path = output_path,
         counts_path = input_path + "/countTables/"
     shell:
-        "Rscript {params.mp}scripts/dea_genome.R {params.counts_path} {params.output_path}"
+        "Rscript {params.mp}scripts/dea_genome.R {params.counts_path} {params.output_path} _countsGenes.tsv"
+
+
+if TEanalysis == "yes" or TEanalysis==True:
+    rule TE_PCA:
+        input: 
+            countT = expand(repeats_path + "/countTables/{sample}_countTE.tsv", sample=samples)
+        output:
+            pca_repeats = repeats_path +"/PCA_TE.pdf"
+        conda:
+            "env.yaml"
+        params:
+            count_path = repeats_path,
+            mp = main_path
+        shell:
+            "Rscript {params.mp}scripts/pca.R {params.count_path} _countTE.tsv"    
+            
+            
+    rule TE_combineSamples:
+        input:
+            countT = expand(repeats_path + "/countTables/{sample}_countTE.tsv", sample=samples)
+        output:
+            groupCount = expand(repeats_path + "/countTables/{group}_countsTE.tsv", group = groups)
+        conda:
+            "env.yaml"
+        params:
+            count_path = repeats_path +"/countTables/",
+            mp = main_path
+        shell:
+            "python {params.mp}scripts/combine2group_genome.py {params.count_path} _countTE.tsv _countsTE.tsv"
+            
+            
+    rule TE_DEA:
+        input:
+            groupCount = expand(repeats_path + "/countTables/{group}_countsTE.tsv", group = groups)
+        output:
+            volcano = repeats_output_path + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf",
+            dea = repeats_output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
+            glimma = repeats_output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
+        conda:
+            "env.yaml"
+        params:
+            mp = main_path,
+            output_path = repeats_output_path ,
+            counts_path = repeats_path + "/countTables/"
+        shell:
+            "Rscript {params.mp}scripts/dea_genome.R {params.counts_path} {params.output_path} _countsTE.tsv"
+

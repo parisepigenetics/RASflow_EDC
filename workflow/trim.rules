@@ -69,10 +69,9 @@ if end == "pair":
         conda:
             "env.yaml"
         params:
-            outputpath = intermediate_path,
-            outputrename = intermediate_path+"/"
+            outputpath = intermediate_path
         shell:
-            "trim_galore {options} --fastqc --j 4 --paired --basename {wildcards.sample} -o {params.outputpath} {input.fw} {input.rv} && rename _val_1 _R1_trimmed {params.outputrename}{wildcards.sample}*  && rename _val_2 _R2_trimmed {params.outputrename}{wildcards.sample}*"
+            "trim_galore {options} --fastqc --j 4 --paired --basename {wildcards.sample} -o {params.outputpath} {input.fw} {input.rv} && rename _val_1 _R1_trimmed {params.outputpath}/{wildcards.sample}*  && rename _val_2 _R2_trimmed {params.outputpath}/{wildcards.sample}*"
     
    
    #### single end, to test
@@ -96,7 +95,7 @@ else:
         params:
             outputpath = intermediate_path
         shell:
-            "trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {params.outputpath} {input.read} && rename _val _trimmed {params.outputrename}{wildcards.sample}*"
+            "trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {params.outputpath} {input.read} && rename _val _trimmed {params.outputpath}/{wildcards.sample}*"
 
 rule summaryReport:
     input:

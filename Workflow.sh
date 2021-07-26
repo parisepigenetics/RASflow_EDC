@@ -33,7 +33,7 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_IFB version: v0.5.2'
+echo 'RASflow_IFB version: v0.5.3'
 echo '-------------------------'
 echo 'Main module versions:'
 
@@ -42,7 +42,7 @@ start0=`date +%s`
 
 # modules loading
 module purge
-module load conda snakemake slurm-drmaa
+module load conda snakemake/5.19.2 slurm-drmaa
 conda --version
 python --version
 echo 'snakemake' && snakemake --version

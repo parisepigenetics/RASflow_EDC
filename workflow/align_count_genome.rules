@@ -1,5 +1,7 @@
-import pandas as pd
 import os
+import subprocess
+import hashlib
+import pandas as pd
 configfile: "configs/config_main.yaml"
 
 samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
@@ -8,18 +10,26 @@ if trimmed == "yes" or trimmed == True:
     input_path = config["BIGDATAPATH"] + "/" + config["PROJECT"] + "/trim"
 else:
     input_path = config["READSPATH"]
+    
 key = config["KEY"]
-end = config["END"]
+seqtype = config["END"]
+seqtype_dict = {"pair":"-p","single":""} # for featureCounts
 mapper = config["ALIGNER"]
 intermediate_path = config["BIGDATAPATH"] + "/" + config["PROJECT"] + "/mapping_" + mapper
 index_path = config["INDEXPATH"]
 index_base = config["INDEXBASE"]
 final_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/mapping_" + mapper
 counter = config["COUNTER"]
-bwStranded = config["BWSTRANDED"]
+TEanalysis = config["REPEATS"]
+bw_stranded = config["BWSTRANDED"]
 main_path = config["MAINPATH"]
 strand = config["STRAND"]
+count_options = config["COUNTOPTIONS"]
+strand_dict = {"yes":"1", "no":"0", "reverse":"2"}  # 0 (unstranded), 1 (stranded) and 2 (reversely stranded)
+gene_gtf = config["ANNOTATION"]
+te_gtf = config["GTFTE"]
 
+### correct paths if necessary
 if input_path[0] != "/": 
     input_path = os.getcwd()+"/"+input_path
 
@@ -28,41 +38,76 @@ if intermediate_path[0] != "/":
 
 if final_path[0] != "/": 
     final_path = os.getcwd()+"/"+final_path
+################################
 
-if bwStranded == "no" or bwStranded==False: 
-    rule end:
-        input:
-            report = final_path + "/report_align_count_"+counter+".html",
-            bw = expand(final_path + "/bw/{sample}.bw", sample = samples),
-            pca = final_path + "/counting_"+ counter + "/PCA.pdf"
-if bwStranded == "yes" or bwStranded==True:
-    rule end:
-        input:
-            pca = final_path + "/counting_"+ counter + "/PCA.pdf",
-            report = final_path + "/report_align_count_"+counter+".html",
-            bw_fw = expand(final_path + "/bw_str/{sample}_fw.bw", sample=samples),
-            bw_rv = expand(final_path + "/bw_str/{sample}_rv.bw", sample=samples)
-if bwStranded == "both":
-    rule end:
-        input:
-            pca = final_path + "/counting_"+ counter + "/PCA.pdf",
-            report = final_path + "/report_align_count_"+counter+".html",
-            bw_fw = expand(final_path + "/bw_str/{sample}_fw.bw", sample=samples),
-            bw_rv = expand(final_path + "/bw_str/{sample}_rv.bw", sample=samples),
-            bw = expand(final_path + "/bw/{sample}.bw", sample = samples)
+### Define final rule depending on TE analysis
+if TEanalysis == "yes" or TEanalysis==True: 
+    pca_repeats = final_path +"/repeats_"+counter+"/PCA_TE.pdf"
+else :
+    pca_repeats = []
+    
+if (TEanalysis == "yes" or TEanalysis==True) and counter == "TEcount" : # no report with TEcount for now.
+    report_html = []
+else :
+    report_html = final_path + "/report_align_count_"+counter+".html"
+   
+### Define final rule depending on bw option. 
+if bw_stranded == "no" or bw_stranded==False:
+    bw = expand(final_path + "/bw/{sample}.bw", sample = samples)
+    bw_fw = []
+    bw_rv = []
+if bw_stranded == "yes" or bw_stranded==True:
+    bw_fw = expand(final_path + "/bw_str/{sample}_fw.bw", sample=samples)
+    bw_rv = expand(final_path + "/bw_str/{sample}_rv.bw", sample=samples)
+if bw_stranded == "both":
+    bw_fw = expand(final_path + "/bw_str/{sample}_fw.bw", sample=samples),
+    bw_rv = expand(final_path + "/bw_str/{sample}_rv.bw", sample=samples),
+    bw = expand(final_path + "/bw/{sample}.bw", sample = samples)
+################################
+    
+    
+### get the max fastq size to decide if splitting is necessary 
+if 'max_size' not in globals(): 
+    with open(config["METAFILE"]+".samples.txt",'rb') as file_to_check:
+        # read contents of the file
+        data = file_to_check.read()    
+        # pipe contents of the file through
+        md5_samples = hashlib.md5(data).hexdigest()
 
-if end == "pair":
+    with open(config["METAFILE"]+"_"+md5_samples+".max_size") as f:
+        max_size = int(f.readline().strip())  
+
+split=False
+if seqtype == "pair" and max_size >  3000000000 : split=True
+if seqtype == "single" and max_size >  6000000000 : split=True
+#if seqtype == "pair" and max_size >  300 : split=True
+#if seqtype == "single" and max_size >  600 : split=True
+
+  
+### final rule
+rule end:
+    input:
+        pca_repeats,
+        report_html,
+        bw,
+        bw_fw,
+        bw_rv,
+        pca = final_path + "/counting_"+ counter + "/PCA.pdf"
+
+### get reads (for now simlink, could be removed / replaced by copy of the files)            
+if seqtype == "pair":
     rule getReads:
         output:
-            fw = temp(intermediate_path + "/reads/{sample}_fw.fastq.gz"),
-            rv = temp(intermediate_path + "/reads/{sample}_rv.fastq.gz")
+            fw = intermediate_path + "/reads/{sample}_fw.fastq.gz",
+            rv = intermediate_path + "/reads/{sample}_rv.fastq.gz"
         params:
             key = key,
             input_path = input_path
-        run:
-            shell("ln -s {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.fw}"),
-            shell("ln -s {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.rv}")
-
+        shell:
+            """
+            ln -s {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.fw}
+            ln -s {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.rv}
+            """
 else:
     rule getReads:
         output:
@@ -73,7 +118,10 @@ else:
         run:
             shell("ln -s {params.input_path}/{wildcards.sample}*.f*q.gz {output.read}")
 
-if mapper == "hisat2":
+
+### Mapping depending on the tool chosen
+
+if mapper == "HISAT2":
 
     rule spliceSites:
         output:
@@ -81,97 +129,108 @@ if mapper == "hisat2":
         conda:
             "env.yaml"
         shell:
-            "hisat2_extract_splice_sites.py {config[ANNOTATION]} > {output.splicesites}"
+            "hisat2_extract_splice_sites.py {gene_gtf} > {output.splicesites}"
 
-    if end == "pair":
+    if seqtype == "pair":
+    
         rule hisat2:
             input:
                 splicesites = intermediate_path + "/splicesites.txt",
                 fw = intermediate_path + "/reads/{sample}_fw.fastq.gz",
                 rv = intermediate_path + "/reads/{sample}_rv.fastq.gz"
             output:
-                sort = intermediate_path + "/bamFileSort/{sample}.sort.bam"
+                #bam = temp(intermediate_path + "/bam_byName/{sample}.sortByName.bam")
+                bam = intermediate_path + "/bam_byName/{sample}.sortByName.bam"
             conda:
                 "env.yaml"
             params:
                 index = index_path +"/" + index_base
             benchmark:
                 intermediate_path + "/benchmarks/{sample}.hisat2.benchmark.txt"
-            shell:
-                "hisat2 -p {config[NCORE]} --known-splicesite-infile {input.splicesites} -x {params.index} -1 {input.fw} -2 {input.rv} | samtools sort -O BAM > {output.sort}"
+            shell :
+                 "hisat2 -p {config[NCORE]} --known-splicesite-infile {input.splicesites} -x {params.index} -1 {input.fw} -2 {input.rv} | samtools view -Sbh  > {output.bam} "
+               
     else:
         rule hisat2:
             input:
                 splicesites = intermediate_path + "/splicesites.txt",
                 fw = intermediate_path + "/reads/{sample}.fastq.gz"
             output:
-                sort = intermediate_path + "/bamFileSort/{sample}.sort.bam"
+                bam = intermediate_path + "/bam_byName/{sample}.sortByName.bam"
             conda:
                 "env.yaml"
             params:
-                index = index_path +"/" + index_base
+                index = index_path +"/" + index_base,
             benchmark:
                 intermediate_path + "/benchmarks/{sample}.hisat2.benchmark.txt"
-            shell:
-                "hisat2 -p {config[NCORE]} --known-splicesite-infile {input.splicesites} -x {params.index} -U {input.fw} | samtools sort -O BAM > {output.sort}"
+            shell :
+                 "hisat2 -p {config[NCORE]} --known-splicesite-infile {input.splicesites} -x {params.index} -U {input.fw} | samtools view -Sbh > {output.bam} "
+        
             
-    
 elif mapper == "STAR":
-    
-    if end == "pair":
+    if seqtype == "pair":
         rule star:
             input:
                 fw = intermediate_path + "/reads/{sample}_fw.fastq.gz",
-                rv = intermediate_path + "/reads/{sample}_rv.fastq.gz",
-                annotation = config["ANNOTATION"]
+                rv = intermediate_path + "/reads/{sample}_rv.fastq.gz"
             output:
-                sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
-                counts = intermediate_path + "/bamFileSort/{sample}.ReadsPerGene.out.tab"
+                sort = intermediate_path + "/Sorted_bam/{sample}.sort.bam",
+                counts = intermediate_path + "/Sorted_bam/{sample}.ReadsPerGene.out.tab"
             conda:
                 "env.yaml"
             params:
                 index = index_path,
-                basename = intermediate_path + "/bamFileSort/{sample}."
+                basename = intermediate_path + "/Sorted_bam/{sample}."
             benchmark:
                 intermediate_path + "/benchmarks/{sample}.star.benchmark.txt"
             shell:
-                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN {config[NCORE]} --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {input.annotation} --outSAMtype BAM SortedByCoordinate --genomeDir {params.index} --readFilesIn  {input.fw} {input.rv} && mv {params.basename}Aligned.sortedByCoord.out.bam {output.sort}"
-                
+                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN {config[NCORE]} --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {gene_gtf} --outSAMtype BAM SortedByCoordinate --genomeDir {params.index} --readFilesIn  {input.fw} {input.rv} && mv {params.basename}Aligned.sortedByCoord.out.bam {output.sort}"
+                  
     else:
         rule star:
             input:
-                fw = intermediate_path + "/reads/{sample}.fastq.gz", 
-                annotation = config["ANNOTATION"]
+                fw = intermediate_path + "/reads/{sample}.fastq.gz"
             output:
-                sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
-                counts = intermediate_path + "/bamFileSort/{sample}.ReadsPerGene.out.tab"
+                sort = intermediate_path + "/Sorted_bam/{sample}.sort.bam",
+                counts = intermediate_path + "/Sorted_bam/{sample}.ReadsPerGene.out.tab"
             conda:
                 "env.yaml"
             params:
                 index = index_path,
-                basename = intermediate_path + "/bamFileSort/{sample}."
+                basename = intermediate_path + "/Sorted_bam/{sample}."
             benchmark:
                 intermediate_path + "/benchmarks/{sample}.star.benchmark.txt"
             shell:
-                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN {config[NCORE]} --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {input.annotation} --outSAMtype BAM SortedByCoordinate --genomeDir {params.index} --readFilesIn  {input.fw} && mv {params.basename}Aligned.sortedByCoord.out.bam {output.sort}"
+                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN {config[NCORE]} --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {gene_gtf} --outSAMtype BAM SortedByCoordinate --genomeDir {params.index} --readFilesIn  {input.fw} && mv {params.basename}Aligned.sortedByCoord.out.bam {output.sort}"  
 
-
+### sort, index the bam and make the bigwig files
+rule sortBam :
+    input: 
+        bam = intermediate_path +"/bam_byName/{sample}.sortByName.bam"
+    output:
+        sort = intermediate_path +"/Sorted_bam/{sample}.sort.bam"
+    conda:
+        "env.yaml"
+    params:
+        tmp_folder = "/tmp/RASflow_Hennion_{sample}/"
+    shell:
+        "mkdir -p {params.tmp_folder} && samtools sort {input.bam} -o {output.sort} -@ 8 -T {params.tmp_folder} && rm -fr {params.tmp_folder}"
+          
 rule BamIndex:
     input:
-        sort = intermediate_path + "/bamFileSort/{sample}.sort.bam"
+        sort = intermediate_path + "/Sorted_bam/{sample}.sort.bam"
     output:
-        bai = intermediate_path + "/bamFileSort/{sample}.sort.bam.bai"
+        bai = intermediate_path + "/Sorted_bam/{sample}.sort.bam.bai"
     conda:
         "env.yaml"
     shell:
         "samtools index {input.sort}"
 
-
-if bwStranded == "yes" or bwStranded == "both" or bwStranded==True:
+if bw_stranded == "yes" or bw_stranded == "both" or bw_stranded==True:
     rule BigWigF:
         input:
-            sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
-            bai = intermediate_path + "/bamFileSort/{sample}.sort.bam.bai"
+            sort = intermediate_path + "/Sorted_bam/{sample}.sort.bam",
+            bai = intermediate_path + "/Sorted_bam/{sample}.sort.bam.bai"
         output:
             bw_fw = final_path + "/bw_str/{sample}_fw.bw"
         conda:
@@ -181,22 +240,21 @@ if bwStranded == "yes" or bwStranded == "both" or bwStranded==True:
             
     rule BigWigR:
         input:
-            sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
-            bai = intermediate_path + "/bamFileSort/{sample}.sort.bam.bai"
+            sort = intermediate_path + "/Sorted_bam/{sample}.sort.bam",
+            bai = intermediate_path + "/Sorted_bam/{sample}.sort.bam.bai"
         output:
             bw_rv = final_path + "/bw_str/{sample}_rv.bw"
         conda:
             "env.yaml"
         shell:
             "bamCoverage -b {input.sort} --filterRNAstrand reverse -o {output.bw_rv} -p max"
+            
 
-    
-
-if bwStranded == "no" or bwStranded == "both" or bwStranded==False:
+if bw_stranded == "no" or bw_stranded == "both" or bw_stranded==False:
     rule BigWig:
         input:
-            sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
-            bai = intermediate_path + "/bamFileSort/{sample}.sort.bam.bai"
+            sort = intermediate_path + "/Sorted_bam/{sample}.sort.bam",
+            bai = intermediate_path + "/Sorted_bam/{sample}.sort.bam.bai"
         output:
             bw = final_path + "/bw/{sample}.bw"
         conda:
@@ -204,9 +262,10 @@ if bwStranded == "no" or bwStranded == "both" or bwStranded==False:
         shell:
             "bamCoverage -b {input.sort} -o {output.bw} -p max"
 
+### Check alignment quality
 rule alignmentQC:
     input:
-        sort = intermediate_path + "/bamFileSort/{sample}.sort.bam"
+        sort = intermediate_path + "/Sorted_bam/{sample}.sort.bam"
     output:
         bamqc = directory(final_path + "/alignmentQC/{sample}_BAMqc")
     conda:
@@ -214,96 +273,252 @@ rule alignmentQC:
     shell:
         "qualimap bamqc -bam {input.sort} -nt {config[NCORE]} --java-mem-size=6G -outdir {output.bamqc}"
 
+if split : 
+    checkpoint splitBam :
+        input: 
+            sort_name = intermediate_path + "/bam_byName/{sample}.sortByName.bam",
+        output:
+            directory(intermediate_path + "/{sample}_split")
+        conda:
+            "env.yaml"
+        params:
+            prefix = "sortByName"   #-> output: {sample}_split/sortByName_000{i}.bam 
+        shell:
+            """
+            mkdir {output}
+            picard SplitSamByNumberOfReads -I {input.sort_name} -O {output}  -N_READS 100000000 -OUT_PREFIX {params.prefix} -VALIDATION_STRINGENCY SILENT
+            """
+     
+    fc_bam = intermediate_path + "/{sample}_split/sortByName_000{i}.bam"
+    if TEanalysis == "yes" or TEanalysis==True:
+        counts = final_path +"/counting_"+counter+"/countTables/{sample}_000{i}_count_all.tsv"
+    else: 
+        counts = final_path +"/counting_"+counter+"/countTables/{sample}_000{i}_count_genes.tsv"
+    whole_table = final_path + "/counting_"+counter+"/countTables/{sample}_000{i}_table_all.tsv"
+    count_summary = final_path + "/counting_"+counter+"/countTables/{sample}_000{i}_table_all.tsv.summary"
+    count_genes = final_path +"/counting_"+counter+"/countTables/{sample}_000{i}_count_genes.tsv"
+    ID = "{sample}_000{i}"
+    table_T =  main_path + "{sample}_000{i}_TE_count.tsv"
+    table_G =  main_path + "{sample}_000{i}_gene_count.tsv"
+
+else:
+    fc_bam = intermediate_path + "/bam_byName/{sample}.sortByName.bam"
+    if TEanalysis == "yes" or TEanalysis==True:
+        counts = final_path +"/counting_"+counter+"/countTables/{sample}_countAll.tsv"
+    else:
+        counts = final_path +"/counting_"+counter+"/countTables/{sample}_countGenes.tsv"
+    whole_table = final_path + "/counting_"+counter+"/countTables/{sample}_table.tsv"
+    count_summary = final_path + "/counting_"+counter+"/countTables/{sample}_table.tsv.summary"
+    count_genes = final_path +"/counting_"+counter+"/countTables/{sample}_countGenes.tsv"
+    ID = "{sample}"
+    table_T =  main_path + "{sample}_TE_count.tsv"
+    table_G =  main_path + "{sample}_gene_count.tsv"
+
+
 
 if counter == "featureCounts":
-    if end == "pair":
-        rule featureCount:
-            input:
-                sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
-                annotation = config["ANNOTATION"]
-            output:
-                countF = final_path + "/counting_"+ counter + "/countTables/{sample}_count.tsv",
-                WholeTable = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv",
-                count_summary = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv.summary"
-            conda:
-                "env.yaml"
+    if TEanalysis == "yes" or TEanalysis==True:   
+        rule mergeGTF:
+            output: 
+                mergeGTF = final_path +"/repeats_"+counter+"/merge_genes_te.gtf"
+            params:
+                folder_TE = final_path +"/repeats_"+counter
             shell:
-                "featureCounts -p -T {config[NCORE]} -t {config[FEATURE]} -g {config[ATTRIBUTE]} -a {input.annotation} -o {output.WholeTable} {input.sort} && tail -n +3 {output.WholeTable} | cut -f1,7 > {output.countF}"
-    else :
-        rule featureCount:
-            input:
-                sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
-                annotation = config["ANNOTATION"]
-            output:
-                countF = final_path + "/counting_"+ counter + "/countTables/{sample}_count.tsv",
-                WholeTable = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv",
-                count_summary = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv.summary"
-            conda:
-                "env.yaml"
-            shell:
-                "featureCounts -T {config[NCORE]} -t {config[FEATURE]} -g {config[ATTRIBUTE]} -a {input.annotation} -o {output.WholeTable} {input.sort} && tail -n +3 {output.WholeTable} | cut -f1,7 > {output.countF}"
+                """
+                mkdir -p {params.folder_TE}
+                cat {config[ANNOTATION]} {config[GTFTE]} > {output.mergeGTF}
+                """
+        fc_GTF = final_path +"/repeats_"+counter+"/merge_genes_te.gtf"
+    else:
+        fc_GTF = gene_gtf
 
+
+
+    rule featureCount:
+            input:
+                bam = fc_bam,
+                GTF = fc_GTF
+            output:
+                counts = counts,
+                whole_table = whole_table, 
+                count_summary = count_summary
+            conda:
+                "env.yaml"
+            resources:
+                load = 10
+            params:
+                options = seqtype_dict[seqtype] + " -s " +strand_dict[strand] + " " + count_options,
+            shell:
+                "featureCounts {params.options} -T {config[NCORE]} -t {config[FEATURE]} -g {config[ATTRIBUTE]} -a {input.GTF} -o {output.whole_table} {input.bam} && tail -n +3 {output.whole_table} | cut -f1,7 > {output.counts}"
+                     
+
+if TEanalysis == "yes" or TEanalysis==True :  
+    mergetableTE = final_path + "/repeats_"+counter+"/countTables/{sample}_countTE.tsv"
+    if split: 
+        count_TE = final_path +"/repeats_"+counter+"/countTables/{sample}_000{i}_count_TE.tsv"
+    else:
+        count_TE = final_path +"/repeats_"+counter+"/countTables/{sample}_countTE.tsv"
+
+
+    if counter == "TEcount" : 
+        rule TE_index:
+            input: 
+                TE_gtf = te_gtf
+            output:
+                TE_index = final_path +"/repeats_"+counter+"/TE.ind"
+            conda:
+                "env.yaml"
+            params:
+                mp = main_path
+            shell:
+                "python {params.mp}scripts/TEtranscripts_indexer.py --afile {input.TE_gtf} --itype TE --output {output.TE_index}"
+                
+        rule gene_index:
+            input: 
+                gene_gtf = gene_gtf
+            output:
+                G_index = final_path +"/repeats_"+counter+"/genes.ind"
+            conda:
+                "env.yaml"
+            params:
+                mp = main_path
+            shell:
+                "python {params.mp}scripts/TEtranscripts_indexer.py --afile {input.gene_gtf} --itype gene --output {output.G_index}"    
+    
+        rule TEcount :
+            input: 
+                sub =  fc_bam,
+                TE_index = final_path +"/repeats_"+counter+"/TE.ind",
+                G_index = final_path +"/repeats_"+counter+"/genes.ind"
+            output:
+                countT = count_TE,
+                countG = count_genes
+            conda:
+                "env.yaml"
+            params:
+                mp = main_path,
+                ID = ID,
+                table_T =  table_T,
+                table_G =  table_G
+            shell:
+                "python {params.mp}scripts/TEcount.py --format BAM --mode multi -b {input.sub} --GTF {input.G_index} --TE {input.TE_index} --stranded {strand} --project {params.ID} && tail -n +2 {params.table_T} > {output.countT} && tail -n +2 {params.table_G} > {output.countG} && rm {params.table_T} {params.table_G}"
+
+    elif counter == "featureCounts" : 
+        rule splitCountTables : 
+                input: 
+                    countF = counts,
+                    GTFgene = gene_gtf
+                output:
+                    count_TE = count_TE,
+                    count_genes = count_genes
+                params:
+                    folder_TE = final_path +"/repeats_"+counter+"/countTables", 
+                    folder_genes = final_path +"/counting_"+counter+"/countTables",
+                    ID = ID
+                shell: 
+                   """
+                   awk  '$3=="gene"' {input.GTFgene} | wc -l > Ngenes.txt
+                   read Ngenes < Ngenes.txt
+                   split -l $Ngenes -a 1 {input.countF} {params.ID}
+                   mkdir -p {params.folder_TE} {params.folder_genes} 
+                   mv {params.ID}a {output.count_genes} 
+                   mv {params.ID}b {output.count_TE}   
+                   """     
+
+else:
+     mergetableTE = []
+     count_TE = []
+ 
+if split :
+
+    def aggregate_summaries(wildcards):
+        checkpoint_output = checkpoints.splitBam.get(**wildcards).output[0]
+        return expand(final_path + "/counting_"+counter+"/countTables/{{sample}}_000{i}_table_all.tsv.summary",
+           i=glob_wildcards(os.path.join(checkpoint_output, 'sortByName_000{i}.bam')).i)  
+
+    rule mergeSummaries:
+        input:
+            aggregate_summaries
+        output: 
+            count_sum_sample = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv.summary"
+        params:
+            mp = main_path,
+        shell:
+            "python {params.mp}scripts/mergeSummaries.py {output.count_sum_sample} {input}"
+            
+    def aggregate_count_TE(wildcards):
+        checkpoint_output = checkpoints.splitBam.get(**wildcards).output[0]
+        return expand(final_path +"/repeats_"+counter+"/countTables/{{sample}}_000{i}_count_TE.tsv",
+           i=glob_wildcards(os.path.join(checkpoint_output, 'sortByName_000{i}.bam')).i)
+           
+    def aggregate_count_genes(wildcards):
+        checkpoint_output = checkpoints.splitBam.get(**wildcards).output[0]
+        return expand(final_path +"/counting_"+counter+"/countTables/{{sample}}_000{i}_count_genes.tsv",
+           i=glob_wildcards(os.path.join(checkpoint_output, 'sortByName_000{i}.bam')).i)             
+            
+    rule mergeCountTables: 
+        input:
+            count_TE = aggregate_count_TE,
+            count_genes = aggregate_count_genes
+        output:
+            mergetableTE = mergetableTE,
+            mergetable_genes = final_path + "/counting_"+counter+"/countTables/{sample}_countGenes.tsv"
+        params:
+            mp = main_path,
+        shell:
+            """
+            python {params.mp}scripts/mergeCounts.py {counter} {output.mergetableTE} {input.count_TE} 
+            python {params.mp}scripts/mergeCounts.py {counter} {output.mergetable_genes} {input.count_genes}
+            """             
+
+######### ht-seq count and start count not implemented with the split! ##########
 if counter == "htseq-count":
-    if end == "pair":
-        rule htseqCount:
-            input:
-                sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
-                annotation = config["ANNOTATION"]
-            output:
-                countF = final_path + "/counting_"+ counter + "/countTables/{sample}_count.tsv",
-                count_summary = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv.summary",
-                tmp = temp(final_path + "/counting_"+ counter + "/countTables/{sample}_count.tmp")
-            conda:
-                "env.yaml"
-            shell:
-                "htseq-count -r pos -f bam -i {config[ATTRIBUTE]} -s {config[STRAND]} -t {config[FEATURE]} -c {output.tmp} {input.sort} {input.annotation} && sed '/^__/ d' {output.tmp} > {output.countF} && grep '__' {output.tmp} > {output.count_summary}"
-    else: 
-        rule htseqCount:
-            input:
-                sort = intermediate_path + "/bamFileSort/{sample}.sort.bam",
-                annotation = config["ANNOTATION"]
-            output:
-                countF = final_path + "/counting_"+ counter + "/countTables/{sample}_count.tsv",
-                count_summary = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv.summary",
-                tmp = temp(final_path + "/counting_"+ counter + "/countTables/{sample}_count.tmp")
-            conda:
-                "env.yaml"
-            shell:
-                "htseq-count -f bam -i {config[ATTRIBUTE]} -s {config[STRAND]} -t {config[FEATURE]} -c {output.tmp} {input.sort} {input.annotation} && sed '/^__/ d' {output.tmp} > {output.countF} && grep '__' {output.tmp} > {output.count_summary}"
+    rule htseqCount:
+        input:
+            sort = intermediate_path + "/Sorted_bam/{sample}.sort.bam"
+        output:
+            countF = final_path + "/counting_"+ counter + "/countTables/{sample}_countGenes.tsv",
+            count_summary = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv.summary",
+            tmp = temp(final_path + "/counting_"+ counter + "/countTables/{sample}_count.tmp")
+        conda:
+            "env.yaml"
+        params:
+            options = count_options  #### j'ai pas encore testé l'utilisation d'options pour htseq
+        shell:
+            "htseq-count {params.options} -r pos -f bam -i {config[ATTRIBUTE]} -s {config[STRAND]} -t {config[FEATURE]} -c {output.tmp} {input.sort} {gene_gtf} && sed '/^__/ d' {output.tmp} > {output.countF} && grep '__' {output.tmp} > {output.count_summary}"
 
 if counter == "STARcount": 
     if strand == "yes" or strand == True:
         rule starCount:
             input:
-                counts = intermediate_path + "/bamFileSort/{sample}.ReadsPerGene.out.tab"
+                counts = intermediate_path + "/Sorted_bam/{sample}.ReadsPerGene.out.tab"
             output:
-                countF = final_path + "/counting_" + counter + "/countTables/{sample}_count.tsv",
+                countF = final_path + "/counting_" + counter + "/countTables/{sample}_countGenes.tsv",
                 count_summary = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv.summary"
             shell:
                 "grep N_ {input.counts} > {output.count_summary} && sed '/N_/ d' {input.counts} | awk '{{print $1\"\t\"$3}}' > {output.countF}"
     if strand == "no" or strand == False: 
         rule starCount:
             input:
-                counts = intermediate_path + "/bamFileSort/{sample}.ReadsPerGene.out.tab"
+                counts = intermediate_path + "/Sorted_bam/{sample}.ReadsPerGene.out.tab"
             output:
-                countF = final_path + "/counting_"+ counter + "/countTables/{sample}_count.tsv",
+                countF = final_path + "/counting_"+ counter + "/countTables/{sample}_countGenes.tsv",
                 count_summary = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv.summary"
             shell:
                 "grep N_ {input.counts} > {output.count_summary} && sed '/N_/ d' {input.counts} | awk '{{print $1\"\t\"$2}}' > {output.countF}"
     if strand == "reverse":
         rule starCount:
             input:
-                counts = intermediate_path + "/bamFileSort/{sample}.ReadsPerGene.out.tab"
+                counts = intermediate_path + "/Sorted_bam/{sample}.ReadsPerGene.out.tab"
             output:
-                countF = final_path + "/counting_"+ counter + "/countTables/{sample}_count.tsv",
+                countF = final_path + "/counting_"+ counter + "/countTables/{sample}_countGenes.tsv",
                 count_summary = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv.summary"
             shell:
                 "grep N_ {input.counts} > {output.count_summary} && sed '/N_/ d' {input.counts} | awk '{{print $1\"\t\"$4}}' > {output.countF}"
-
-
+ 
 rule PCA:
-    input:
-        countF = expand(final_path + "/counting_"+ counter + "/countTables/{sample}_count.tsv", sample=samples)
+    input: 
+        countF = expand(final_path +"/counting_"+counter+"/countTables/{sample}_countGenes.tsv",sample=samples)
     output:
         pca = final_path + "/counting_"+ counter + "/PCA.pdf"
     conda:
@@ -312,8 +527,22 @@ rule PCA:
         count_path = final_path + "/counting_"+ counter,
         mp = main_path
     shell:
-        "Rscript {params.mp}scripts/pca.R {params.count_path}"
-
+        "Rscript {params.mp}scripts/pca.R {params.count_path} _countGenes.tsv"
+  
+if TEanalysis == "yes" or TEanalysis==True:
+    rule TEPCA:
+        input: 
+            countTE = expand(final_path +"/repeats_"+counter+"/countTables/{sample}_countTE.tsv",sample=samples)
+        output:
+            pca_repeats = final_path +"/repeats_"+counter+ "/PCA_TE.pdf"
+        conda:
+            "env.yaml"
+        params:
+            count_path = final_path + "/repeats_"+counter,
+            mp = main_path
+        shell:
+            "Rscript {params.mp}scripts/pca.R {params.count_path} _countTE.tsv"
+    
 if counter == "htseq-count" or counter == "featureCounts":
     rule summaryReport:
         input:
@@ -329,14 +558,14 @@ if counter == "htseq-count" or counter == "featureCounts":
 if counter =="STARcount": 
     rule summaryReport:
         input:
-            counts = expand(intermediate_path + "/bamFileSort/{sample}.ReadsPerGene.out.tab", sample = samples),
+            counts = expand(intermediate_path + "/Sorted_bam/{sample}.ReadsPerGene.out.tab", sample = samples),
             bamqc = expand(final_path + "/alignmentQC/{sample}_BAMqc", sample = samples)
         output:
             report = final_path + "/report_align_count_"+counter+".html"
         conda:
             "env.yaml"
         params:
-            mapping = intermediate_path + "/bamFileSort/",
+            mapping = intermediate_path + "/Sorted_bam/",
         shell:
             "multiqc {params.mapping} {input.bamqc} --filename {output.report}"
 

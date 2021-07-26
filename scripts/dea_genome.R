@@ -17,8 +17,8 @@ library(DEFormats)
 DEA <- function(control, treat) {
   message("###############################################################################################")
   message(paste("---------------","Comparing groups", control, "and",  treat, "---------------", sep=" "))  
-  count.control <- read.table(paste(counts_path, control, '_counts.tsv', sep = ''), header = TRUE, row.names = 1)
-  count.treat <- read.table(paste(counts_path, treat, '_counts.tsv', sep = ''), header = TRUE, row.names = 1)
+  count.control <- read.table(paste(counts_path, control, suffix, sep = ''), header = TRUE, row.names = 1)
+  count.treat <- read.table(paste(counts_path, treat, suffix, sep = ''), header = TRUE, row.names = 1)
   count.table <- cbind(count.control, count.treat)  # merge the control and treat tables together
   
   # number of samples in control and treat groups (should be the same if it's a pair test)
@@ -265,29 +265,33 @@ DEA <- function(control, treat) {
     # get Symbols 
     
     annotation$GeneID <- sapply(strsplit(as.character(annotation$GeneID), "\\."),  "[", 1)
-    gene.id.dea <- annotation$GeneID
-    gene.symbol.dea.all <- queryMany(gene.id.dea, scopes = 'ensembl.gene', fields = 'symbol')
-    h <- hash()
-    for (i in 1:nrow(gene.symbol.dea.all)) {
-      query <- gene.symbol.dea.all$query[i]
-      symbol <- gene.symbol.dea.all$symbol[i]
-      if (has.key(query, h)) {  # if there's duplicate for the same query
-        h[[query]] <- paste(hash::values(h, keys = query), symbol, sep = ', ')
-      }
-      else {
-        if (is.null(symbol) || is.na(symbol)) {  # if there's no hit for the query, keep the original id
-          h[[query]] <- query
-        } 
-        else {
-          h[[query]] <- symbol
-        }
-      }
-    }
-    gene.dea <- gene.id.dea
-    for (i in c(1:length(gene.dea))) {
-       gene.dea[i] <- h[[gene.id.dea[i]]]
-    }
-    annotation$GeneID <- gene.dea
+    
+    if (suffix == '_countsGenes.tsv') {
+       gene.id.dea <- annotation$GeneID
+       gene.symbol.dea.all <- queryMany(gene.id.dea, scopes = 'ensembl.gene', fields = 'symbol')
+       h <- hash()
+       for (i in 1:nrow(gene.symbol.dea.all)) {
+          query <- gene.symbol.dea.all$query[i]
+          symbol <- gene.symbol.dea.all$symbol[i]
+          if (has.key(query, h)) {  # if there's duplicate for the same query
+             h[[query]] <- paste(hash::values(h, keys = query), symbol, sep = ', ')
+          }
+          else {
+             if (is.null(symbol) || is.na(symbol)) {  # if there's no hit for the query, keep the original id
+                h[[query]] <- query
+             } 
+             else {
+                h[[query]] <- symbol
+             }
+          }
+       }
+       gene.dea <- gene.id.dea
+       for (i in c(1:length(gene.dea))) {
+          gene.dea[i] <- h[[gene.id.dea[i]]]
+          }
+       annotation$GeneID <- gene.dea
+       }
+        
     anno <- as.data.frame(cbind(annotation$GeneID, DE))      
     
     html <- paste('MDPlot_', control, '_', treat, sep = '')  
@@ -302,23 +306,23 @@ DEA <- function(control, treat) {
 
     # add PDFs of important figures
     # volcano
-    fig.volcano <- EnhancedVolcano(dea, lab = gene.dea, xlab = bquote(~Log[2]~ "fold change"), x = x.volc, y = y.volc, pCutoff = 10e-5, col = c("grey30", "orange2", "royalblue", "red2"),
+    fig.volcano <- EnhancedVolcano(dea, lab = annotation$GeneID, xlab = bquote(~Log[2]~ "fold change"), x = x.volc, y = y.volc, pCutoff = 0.05, col = c("grey30", "orange2", "royalblue", "red2"),
                                  FCcutoff = 1, title = dea.tool, subtitle = paste(control, 'vs', treat, sep = ' '))
     pdf(file = file.path(output.path, paste('Report/plots/volcano_plot_', control, '_', treat, '.pdf', sep = '')), width = 9, height = 7)
     print(fig.volcano)
     dev.off()  
     message(paste("---------------","Volcano plot for DEA between", control, "and",  treat, "exported ---------------", sep=" "))
     
-    # draw heatmap of the Top20 regulated genes
+    # draw heatmap of the Top30 regulated genes
     groups <- c(control, treat)  
     splan.control <- meta.data[meta.data$group %in% c(control), ]
     splan.treat <- meta.data[meta.data$group %in% c(treat), ]
     num.control <- nrow(splan.control) 
     num.treat <- nrow(splan.treat)  
 
-    # instead using all genes, only use the top 20 genes in dea.table
+    # instead using all genes, only use the top 30 genes in dea.table
     id2 <- row.names(dea.sorted)
-    index.deg <- which(row.names(normalized_counts) %in% id2[1:20])
+    index.deg <- which(row.names(normalized_counts) %in% id2[1:30])
     norm.table.deg <- normalized_counts[index.deg,]
 
     gene.id.norm.table <- rownames(norm.table.deg)
@@ -345,37 +349,50 @@ DEA <- function(control, treat) {
     palette.group <- c(rep(palette[1], num.control), rep(palette[2], num.treat)) # number of cotr/treat samples -> need metadata
 
     pdf(file = file.path(output.path, paste('Report/plots/heatmapTop_', control, '_', treat, '.pdf', sep = '')), width = 15, height = 15, title = 'Heatmap using the top features')
-    heatmap.2(as.matrix(norm.table.deg), col=brewer.pal(11,"RdBu"),scale="row", trace="none", ColSideColors = palette.group, margins = c(20,18), labRow = gene.norm.table, cexRow = 1.9, cexCol = 1.9)
+    heatmap.2(as.matrix(norm.table.deg), col=brewer.pal(11,"RdBu"),scale="row", trace="none", ColSideColors = palette.group, margins = c(20,18), labRow = gene.norm.table, cexRow = 1.9, cexCol = 1.9, Rowv=FALSE)
     legend("topright", title = 'Group', legend=groups, text.font = 15,
          col = palette, fill = palette, cex=1.8)
 
     dev.off()
-    message(paste("---------------","heatmap for Top20 genes for DEA between", control, "and",  treat, "exported ---------------", sep=" "))
+    message(paste("---------------","heatmap for Top30 genes for DEA between", control, "and",  treat, "exported ---------------", sep=" "))
       
     ## Sample distances
     ## Run the rlog normalization
     rld <-rlog(dds, blind=TRUE)
+    
     ## Obtain the sample euclidean distances
     sampleDists <- dist(t(assay(rld)))
     sampleDistMatrix <- as.matrix(sampleDists)
-    ## Add names based on intgroup
-    rownames(sampleDistMatrix) <- apply(as.data.frame(colData(rld)[, c("group")]), 1,paste, collapse = ' : ')
-    colnames(sampleDistMatrix) <- NULL
+    colnames(sampleDistMatrix) <- rownames(colData(rld))
+    
+    ## Add names including intgroup
+    rownames(sampleDistMatrix) <- paste(rownames(colData(rld)), colData(rld)[, c("group")],sep=":") 
+    colnames(sampleDistMatrix) <- rownames(colData(rld))
     colors <- colorRampPalette(rev(brewer.pal(9,"Blues")))(255)
-    pheatmap(sampleDistMatrix, clustering_distance_rows = sampleDists, clustering_distance_cols = sampleDists, color = colors, main="sample distance", filename=file.path(output.path, paste('Report/plots/SampleDistances_', control, '_', treat, '.pdf', sep = '')))
+    if (suffix == "_countsGenes.tsv") {
+        title <- "Sample distances for genes"
+        titlepca <- 'PCA using gene counts'
+    } 
+    if (suffix == "_countsTE.tsv") {
+        title <- "Sample distances for repeats"
+        titlepca <- 'PCA using repeat counts'
+    } 
+    pheatmap(sampleDistMatrix, clustering_distance_cols = sampleDists, clustering_distance_rows = sampleDists, color = colors, main=title, filename=file.path(output.path, paste('Report/plots/SampleDistances_', control, '_', treat, '.pdf', sep = '')))        
     message(paste("---------------","Sample distances between", control, "and",  treat, "exported ---------------", sep=" "))
 
     ## PCA
     pdf(file = file.path(output.path, paste('Report/plots/PCA_', control, '_', treat, '.pdf', sep = '')), width = 15, height = 15, title = 'PCA')
     par(mfrow = c(2,1))
     # run PCA
-    fig.pca <- DESeq2::plotPCA(rld, intgroup =c("group"), ntop=1000)
-    print(fig.pca)
+    pca = DESeq2::plotPCA(rld, intgroup=c("group"), returnData=TRUE, ntop=1000)
+    pca_plot <- ggplot(data=pca, aes_string(x="PC1", y="PC2", color="group")) + geom_point(size=3) + 
+    labs(title=titlepca, x =paste0("PC1: ",round(attr(pca, 'percentVar')[1] * 100),"% variance"), 
+         y = paste0("PC2: ",round(attr(pca, 'percentVar')[2] * 100),"% variance")) + coord_fixed()
+    print(pca_plot)
     dev.off()
     message(paste("---------------","PCA between", control, "and",  treat, "exported ---------------", sep=" "))
-  
-}      
-  
+} 
+
 
 # load the config file
 yaml.file <- yaml.load_file('configs/config_main.yaml')
@@ -395,6 +412,7 @@ mapper <- yaml.file$ALIGNER
 args <- commandArgs(TRUE)
 counts_path <- args[1]
 output.path <- args[2]
+suffix <- args[3]
 
 # extract the metadata
 meta.data <- read.csv(meta.file, header = TRUE, sep = '\t')

@@ -1,5 +1,5 @@
 __default__:
-  mem: 2000
+  mem: 500
   name: snakejob
   cpus: 1
 
@@ -21,7 +21,7 @@ trimS:
 hisat2:
   mem: 7000
   name: hisat2
-  cpus: 16
+  cpus: 32
 
 star:
   mem: 40000
@@ -50,7 +50,7 @@ BigWigF:
 featureCount:
   mem: 10000
   name: featureCount
-  cpus: 8
+  cpus: 4
 
 htseqCount:
   mem: 50000
@@ -64,6 +64,11 @@ BamIndex:
 
 PCA:
   name: PCA
+  mem: 2000
+  
+TEPCA:
+  name: TEPCA
+  mem: 2000
 
 summaryReport:
   name: multiQC
@@ -74,6 +79,9 @@ MappingReport:
 DEA:
   name: DEA
 
+TE_DEA:
+  name: TE_DEA
+
 quantify:
   name: quantTrans
 
@@ -82,3 +90,42 @@ getReads:
 
 starCount:
   name: starCount
+  
+TEcount:
+  mem: 30000
+  name : TEcount
+  cpus: 24
+  
+Samtools:
+  mem: 30000
+  name : Samtools
+  cpus: 8
+
+splitBam : 
+  mem: 10000
+  name : Picards
+  
+sortBam:
+  name: sortBam
+  cpus: 8
+  mem: 10000
+
+spliceSites:
+  name: spliceSites
+  
+splitCountTables:
+  name: splitCountTables
+  
+mergeCountTables:
+  name: mergeCountTables
+  
+mergeSummaries:
+  name: mergeSummaries
+  
+TE_index:
+  name: TE_index
+  mem: 10000
+  
+gene_index:
+  name: gene_index
+  mem: 1000
