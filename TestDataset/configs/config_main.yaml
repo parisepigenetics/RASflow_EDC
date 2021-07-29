@@ -86,7 +86,7 @@ FEATURE: transcript # "exon", "gene", "transcript", ... depending on your GTF fi
 
 # ================== Configuration for repeat analysis ==================
 
-GTFTE: /shared/projects/repeats/RASflow_IFB/gtf/hg38_TE_rmsk_MH_20210525.gtf  # GTF ANNOTATION file for repeats, must be adapted to have the FEATURE you chose ("exon", "gene", "transcript") as 3rd column. 
+GTFTE: TestDataset/gtf/hg38_TE_rmsk_chr22.gtf  # GTF ANNOTATION file for repeats, must be adapted to have the FEATURE you chose ("exon", "gene", "transcript") as 3rd column. 
 
 
 # ================== Configuration for DEA ==================

@@ -1,7 +1,7 @@
 # Tutorial : RNA-seq analysis using RASflow implementation by BIBS-EDC (on IFB and RPBS clusters)
 
-<small>Maintained by [Magali Hennion](mailto:hennion@ens.fr). Last update : 27/11/2020.</small>  
-**Important! The RPBS version of the workflow has NOT been updated since September 25th.** 
+<small>Maintained by [Magali Hennion](mailto:hennion@ens.fr). Last update : 26/07/2021.</small>  
+**Important! The RPBS version of the workflow has NOT been updated since February 2021.** 
 
 RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhang](https://doi.org/10.1186/s12859-020-3433-x). It has been modified to run effectively on both IFB and RPBS core cluster and to fit our specific needs. Moreover, several tools and features were added, including a comprehensive report. If you encounter troubles or need additional tools or features, you can create an issue on the [GitHub repository](https://github.com/parisepigenetics/RASflow_IFB/issues), or email directly [Magali](mailto:hennion@ens.fr). The tutorial is detailed for the IFB cluster. A small paragraph at the end gives you the instructions to run it on RPBS cluster. 
 
@@ -86,7 +86,8 @@ Here is a simplified scheme of the workflow as implemented on IFB or RBPS cluste
 - IFB  
   - Create and manage your [account](https://my.cluster.france-bioinformatique.fr/manager2/login)  
   - Community [support](https://community.cluster.france-bioinformatique.fr)   
-  - [Documentation](https://ifb-elixirfr.gitlab.io/cluster/doc/)  
+  - [Documentation](https://ifb-elixirfr.gitlab.io/cluster/doc/)
+  - [Jupyter Hub](https://jupyterhub.cluster.france-bioinformatique.fr)  
 
 - RASflow, Zhang, X.  
   - [Original article](https://doi.org/10.1186/s12859-020-3433-x): RASflow: an RNA-Seq analysis workflow with Snakemake, Xiaokang Zhang & Inge Jonassen, BMC Bioinformatics  21, 110 (2020)  
@@ -107,6 +108,7 @@ Here is a simplified scheme of the workflow as implemented on IFB or RBPS cluste
   - [edgeR](https://bioconductor.org/packages/release/bioc/manuals/edgeR/man/edgeR.pdf) 
   - [DESeq2](https://bioconductor.org/packages/release/bioc/manuals/DESeq2/man/DESeq2.pdf)
   - [Glimma](http://www.bioconductor.org/packages/release/bioc/manuals/Glimma/man/Glimma.pdf)
+  - TEcount from [TEtranscripts](https://github.com/mhammell-laboratory/TEtranscripts)
 
 ---
 
@@ -116,13 +118,21 @@ Here is a simplified scheme of the workflow as implemented on IFB or RBPS cluste
 
 We highly recommend to first read at least the [Quick Start](https://ifb-elixirfr.gitlab.io/cluster/doc/quick-start/) of the cluster [documentation](https://ifb-elixirfr.gitlab.io/cluster/doc/). 
 
-To ask for an account you have to go to [my.cluster.france-bioinformatique.fr](https://my.cluster.france-bioinformatique.fr/manager2/login), click on `create an account` and fill the form. You will then shortly receive an email to activate your account.  
-Once your account is active, you have to connect to [my.cluster.france-bioinformatique.fr/manager2/project](https://my.cluster.france-bioinformatique.fr/manager2/project) in order to create a new project. You will then receive an email when it's done (few hours usually). 
+- To ask for an account you have to go to [my.cluster.france-bioinformatique.fr](https://my.cluster.france-bioinformatique.fr/manager2/login), click on `create an account` and fill the form. You will then shortly receive an email to activate your account.  
+- Once your account is active, you have to connect to [my.cluster.france-bioinformatique.fr/manager2/project](https://my.cluster.france-bioinformatique.fr/manager2/project) in order to create a new project. You will then receive an email when it's done (few hours usually). 
+- [Facultative] If your data are not sensitive and you encounter difficulties running the workflow, you can give Magali access to your project by adding the user `mhennion` on the [project manager webpage](https://my.cluster.france-bioinformatique.fr/manager2/project). You can remove it anytime. 
+
 
 ---
 ## Connect to IFB core cluster
+It's time to go to the cluster! You can connect to IFB server either via `ssh` or using the Jupyter Hub from IFB, which facilitates a lot file navigation. 
 
-It's time to go to the cluster! You can connect to IFB server typing the following command replacing `username` by your IFB username. 
+### Easy connection : use the Jupyter Hub!
+You can connect to [IFB Jupyter Hub](https://jupyterhub.cluster.france-bioinformatique.fr/) and enter your login and password. On the left pannel, you can navigate to your project (`/shared/projects/YourProjectName`). For now your project folder is empty. 
+
+
+### SSH connection 
+You can also use your terminal and type the following command replacing `username` by your IFB username. 
 
 ```bash
 You@YourComputer:~/PathTo/RNAseqProject$ ssh -o "ServerAliveInterval 10" -X username@core.cluster.france-bioinformatique.fr
@@ -157,30 +167,38 @@ You can now go to your project using `cd`.
 ```
 [username@clust-slurm-client ~]$ cd /shared/projects/YourProjectName
 ```
-For now your project folder is empty. 
 
 
 ## RASflow installation and description
 
 In order to install RASflow, you  have to clone the RASflow_IFB GitHub repository to your IFB project. For now the repository is private, so you need to have a GitHub account and to be a member of [EDC repository](https://github.com/parisepigenetics) to have access. If you're not, please let me know and I will add you. You will have to enter your GitHub username and password to clone the repository. You can then look at the files using `tree` or `ls`.
 
+If you're using the Jupyter Hub, you now have to open a terminal by clicking on the corresponding icon. 
+
+<img src="Tuto_pictures/JupyterHub.png" alt="drawing" width="700"/>
+
+And to go to your project using `cd`.
+
+```
+[username @ cpu-node-12 ]$ cd /shared/projects/YourProjectName
+```
+Now you can clone the repository.
 ```bash
-[username@clust-slurm-client Raw_fastq]$ cd .. #to go back at the root of your project directory
 [username@clust-slurm-client YourProjectName]$ git clone https://github.com/parisepigenetics/RASflow_IFB
 Cloning into 'RASflow_IFB'...
 Username for 'https://github.com': GITHUBusername
 Password for 'https://username@github.com': GITHUBpassword
-remote: Enumerating objects: 203, done.
-remote: Counting objects: 100% (203/203), done.
-remote: Compressing objects: 100% (152/152), done.
-remote: Total 203 (delta 74), reused 175 (delta 49), pack-reused 0
-Receiving objects: 100% (203/203), 8.37 MiB | 6.08 MiB/s, done.
-Resolving deltas: 100% (74/74), done.
-Checking out files: 100% (100/100), done.
+remote: Enumerating objects: 670, done.
+remote: Counting objects: 100% (42/42), done.
+remote: Compressing objects: 100% (41/41), done.
+remote: Total 670 (delta 1), reused 31 (delta 1), pack-reused 628
+Receiving objects: 100% (670/670), 999.24 MiB | 32.76 MiB/s, done.
+Resolving deltas: 100% (315/315), done.
+Checking out files: 100% (84/84), done.
 [username@clust-slurm-client YourProjectName]$ cd RASflow_IFB
 [username@clust-slurm-client RASflow_IFB]$ tree -L 2
 .
-├── cluster.yml
+├── cluster.yaml
 ├── configs
 │   ├── config_main.yaml
 │   └── metadata.tsv
@@ -190,14 +208,15 @@ Checking out files: 100% (100/100), done.
 ├── scripts
 │   ├── combine2group_genome.py
 │   ├── dea_genome.R
-│   ├── formatCount.sh
-│   ├── __init__.py
-│   ├── opencsv-1.8.jar
+│   ├── getquota2.sh
+│   ├── mergeCounts.py
+│   ├── mergeSummaries.py
 │   ├── pca.R
-│   ├── qlt_ctr.sh
 │   ├── reporting.py
-│   ├── sumgenescod.class
-│   └── sumgenescod.java
+│   ├── rmsk2gtf.py
+│   ├── TEcount.py
+│   ├── TEToolkit
+│   └── TEtranscripts_indexer.py
 ├── StarIndex.sh
 ├── TestDataset
 │   ├── configs
@@ -251,8 +270,8 @@ You should transfer your data in your project folder `/shared/projects/YourProje
 
 ### FASTQ names
 The workflow is expecting gzip-compressed FASTQ files with names formatted as   
-- SampleName_R1.fastq.gz and SampleName_R2.fastq.gz for pair-end data, 
-- SampleName.fastq.gz for single-end data. 
+- `SampleName_R1.fastq.gz` and `SampleName_R2.fastq.gz` for pair-end data, 
+- `SampleName.fastq.gz` for single-end data. 
 
 If your files are not fitting this format, please see [how to correct the names of a batch of FASTQ files](#quickly-change-fastq-names). 
 
@@ -290,9 +309,11 @@ Check that the transfer went fine using md5sum.
 
 ## Preparing the run
 
-There are **2 files that you have to modify** before running your analysis (`metadata.tsv` and `config_main.yaml` in the `configs` folder), and eventually some others not mandatory. To modify the text files on the cluster you can use **vi**, **emacs**, **nano** or **gedit** (the last one being easier to use). Never copy/past code to word processor (like Microsoft Word or LibreOffice Writer), use only text editors.  
+There are **2 files that you have to modify** before running your analysis (`metadata.tsv` and `config_main.yaml` in the `configs` folder), and eventually some others not mandatory. To modify the text files from the terminal you can use **vi**, **emacs**, **nano** or **gedit** (the last one being easier to use). **Never copy/past code to word processor** (like Microsoft Word or LibreOffice Writer), use only text editors.  
 
 Nota: in order to use **gedit**, be sure that you included `-X` when connecting to the cluster (`-X` option is necessary to run graphical applications remotely). See [common errors](#error-starting-gedit). 
+
+If you're using the Jupyter Hub, it's **easier** as text and table editors are included, you just have to double click on the file you want to edit, modify and save it using the menu File/Save or Ctrl+S. 
 
 ### 1. **metadata.tsv**
 
@@ -314,7 +335,9 @@ D197-D192T36	J10_KO	1
 D197-D192T37	J10_KO	2
 D197-D192T38	J10_KO	3
 ```   
-**Important:** the columns have to be **tab-separated**. 
+**Important:** the columns have to be **tab-separated**.  
+On Jupyter Hub:
+<img src="Tuto_pictures/metadata.png" alt="drawing" width="500"/>
 
 The first column contains the **sample** names that have to **correspond to the FASTQ names** (for instance here D197-D192T27_R1.fastq.gz). The second column describes the **group** the sample belongs to and will be used for differential expression analysis. The last column contains the replicate number or **subject**. If the samples are paired, for instance 2 samples from the same patient taken at different times, the **subject** number should be the same (this information is important for differential expression analysis). You can rename or move that file, as long as you adapt the `METAFILE` entry in `config_main.yaml` (see below).  
 
@@ -334,16 +357,19 @@ PROJECT: EXAMPLE
 # ================== Control of the workflow ==================
 
 ## Do you need to do quality control?
-QC: no  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
+QC: yes  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
 
 ## Do you need to do trimming?
 TRIMMED: yes  # "yes" or "no"? 
 
-## Do you need to do mapping?
+## Do you need to do mapping and feature counting?
 MAPPING: yes # "yes" or "no"
 
 ## Which mapping reference do you want to use? Genome or transcriptome?
 REFERENCE: genome  # "genome" or "transcriptome", I haven't implemented transcriptome yet.
+
+## Do you want to study the repeats?
+REPEATS: yes # "yes" or "no"
 
 ## Do you want to do Differential Expression Analysis (DEA)?
 DEA: yes  # "yes" or "no"
@@ -353,7 +379,7 @@ DEA: yes  # "yes" or "no"
 
 2. Shared parameters   
 Here you define where the FASTQ files are stored, where is the file describing the experimental set up, the name and localization of the folders where the results will be saved. The results (detailed in [Workflow results](#workflow-results)) are separated into two folders:  
-- the big files : trimmed FASTQ, bam files are in an intermediate folder defined at `BIGDATAPATH`
+- the big files : trimmed FASTQ, bam files are in an specific folder defined at `BIGDATAPATH`
 - the small files: QC reports, count tables, BigWig, etc. are in the final result folder defined at `RESULTPATH`  
 Examples are given in the configuration file, but you're free to name and organise them as you want. **Be sure to include the full path** (starting from `/`). Here you also precise if your data are paired-end or single-end [Nota: I haven't tested single-end data yet, there might be bugs] and the number of CPUs you want to use for your analysis. 
 
@@ -370,7 +396,7 @@ READSPATH: /shared/projects/YourProjectName/Raw_fastq
 ## the meta file describing the experiment settings
 METAFILE: /shared/projects/YourProjectName/RASflow_IFB/configs/metadata.tsv
 
-## paths for intermediate and final results
+## paths for intermediate final results
 BIGDATAPATH: /shared/projects/YourProjectName/RASflow_IFB/data # for big files
 RESULTPATH: /shared/projects/YourProjectName/RASflow_IFB/results
 
@@ -378,10 +404,11 @@ RESULTPATH: /shared/projects/YourProjectName/RASflow_IFB/results
 END: pair  # "pair" or "single"
 
 ## number of cores you want to allocate to this workflow
-NCORE: 30  # Use command "getconf _NPROCESSORS_ONLN" to check the number of cores/CPU on your machine
+NCORE: 24  # Use command "getconf _NPROCESSORS_ONLN" to check the number of cores/CPU on your machine
 ```
 
 Nota: it is possible to replace all the occurences of `YourProjectName` by your actual project name at once. You can either
+- open config_main.yaml in the Jupyter Hub and use `Find...` (Edit menu or Ctrl+F), clicking on the small triangle next to the search bar allows you to replace.
 - open config_main.yaml with **gedit** and use `Find and Replace...` (menu or Ctrl+H)
 - open with **vi** and type `:%s/YourProjectName/BestProjectEver/g`
 - use the command line `sed`
@@ -402,36 +429,32 @@ Here you precise parameters that are specific to one of the steps of the workflo
 # ================== Configuration for trimming ==================
 
 ## Number of trimmed bases
-## put "no" for TRIM3 if you don't want to trim a fixed number of bases. 
-TRIM3: no #  integer or "no", hard-clip sequences from their 5' end, keep the N 3' end bases (remove start of the sequences) , put "no" if don't want trimming 
-TRIM5: no # integer or "no", hard-clip sequences from their 3' end, keep the N 5' end bases (remove end of the sequences) , the trimming of the beginning of the read is done first. This number should be smaller than or equal to TRIM3 (it is the final lenght of the sequences).
+## put "no" for TRIM3 and TRIM5 if you don't want to trim a fixed number of bases.
+TRIM5: no #  integer or "no", remove N bp from the 5' end of reads. This may be useful if the qualities were very poor, or if there is some sort of unwanted bias at the 5' end. 
+TRIM3: no # integer or "no", remove N bp from the 3' end of reads AFTER adapter/quality trimming has been performed.
 
 # ================== Configuration for quantification using transcriptome ==================
 
 ## transcriptome file
-TRANS: /shared/..  # not yet implemented
+TRANS: /shared/.. # not yet implemented
 
 # ================== Configuration for alignment to genome and feature count ==================
 
 ## aligner
-ALIGNER: hisat2 # "STAR" or "hisat2"
+ALIGNER: HISAT2 # "STAR" or "HISAT2"
 
 ## genome and annotation files
-INDEXPATH: /shared/bank/homo_sapiens/hg38/hisat2 # or index/STAR # folder containing index files
-INDEXBASE: genome  # for hisat2, base of the name of the index files (ie genome.1.ht2)
-ANNOTATION: /shared/projects/YourProjectName/RASflow_IFB/gtf/gencode.v34.annotation.gtf # GTF file 
+INDEXPATH: /shared/bank/homo_sapiens/hg38/hisat2 # folder containing index files
+INDEXBASE: genome # for hisat2, base of the name of the index files (ie genome.1.ht2)
+ANNOTATION: /shared/projects/YourProjectName/RASflow_IFB/gtf/gencode.v34.annotation.gtf # GTF file  
 
 ## bigwig option
-BWSTRANDED: both # "no": bw merging forward and reverse reads, "yes": get 2 bw files, one forward and one reverse; "both": get the two bw per strand as well as the merge one.
+BWSTRANDED: both # "no": bw merging forward and reverse reads, "yes": get 2 bw files, one forward and one reverse; "both": get the two bw per strand as well as the merge one. 
 
 ## tool for feature count
-COUNTER: featureCounts # "featureCounts" or "htseq-count" or "STARcount" (only with STAR aligner, --quantMode GeneCounts option)
+COUNTER: featureCounts # "featureCounts" or "htseq-count" or "STARcount" (only with STAR aligner, --quantMode GeneCounts option) or "TEcount" (if REPEATS: yes)
 
 ## counting options
-ATTRIBUTE: gene_id  # the attribute used in annotation file. It's usually "gene_id", but double check that since it may also be "gene", "ID"...
-STRAND: "reverse" # "no", "yes", "reverse". For ht-seq counts: For stranded=no, a read is considered overlapping with a feature regardless of whether it is mapped to the same or the opposite strand as the feature. For stranded=yes and single-end reads, the read has to be mapped to the same strand as the feature. For paired-end reads, the first read has to be on the same strand and the second read on the opposite strand. For stranded=reverse, these rules are reversed.
-FEATURE: transcript # "exon" or "transcript"
-
 [...]
 ```
 
@@ -475,7 +498,6 @@ the job name will be `RASflow` and SLURM output (only for the snakemake commands
 RASflow relies on a Conda environment, you can check the version of the tools (and eventually modify them) in `workflow/env.yaml`. Note that conflicts between versions are frequent and might be tricky to solve. 
 
 ```yaml
-[username@clust-slurm-client RASflow_IFB]$ cat workflow/env.yaml 
 name: rasflow_IFB 
 channels:
   - conda-forge
@@ -521,6 +543,8 @@ dependencies:
   - deeptools=3.4.3
   - bioconductor-regionreport=1.22.0
   - bioconductor-glimma=1.16.0
+  - pysam=0.16.0 
+  - picard=2.25.5
 ```
 
 ## Running the workflow
@@ -578,7 +602,7 @@ RESULTPATH: /shared/projects/YourProjectName/RASflow_IFB/results
 END: pair  # "pair" or "single"
 
 ## number of cores you want to allocate to this workflow
-NCORE: 30  # Use command "getconf _NPROCESSORS_ONLN" to check the number of cores/CPU on your machine
+NCORE: 24  # Use command "getconf _NPROCESSORS_ONLN" to check the number of cores/CPU on your machine
 ```
 
 When this is done, you can start the QC by running:
@@ -612,7 +636,7 @@ Where to find those outputs and what do they contain?
 
 #### 1. **Main script**
 
- Slurm output is in `slurm_output` (default) or in the specified folder if you modified `Workflow.sh`. It contains global information about your run. 
+ The output is in `slurm_output` (default) or in the specified folder if you modified `Workflow.sh`. It contains global information about your run. 
 Typically the main job output looks like :
 
 ```
@@ -775,7 +799,7 @@ Finished job 0.
 ```
 #### 4. **Configuration and timing**
 
-Two extra files can be found in the `logs` folder:
+Three extra files can be found in the `logs` folder:
 
 - A log file named `20200615T1540_running_time.txt` stores **running times.**  
 
@@ -790,8 +814,8 @@ Time of running DEA genome based: 0:01:32
 Finish time: Mon Jun 15 15:50:43 2020
 ```
 
-- A log file named `20200925T1057_configuration.txt` keeps a track of the **configuration of the run** (`config_main.yaml` followed by `metadata.tsv`)
-```
+- A log file named `20200925T1057_configuration.txt` keeps a track of the **configuration of the run** (`config_main.yaml` followed by `metadata.tsv`, conda environment `env.yaml` and cluster configuration `cluster.yaml`)
+```yaml
 [username@clust-slurm-client RASflow_IFB]$: cat logs/20200925T1057_configuration.txt 
  
 # Please check the parameters, and adjust them according to your circumstance
@@ -820,7 +844,53 @@ D197-D192T35	J10_WT	3
 D197-D192T36	J10_KO	1
 D197-D192T37	J10_KO	2
 D197-D192T38	J10_KO	3
+
+==========================================
+
+CONDA ENV
+
+name: rasflow_IFB 
+channels:
+  - conda-forge
+  - bioconda
+  - r
+  - defaults
+dependencies:
+# conda-forge channel installs
+  - R=4.0
+  - python=3.7.6
+  - graphviz=2.42.3
+  - r-yaml=2.2.1
+  - r-statmod=1.4.34
+[...]
+
+==========================================
+
+CLUSTER
+
+__default__:
+  mem: 500
+  name: snakejob
+  cpus: 1
+
+qualityControl:
+  mem: 6000
+  name: QC
+  cpus: 2
+[...]
 ```
+- A log file named `20200925T1057_free_disk.txt` stores the disk usage during the run (every minute, the remaining space is measured). 
+```
+# quota:b'1 limit:1.5
+time	free_disk
+20210726T1611	661
+20210726T1612	660
+20210726T1613	660
+20210726T1614	660
+20210726T1615	660
+20210726T1616	660
+```
+If a run stops with no error, it can be that you don't have enough space in your IFB project. You can see in this file that the free disk tends to 0. 
 
 
 ### FastQC results
@@ -837,12 +907,12 @@ total 38537
 ```
 
 Those are individual fastQC reports. [MultiQC](https://multiqc.info/docs/) is called after FastQC, so you will also find `report_quality_control.html` that is a summary for all the samples. 
-You can copy those reports to your computer to read them, by typing (in a new local terminal):
+You can copy those reports to your computer by typing (in a new local terminal):
 
 ```
 You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourEXAMPLE/RASflow_IFB/results/EXAMPLE/fastqc PathTo/WhereYouWantToSave/
 ```
-
+or look at them directly in the Jupyter Hub.  
 It's time to decide if you need trimming or not. 
 If you have no sequence bias, and little amount of adapters, trimming is not necessary and you can proceed directly to the [mapping step](#mapping-and-counting).
 
@@ -855,7 +925,7 @@ If you have no sequence bias, and little amount of adapters, trimming is not nec
 ### Trimming
 If you put `TRIMMED: no`, there will be no trimming and the original FASTQ sequences will be mapped. 
 
-If you put `TRIMMED: yes`, [Trim Galore](https://github.com/FelixKrueger/TrimGalore/blob/master/Docs/Trim_Galore_User_Guide.md) will remove low quality and very short reads, and cut the adapters. If you also want to remove a fixed number of bases in 5' or 3', you have to configure it. For instance if you want to remove the first 10 bases of reads of 101 bases: 
+If you put `TRIMMED: yes`, [Trim Galore](https://github.com/FelixKrueger/TrimGalore/blob/master/Docs/Trim_Galore_User_Guide.md) will remove low quality and very short reads, and cut the adapters. If you also want to remove a fixed number of bases in 5' or 3', you have to configure it. For instance if you want to remove the first 10 bases: 
 
 ```yaml
 # ================== Control of the workflow ==================
@@ -868,23 +938,11 @@ TRIMMED: "yes"  # "yes" or "no"?
 [...]
 # ================== Configuration for trimming ==================
 
-## Number of trimmed bases 
-## put "no" for TRIM3 if you don't want to trim a fixed number of bases. 
-TRIM3: 91 #  integer or "no", hard-clip sequences from their 5' end, keep the N 3' end bases (remove start of the sequences) , put "no" if don't want trimming 
-TRIM5: 91 #  integer or "no", hard-clip sequences from their 3' end, keep the N 5' end bases (remove end of the sequences) , the trimming of the beginning of the read is done first. This number should be smaller than or equal to TRIM3 (it is the final length of the sequences). 
+## Number of trimmed bases
+## put "no" for TRIM3 and TRIM5 if you don't want to trim a fixed number of bases.
+TRIM5: 10 #  integer or "no", remove N bp from the 5' end of reads. This may be useful if the qualities were very poor, or if there is some sort of unwanted bias at the 5' end. 
+TRIM3: no # integer or "no", remove N bp from the 3' end of reads AFTER adapter/quality trimming has been performed. 
 ```
-
-!! The number you indicate is the number of bases **to keep** !!  
-Of note, this trimming is done before the adapter removal and read filtering.  
-- If you don't want to trim a fixed number of bases, put "no" for TRIM3 (TRIM5 won't be used then).  
-- If you want to trim only 3' end, set TRIM3 to the starting read length and TRIM5 to the final length you want.  
-- If you want to trim only 5' end, set TRIM3 and TRIM5 to the final length you want (as in the example above).  
-- If you want to trim both, put   
-TRIM3: read length MINUS number of bases to remove at 5' end  
-TRIM5: final length. 
-
-Nota: I will probably modify that part to be more computationally efficient. 
-
 
 ### Mapping and counting
 
@@ -948,7 +1006,7 @@ Saving to: ‘download’
 [username@clust-slurm-client index]$ tar -zxvf hg38.tar.gz 
 ```
 
-**STAR indexes** depend on STAR version. STAR 2.7.5a is used here, the indexes should be made with version 2.7.5a or 2.7.4a to be compatible. If you dont find the indexes you need, you can generate them from your genome FASTA. To do so, you can run `StarIndex.sh` giving the path to your genome FASTA file (here `/shared/bank/homo_sapiens/hg38/fasta/hg38.fa` and to the output directory where the index will be saved (here `index/STAR_2.7.5a/hg38`). 
+**STAR indexes** depend on STAR version. STAR 2.7.5a is used here, the indexes should be made with version 2.7.5a or 2.7.4a to be compatible. If you don't find the indexes you need, you can generate them from your genome FASTA. To do so, you can run `StarIndex.sh` giving the path to your genome FASTA file (here `/shared/bank/homo_sapiens/hg38/fasta/hg38.fa` and to the output directory where the index will be saved (here `index/STAR_2.7.5a/hg38`). 
 
 ```
 [username@clust-slurm-client RASflow_IFB]$ sbatch StarIndex.sh /shared/bank/homo_sapiens/hg38/fasta/hg38.fa index/STAR_2.7.5a/hg38
@@ -956,6 +1014,8 @@ Saving to: ‘download’
 
 **GTF** files can be downloaded from [GenCode](https://www.gencodegenes.org/) (mouse and human), [ENSEMBL](https://www.ensembl.org/info/data/ftp/index.html), [NCBI](https://www.ncbi.nlm.nih.gov/assembly/) (RefSeq, help [here](https://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#files)), ...
 Similarly you can dowload them to the server using `wget`. 
+
+Don't hesitate to give the links to the new references you made/downloaded to [IFB community support](https://community.france-bioinformatique.fr/) so that they can add them to the common banks. 
 
 Be sure you give the right path to those files and adjust the other settings to your need: 
 
@@ -970,7 +1030,7 @@ REFERENCE: genome  # "genome" or "transcriptome", I haven't implemented transcri
 # ================== Configuration for alignment to genome and feature count ==================
 
 ## aligner
-ALIGNER: hisat2 # "STAR" or "hisat2"
+ALIGNER: HISAT2 # "STAR" or "HISAT2"
 
 ## genome and annotation files
 INDEXPATH: /shared/bank/homo_sapiens/hg38/hisat2 # folder containing index files
@@ -981,13 +1041,15 @@ ANNOTATION: /shared/projects/YourProjectName/RASflow_IFB/gtf/gencode.v34.annotat
 BWSTRANDED: both # "no": bw merging forward and reverse reads, "yes": get 2 bw files, one forward and one reverse; "both": get the two bw per strand as well as the merge one. 
 
 ## tool for feature count
-COUNTER: featureCounts # "featureCounts" or "htseq-count" or "STARcount" (only with STAR aligner, --quantMode GeneCounts option)
-
+COUNTER: featureCounts # "featureCounts" or "htseq-count" or "STARcount" (only with STAR aligner, --quantMode GeneCounts option) or "TEcount" (if REPEATS: yes)
 
 ## counting options
+COUNTOPTIONS: "-O --fraction" # add extra options for the counter (for featureCounts or htseq-count only). 
+# featureCounts: '-O' (set allowMultiOverlap to TRUE), '-M' (set countMultiMappingReads to TRUE), '--fraction'.
+# htseq-count: -m <mode> ; --nonunique=<nonunique mode>; ... see https://htseq.readthedocs.io
 ATTRIBUTE: gene_id  # the attribute used in annotation file. It's usually "gene_id", but double check that since it may also be "gene", "ID"...
-STRAND: "reverse" # "no", "yes", "reverse". For ht-seq counts: For stranded=no, a read is considered overlapping with a feature regardless of whether it is mapped to the same or the opposite strand as the feature. For stranded=yes and single-end reads, the read has to be mapped to the same strand as the feature. For paired-end reads, the first read has to be on the same strand and the second read on the opposite strand. For stranded=reverse, these rules are reversed.
-FEATURE: transcript # "exon" or "transcript"
+STRAND: reverse # "no", "yes", "reverse". For stranded=no, a read is considered overlapping with a feature regardless of whether it is mapped to the same or the opposite strand as the feature. For stranded=yes and single-end reads, the read has to be mapped to the same strand as the feature. For paired-end reads, the first read has to be on the same strand and the second read on the opposite strand. For stranded=reverse, these rules are reversed.
+FEATURE: transcript # "exon", "gene", "transcript", ... depending on your GTF file and on the feature you're interested in. 
 ```
 
 For an easy visualisation on a genome browser, BigWig files are generated. You can choose if you want to separate forward and reverse reads setting `BWSTRANDED`. 
@@ -999,7 +1061,12 @@ Two other counters are available:
 
 - featureCounts ([SubReads package](http://subread.sourceforge.net/)) 
 
-Both are now running with default parameters. I will implement more parameters. Beside the methode that is a bit different, HTseq-count is much slower at the moment (several hours for a human RNAseq sample) than featureCounts (~10 min). This is because HTseq count is not parallelizable yet. featureCounts is very fast, but needs a lot of free storage space (I measure at least 150 Go to process ~100 Go of bam) that is used temporarily. As at the moment the default projet quota in 500 Go you might be exceeding the space you have (and may or may not get error messages). So if featureCounts fails, try removing files to get more space, or ask to increase your quota on [Community support](https://community.cluster.france-bioinformatique.fr). To see the space you have you can run:
+
+======================TO MODIFY==============  
+Both are running with default parameters unless you add parameters in `COUNTOPTIONS`. Beside the methode that is a bit different, HTseq-count is much slower at the moment (several hours for a human RNAseq sample) than featureCounts (~10 min). This is because HTseq count is not parallelizable yet. featureCounts is very fast, but needs a lot of free storage space (I measure at least 150 Go to process ~100 Go of bam) that is used temporarily. As at the moment the default projet quota in 500 Go you might be exceeding the space you have (and may or may not get error messages). So if featureCounts fails, try removing files to get more space, or ask to increase your quota on [Community support](https://community.cluster.france-bioinformatique.fr). To see the space you have you can run:
+
+========================================
+
 
 ``` 
 [username@clust-slurm-client RASflow_IFB]$ du -h --max-depth=1 /shared/projects/YourProjectName/
@@ -1008,8 +1075,41 @@ Both are now running with default parameters. I will implement more parameters. 
 and
 
 ```
-[username@clust-slurm-client RASflow_IFB]$ mfsgetquota -H /shared/projects/YourProjectName/
+[username@clust-slurm-client RASflow_IFB]$ lfsgetquota YourProjectName
 ```
+
+### Repeats analysis
+It is possible to analyse the repeat expression. To do so, you have to set `REPEATS` to `yes` in config_main.yaml and to choose an appropriate counter, ie featureCounts or TEcount (from [TEtranscripts](https://github.com/mhammell-laboratory/TEtranscripts)). You also have to give the path to the GTF of the repeats. You can make it using http://genome.ucsc.edu/cgi-bin/hgTables. 
+
+<img src="Tuto_pictures/mm39_rmsk.png" alt="drawing" width="600"/>
+
+You have to download the table and to copy it to the cluster (or upload it directly into the Jupyter Hub). For instance: 
+```sh
+You@YourComputer:~$ scp mm39_TE.rmsk.gz username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/
+```
+Then you decompress it on the cluster. 
+```sh
+[username@clust-slurm-client RASflow_IFB]$ mkdir gtf  # create a folder
+[username@clust-slurm-client RASflow_IFB]$ mv mm39_TE.rmsk.gz gtf # mv your rmsk file into the folder gtf
+[username@clust-slurm-client RASflow_IFB]$ cd gtf # go to gtf folder
+[username@clust-slurm-client gtf]$ gzip -d mm39_TE.rmsk.gz # decompress the file
+```
+A small script is available to transform this table into a GTF.
+```
+[username@clust-slurm-client gtf]$ module load python
+[username@clust-slurm-client gtf]$ python ../scripts/rmsk2gtf.py mm39_TE.rmsk mm39_TE_rmsk.gtf transcript
+```
+The last argument (here `transcript`) should fit the feature you have choosen for counting: 
+```yaml
+FEATURE: transcript # "exon", "gene", "transcript", ... depending on your GTF file and on the feature you're interested in.
+```
+You can then give the path to your repeat GTF in the configuration file.
+```yaml
+# ================== Configuration for repeat analysis ==================
+
+GTFTE: /shared/projects/YourProjectName/RASflow_IFB/gtf/mm39_TE_rmsk.gtf  # GTF ANNOTATION file for repeats, must be adapted to have the FEATURE you chose ("exon", "gene", "transcript") as 3rd column. 
+```
+
 
 ### Differential expression analysis and visualization
 
@@ -1054,15 +1154,17 @@ BIGDATAPATH: /shared/projects/YourProjectName/RASflow_IFB/data # for big files
 ```
 [username@clust-slurm-client RASflow_IFB]$ tree -L 2 data/EXAMPLE/
 data/EXAMPLE/
-├── genome
-│   ├── bamFileSort
-│   ├── benchmarks
-│   └── splicesites.txt
+└── mapping_HISAT2
+    ├── bam_byName
+    ├── benchmarks
+    ├── reads
+    ├── Sorted_bam
+    └── splicesites.txt
 └── trim
-    ├── redD197-D192T27_forward.91bp_3prime.fq.gz_trimming_report.txt
-    ├── redD197-D192T27_R1_trimmed_fastqc.html
-    ├── redD197-D192T27_R1_trimmed_fastqc.zip
-    ├── redD197-D192T27_R1_trimmed.fq.gz
+    ├── D197-D192T27_forward.91bp_3prime.fq.gz_trimming_report.txt
+    ├── D197-D192T27_R1_trimmed_fastqc.html
+    ├── D197-D192T27_R1_trimmed_fastqc.zip
+    ├── D197-D192T27_R1_trimmed.fq.gz
     ...
 ```
 
@@ -1074,27 +1176,21 @@ RESULTPATH: /shared/projects/YourProjectName/RASflow_IFB/results
 
 ```bash
 [username@clust-slurm-client RASflow_IFB]$ tree -L 2 results/EXAMPLE/
-├── fastqc
-│   ├── D197-D192T27_fw_fastqc.html
-│   ├── D197-D192T27_fw_fastqc.zip
-│   ├── D197-D192T27_rv_fastqc.html
-│   ├── D197-D192T27_rv_fastqc.zip
-|   ... 
-├── fastqc_after_trimming
-│   ├── report_quality_control_after_trimming_data
-│   └── report_quality_control_after_trimming.html
+├── 20210727T1030_report.html
+├── 20210727T1030_report.tar.bz2
 ├── logs
-│   ├── 20201125T1709_configuration.txt
-│   ├── 20201125T1709_quality_control.txt
-│   └── 20201125T1709_running_time.txt
-├── mapping_hisat2
-│   ├── alignmentQC
-│   ├── bw_str
-│   ├── counting_featureCounts
-│   ├── report_align_count_featureCounts_data
-│   └── report_align_count_featureCounts.html
-├── report.html
-└── report.tar.bz2
+│   ├── 20210727T1030_align_count_genome.txt
+│   ├── 20210727T1030_configuration.txt
+│   ├── 20210727T1030_dea_genome.txt
+│   ├── 20210727T1030_free_disk.txt
+│   └── 20210727T1030_running_time.txt
+└── mapping_HISAT2
+    ├── alignmentQC
+    ├── bw_str
+    ├── counting_featureCounts
+    ├── repeats_featureCounts
+    ├── report_align_count_featureCounts_data
+    └── report_align_count_featureCounts.html
 ```
 
 This way you can **get all the results** on your computer by running (from your computer):
@@ -1106,7 +1202,7 @@ You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/sha
 and the huge files will stay on the server. You can of course download them as well if you have space (and this is recommended for the long term). 
 
 ### Final report
-A report named `report.html` summarizes your experiment and your results. You'll find links to fastQC results, to mapping quality report, to exploratory analysis of all the samples and finally to pairwise differential expression analyses. Interactive plots are included in the report. They are very helpful to dig into the results. A compressed archive names `report.tar.bz2` is also generated and contains the report and the targets of the different links, excluding the count and DEA tables to make it small enough to be sent to your collaborators. An example of report is visible [here](https://parisepigenetics.github.io/umr7216bioinfofacility/pages/report/report.html). 
+A report named as `20210727T1030_report.html` summarizes your experiment and your results. You'll find links to fastQC results, to mapping quality report, to exploratory analysis of all the samples and finally to pairwise differential expression analyses. Interactive plots are included in the report. They are very helpful to dig into the results. A compressed archive names `report.tar.bz2` is also generated and contains the report and the targets of the different links, excluding the count and DEA tables to make it small enough to be sent to your collaborators. An example of report is visible [here](https://parisepigenetics.github.io/umr7216bioinfofacility/pages/report/report.html). 
 
 Detailed description of all the outputs of the workflow is included below. 
 
@@ -1118,21 +1214,20 @@ In this examples the trim FASTQ files will be stored in `/shared/projects/YourPr
 - Sample1_R2_val_2.fq
 
 #### Trimming report
-In the same folder, you'll find trimming reports such as `Sample1_forward.fq.gz_trimming_report.txt` for each samples. If you have trimmed a fixed number of bases, the trimming report will have a name related to the intermediate file (not conserved) generated after that initial trimming: such as `Sample1_forward.91bp_3prime.fq.gz_trimming_report.txt`. You'll find information about the tools and parameters, as well as trimming statistics:
+In `results/EXAMPLE/trimming` you'll find trimming reports such as `Sample1_forward.fastq.gz_trimming_report.txt` for each samples. You'll find information about the tools and parameters, as well as trimming statistics:
 
 ```
-[username@clust-slurm-client RASflow_IFB]$ cat data/LXACT_1/trim/D197-D192T27_forward.91bp_3prime.fq.gz_trimming_report.txt
-
 SUMMARISING RUN PARAMETERS
 ==========================
-Input filename: /shared/projects/lxactko_analyse/RASflow/data/LXACT_1/trim/D197-D192T27_forward.91bp_3prime.fq.gz
+Input filename: data/Trim/trimming/reads/D197-D192T27_reverse.fastq.gz
 Trimming mode: paired-end
-Trim Galore version: 0.6.2
-Cutadapt version: 2.10
+Trim Galore version: 0.6.4_dev
+Cutadapt version: 3.4
 Python version: could not detect
 Number of cores used for trimming: 4
 Quality Phred score cutoff: 20
 Quality encoding type selected: ASCII+33
+Using Illumina adapter for trimming (count: 6420). Second best hit was smallRNA (count: 181)
 Adapter sequence: 'AGATCGGAAGAGC' (Illumina TruSeq, Sanger iPCR; auto-detected)
 Maximum trimming error rate: 0.1 (default)
 Minimum required adapter overlap (stringency): 1 bp
@@ -1141,66 +1236,64 @@ Running FastQC on the data once trimming has completed
 Output file will be GZIP compressed
 
 
-This is cutadapt 2.10 with Python 3.6.7
-Command line parameters: -j 4 -e 0.1 -q 20 -O 1 -a AGATCGGAAGAGC /shared/projects/lxactko_analyse/RASflow/data/LXACT_1/trim/D197-D192T27_forward.91bp_3prime.fq.gz
+This is cutadapt 3.4 with Python 3.7.6
+Command line parameters: -j 4 -e 0.1 -q 20 -O 1 -a AGATCGGAAGAGC data/Trim/trimming/reads/D197-D192T27_reverse.fastq.gz
 Processing reads on 4 cores in single-end mode ...
-Finished in 753.96 s (10 us/read; 6.12 M reads/minute).
+Finished in 10.61 s (10 µs/read; 5.94 M reads/minute).
 
 === Summary ===
 
-Total reads processed:              76,953,098
-Reads with adapters:                26,337,424 (34.2%)
-Reads written (passing filters):    76,953,098 (100.0%)
+Total reads processed:               1,049,477
+Reads with adapters:                   369,439 (35.2%)
+Reads written (passing filters):     1,049,477 (100.0%)
 
-Total basepairs processed: 7,002,731,918 bp
-Quality-trimmed:               3,377,451 bp (0.0%)
-Total written (filtered):  6,945,877,513 bp (99.2%)
+Total basepairs processed:   105,997,177 bp
+Quality-trimmed:                 282,956 bp (0.3%)
+Total written (filtered):    104,983,243 bp (99.0%)
 
 === Adapter 1 ===
 
-Sequence: AGATCGGAAGAGC; Type: regular 3'; Length: 13; Trimmed: 26337424 times
+Sequence: AGATCGGAAGAGC; Type: regular 3'; Length: 13; Trimmed: 369439 times
 
 No. of allowed errors:
-0-9 bp: 0; 10-13 bp: 1
+1-9 bp: 0; 10-13 bp: 1
 
 Bases preceding removed adapters:
-  A: 28.4%
-  C: 34.7%
-  G: 19.3%
-  T: 17.6%
+  A: 30.0%
+  C: 31.9%
+  G: 25.2%
+  T: 12.9%
   none/other: 0.0%
 
 Overview of removed sequences
 length	count	expect	max.err	error counts
-1	17772643	19238274.5	0	17772643
-2	5175839	4809568.6	0	5175839
-3	1542956	1202392.2	0	1542956
-4	405786	300598.0	0	405786
-5	193232	75149.5	0	193232
-6	122612	18787.4	0	122612
-7	107160	4696.8	0	107160
-8	111233	1174.2	0	111233
-...
-RUN STATISTICS FOR INPUT FILE: /shared/projects/lxactko_analyse/RASflow/data/LXACT_1/trim/D197-D192T27_forward.91bp_3prime.fq.gz
+1	240511	262369.2	0	240511
+2	79277	65592.3	0	79277
+3	26294	16398.1	0	26294
+[...]
+
+RUN STATISTICS FOR INPUT FILE: data/Trim/trimming/reads/D197-D192T27_reverse.fastq.gz
 =============================================
-76953098 sequences processed in total
+1049477 sequences processed in total
+
+Total number of sequences analysed for the sequence pair length validation: 1049477
+
+Number of sequence pairs removed because at least one read was shorter than the length cutoff (20 bp): 532 (0.05%)
 ```
 
 This information is summarized in the MultiQC report, see  below. 
 
 #### FastQC of trimmed reads
-After the trimming, fastQC is automatically run on the new FASTQ and the results are also in this folder:
-- Sample1_R1_val_1_fastqc.html
-- Sample1_R1_val_1_fastqc.zip
-- Sample1_R2_val_2_fastqc.html
-- Sample1_R2_val_2_fastqc.zip
+After the trimming, fastQC is automatically run on the new FASTQ and the results are also in the folder `results/EXAMPLE/fastqc_after_trimming/`:
+- Sample1_R1_trimmed_fastqc.html
+- Sample1_R1_trimmed_fastqc.zip
+- Sample1_R2_trimmed_fastqc.html
+- Sample1_R2_trimmed_fastqc.zip
 
-As previously **MultiQC** gives a summary for all the samples. It can be found in `results/EXAMPLE/fastqc_after_trimming/`. You'll find information from the trimming report (for instance you can rapidly see the % of trim reads for the different samples) as well as from fastQC. 
-
-Nota: I will modify to have all the fastQC results in this folder.
+As previously **MultiQC** gives a summary for all the samples :  `results/EXAMPLE/fastqc_after_trimming/report_quality_control_after_trimming.html`. You'll find information from the trimming report (for instance you can rapidly see the % of trim reads for the different samples) as well as from fastQC. It is included in the final report (ie `20210727T1030_report.html`). 
 
 ### Mapped reads
-The mapped reads are stored as sorted bam in the data folder, in our example in `data/EXAMPLE/mapping_ALIGNER/bamFileSort`, together with their `.bai` index. They can be visualized using a genome browser such as [IGV](http://software.broadinstitute.org/software/igv/home) but this is not very convenient as the files are heavy. [BigWig](https://deeptools.readthedocs.io/en/develop/content/tools/bamCoverage.html) files, that summarize the information converting the individual read positions into a number of reads per bin of a given size, are more adapted. 
+The mapped reads are stored as sorted bam in the data folder, in our example in `data/EXAMPLE/mapping_ALIGNER/Sorted_bam`, together with their `.bai` index. They can be visualized using a genome browser such as [IGV](http://software.broadinstitute.org/software/igv/home) but this is not very convenient as the files are heavy. [BigWig](https://deeptools.readthedocs.io/en/develop/content/tools/bamCoverage.html) files, that summarize the information converting the individual read positions into a number of reads per bin of a given size, are more adapted. 
 
 ### BigWig
 To facilitate visualization on a genome browser, [BigWig](https://deeptools.readthedocs.io/en/develop/content/tools/bamCoverage.html) files are generated (window size of 50 bp). There are in `results/EXAMPLE/mapping_ALIGNER/bw`. If you have generated stranded BigWig, they are in  `results/EXAMPLE/mapping_ALIGNER/bw_str`. 
@@ -1222,17 +1315,11 @@ You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/sha
 - insert size histogram
 - ...  
 
-If not already done, you can get the files on your computer running:
-
-```
-You@YourComputer:~$ scp -pr username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/RASflow_IFB/results/EXAMPLE/mapping_ALIGNER/alignmentQC PathTo/WhereYouWantToSave/
-```
-
-Once again **MultiQC** aggregates the results of all the samples and you can have a quick overview by looking at `results/EXAMPLE/mapping_ALIGNER/report_align_count_COUNTER.html`. 
+Once again **MultiQC** aggregates the results of all the samples and you can have a quick overview by looking at `results/EXAMPLE/mapping_ALIGNER/report_align_count_COUNTER.html` or in the final report (ie `20210727T1030_report.html`). 
 
 ### Counting
 
-Counting results are saved in `results/EXAMPLE/mapping_ALIGNER/counting_COUNTER`. 
+Counting results are saved in `results/EXAMPLE/mapping_ALIGNER/counting_COUNTER` (and in results/EXAMPLE/mapping_ALIGNER/repeats_COUNTER if you have enabled repeat analysis)
 ```
 [username@clust-slurm-client RASflow_IFB]$ tree results/EXAMPLE/mapping_hisat2/counting_featureCounts/
 results/EXAMPLE/mapping_hisat2/counting_featureCounts/
@@ -1258,7 +1345,7 @@ The `.summary` contains information about the reads that couldn't be attributed 
 
 ```
 [username@clust-slurm-client RASflow_IFB]$ cat results/EXAMPLE/mapping_hisat2/featureCounts/countTables/D197-D192T27_table.tsv.summary
-Status	/shared/projects/bi4edc/RASflow_IFB/data/TIMING/hisat2/bamFileSort/D197-D192T27.sort.bam
+Status	/shared/projects/bi4edc/RASflow_IFB/data/TIMING/hisat2/Sorted_bam/D197-D192T27.sort.bam
 Assigned	51236995
 Unassigned_Unmapped	265300
 Unassigned_Read_Type	0
@@ -1286,7 +1373,7 @@ In addition, an interactive MDS plot as well as 2 PDF are generated:
 - `Heatmap.pdf` with a heatmap of sample distances 
 <img src="Tuto_pictures/SampleHeatmap.png" alt="drawing" width="600"/>
 
-MultiQC is run after the counting, looking at `report_align_count_COUNTER.html` in `results/EXAMPLE/mapping_ALIGNER/` will help you to check that everything went fine. 
+MultiQC is run after the counting, looking at `report_align_count_COUNTER.html` in `results/EXAMPLE/mapping_ALIGNER/` (also included in the final report) will help you to check that everything went fine. 
 
 ![htseq](Tuto_pictures/htseq_assignment_plot.png)
 
@@ -1418,7 +1505,7 @@ And search in the bar for your favorite gene.
 - Volcano plots, with the same functionalities as the MD plots.
 ![volcano_glimma.png](Tuto_pictures/volcano_glimma.png)
 
-
+All those plots are included in the final report. 
 ---
 ---
 
@@ -1603,10 +1690,10 @@ slurmstepd: error: *** JOB 8430179 ON cpu-node-13 CANCELLED AT 2020-05-20T09:58:
 Will exit after finishing currently running jobs.
 ```
 
-In that case, you can increase the memory request by modifying in `cluster.yml` the `mem` entry corresponding to the rule that failed. 
+In that case, you can increase the memory request by modifying in `cluster.yaml` the `mem` entry corresponding to the rule that failed. 
 
 ```yaml
-[username@clust-slurm-client RASflow_IFB]$ cat cluster.yml 
+[username@clust-slurm-client RASflow_IFB]$ cat cluster.yaml 
 __default__:
   mem: 2000
   name: snakejob
@@ -1662,7 +1749,7 @@ Then you can restart your workflow.
 Sometimes you may reach the quota you have for your project. To check the quota, run: 
 
 ```
-[username@clust-slurm-client RASflow_IFB]$ mfsgetquota -H /shared/projects/YourProjectName/
+[username@clust-slurm-client RASflow_IFB]$ lfsgetquota YourProjectName
 ```
 
 In principle it should raise an error, but sometimes it doesn't and it's hard to find out what is the problem. So if a task fails with no error (typically mapping or counting), try to make more space (or ask for more space on [Community support](https://community.cluster.france-bioinformatique.fr)) before trying again. 
@@ -1799,7 +1886,7 @@ It is important to launch the workflow from `scratch` as this is where the conda
 [RPBSusername @ goliath hh:mm]$ RPBSusername : cd RASflow
 [RPBSusername @ goliath hh:mm]$ RASflow : ls -l 
 total 16
--rw-r--r-- 1 hennion umr7216  247 Jul 23 17:05 cluster.yml
+-rw-r--r-- 1 hennion umr7216  247 Jul 23 17:05 cluster.yaml
 drwxr-xr-x 2 hennion umr7216 4096 Jul 24 09:35 configs
 -rw-r--r-- 1 hennion umr7216 1059 Jul 24 10:05 Unlock.sh
 -rwxr-xr-x 1 hennion umr7216 1275 Jul 24 10:15 Workflow.sh
