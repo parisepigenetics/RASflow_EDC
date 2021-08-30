@@ -2,6 +2,7 @@ import sys
 
 rmsk_file = sys.argv[1]
 te_gtf_file = sys.argv[2]
+feature = sys.argv[3]
 
 te_gtf = open(te_gtf_file,'w')
 
@@ -25,7 +26,7 @@ with open(rmsk_file, 'r') as rmsk:
                 transcript_id = gene_id
             family_id = ss[12]
             class_id = ss[11]
-            te_gtf.write(f"{chrom}\t{ID}_rmsk\ttranscript\t{start}\t{end}\t{L}\t{strand}\t.\tgene_id \"{gene_id}\"; transcript_id \"{transcript_id}\"; family_id \"{family_id}\"; class_id \"{class_id}\";\n")
+            te_gtf.write(f"{chrom}\t{ID}_rmsk\t{feature}\t{start}\t{end}\t{L}\t{strand}\t.\tgene_id \"{gene_id}\"; transcript_id \"{transcript_id}\"; family_id \"{family_id}\"; class_id \"{class_id}\";\n")
 
 te_gtf.close()
 

@@ -78,9 +78,11 @@ MappingReport:
 
 DEA:
   name: DEA
+  mem: 2000
 
 TE_DEA:
   name: TE_DEA
+  mem: 2000
 
 quantify:
   name: quantTrans

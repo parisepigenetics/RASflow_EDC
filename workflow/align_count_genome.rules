@@ -7,7 +7,7 @@ configfile: "configs/config_main.yaml"
 samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
 trimmed = config["TRIMMED"]
 if trimmed == "yes" or trimmed == True:  
-    input_path = config["BIGDATAPATH"] + "/" + config["PROJECT"] + "/trim"
+    input_path = config["BIGDATAPATH"] + "/" + config["PROJECT"] + "/trimming"
 else:
     input_path = config["READSPATH"]
     
@@ -59,9 +59,10 @@ if bw_stranded == "no" or bw_stranded==False:
 if bw_stranded == "yes" or bw_stranded==True:
     bw_fw = expand(final_path + "/bw_str/{sample}_fw.bw", sample=samples)
     bw_rv = expand(final_path + "/bw_str/{sample}_rv.bw", sample=samples)
+    bw = []
 if bw_stranded == "both":
-    bw_fw = expand(final_path + "/bw_str/{sample}_fw.bw", sample=samples),
-    bw_rv = expand(final_path + "/bw_str/{sample}_rv.bw", sample=samples),
+    bw_fw = expand(final_path + "/bw_str/{sample}_fw.bw", sample=samples)
+    bw_rv = expand(final_path + "/bw_str/{sample}_rv.bw", sample=samples)
     bw = expand(final_path + "/bw/{sample}.bw", sample = samples)
 ################################
     
@@ -78,9 +79,9 @@ if 'max_size' not in globals():
         max_size = int(f.readline().strip())  
 
 split=False
-if seqtype == "pair" and max_size >  3000000000 : split=True
-if seqtype == "single" and max_size >  6000000000 : split=True
-#if seqtype == "pair" and max_size >  300 : split=True
+#if seqtype == "pair" and max_size >  3000000000 : split=True
+#if seqtype == "single" and max_size >  6000000000 : split=True
+if seqtype == "pair" and max_size >  300 : split=True
 #if seqtype == "single" and max_size >  600 : split=True
 
   
@@ -286,7 +287,7 @@ if split :
         shell:
             """
             mkdir {output}
-            picard SplitSamByNumberOfReads -I {input.sort_name} -O {output}  -N_READS 100000000 -OUT_PREFIX {params.prefix} -VALIDATION_STRINGENCY SILENT
+            picard SplitSamByNumberOfReads -I {input.sort_name} -O {output}  -N_READS 50000000 -OUT_PREFIX {params.prefix} -VALIDATION_STRINGENCY SILENT
             """
      
     fc_bam = intermediate_path + "/{sample}_split/sortByName_000{i}.bam"
@@ -300,6 +301,8 @@ if split :
     ID = "{sample}_000{i}"
     table_T =  main_path + "{sample}_000{i}_TE_count.tsv"
     table_G =  main_path + "{sample}_000{i}_gene_count.tsv"
+    htseq_tmp = final_path + "/counting_"+ counter + "/countTables/{sample}_000{i}_count.tmp"
+
 
 else:
     fc_bam = intermediate_path + "/bam_byName/{sample}.sortByName.bam"
@@ -313,25 +316,34 @@ else:
     ID = "{sample}"
     table_T =  main_path + "{sample}_TE_count.tsv"
     table_G =  main_path + "{sample}_gene_count.tsv"
+    htseq_tmp = temp(final_path + "/counting_"+ counter + "/countTables/{sample}_count.tmp")
 
 
 
 if counter == "featureCounts":
     if TEanalysis == "yes" or TEanalysis==True:   
         rule mergeGTF:
+            input:
+                GTFgene = gene_gtf
             output: 
-                mergeGTF = final_path +"/repeats_"+counter+"/merge_genes_te.gtf"
+                #mergeGTF = final_path +"/repeats_"+counter+"/merge_genes_te.gtf",
+                #mergeGTF = "merge_genes_te.gtf",
+                Ngenes = final_path +"/repeats_"+counter+"/Ngenes.txt"
+                #Ngenes = "Ngenes.txt"
             params:
                 folder_TE = final_path +"/repeats_"+counter
             shell:
                 """
                 mkdir -p {params.folder_TE}
-                cat {config[ANNOTATION]} {config[GTFTE]} > {output.mergeGTF}
+                awk  '$3=="gene"' {input.GTFgene} | wc -l > {output.Ngenes}
                 """
-        fc_GTF = final_path +"/repeats_"+counter+"/merge_genes_te.gtf"
+        #fc_GTF = final_path +"/repeats_"+counter+"/merge_genes_te.gtf"
+        fc_GTF = "merge_genes_te.gtf"
     else:
         fc_GTF = gene_gtf
-
+        
+### removed from shell: 
+#cat {config[ANNOTATION]} {config[GTFTE]} > {output.mergeGTF}
 
 
     rule featureCount:
@@ -350,7 +362,25 @@ if counter == "featureCounts":
                 options = seqtype_dict[seqtype] + " -s " +strand_dict[strand] + " " + count_options,
             shell:
                 "featureCounts {params.options} -T {config[NCORE]} -t {config[FEATURE]} -g {config[ATTRIBUTE]} -a {input.GTF} -o {output.whole_table} {input.bam} && tail -n +3 {output.whole_table} | cut -f1,7 > {output.counts}"
-                     
+         
+         
+### htseq-count not implemented for repeat analysis
+
+if counter == "htseq-count":
+    rule htseqCount:
+        input:
+            bam = fc_bam
+        output:
+            counts = counts,
+            count_summary = count_summary,
+            tmp = htseq_tmp
+        conda:
+            "env.yaml"
+        params:
+            options = count_options  #### j'ai pas encore testé l'utilisation d'options pour htseq
+        shell:
+            "htseq-count {params.options} -r pos -f bam -i {config[ATTRIBUTE]} -s {config[STRAND]} -t {config[FEATURE]} -c {output.tmp} {input.bam} {gene_gtf} && sed '/^__/ d' {output.tmp} > {output.counts} && grep '__' {output.tmp} > {output.count_summary}"         
+         
 
 if TEanalysis == "yes" or TEanalysis==True :  
     mergetableTE = final_path + "/repeats_"+counter+"/countTables/{sample}_countTE.tsv"
@@ -407,7 +437,8 @@ if TEanalysis == "yes" or TEanalysis==True :
         rule splitCountTables : 
                 input: 
                     countF = counts,
-                    GTFgene = gene_gtf
+                    Ngenes = final_path +"/repeats_"+counter+"/Ngenes.txt"
+                    #Ngenes = "Ngenes.txt"
                 output:
                     count_TE = count_TE,
                     count_genes = count_genes
@@ -416,18 +447,13 @@ if TEanalysis == "yes" or TEanalysis==True :
                     folder_genes = final_path +"/counting_"+counter+"/countTables",
                     ID = ID
                 shell: 
-                   """
-                   awk  '$3=="gene"' {input.GTFgene} | wc -l > Ngenes.txt
-                   read Ngenes < Ngenes.txt
-                   split -l $Ngenes -a 1 {input.countF} {params.ID}
-                   mkdir -p {params.folder_TE} {params.folder_genes} 
-                   mv {params.ID}a {output.count_genes} 
-                   mv {params.ID}b {output.count_TE}   
+                   """ 
+                   mkdir -p {params.folder_TE} {params.folder_genes}
+                   read Ngenes < {input.Ngenes}
+                   csplit --prefix={params.ID} {input.countF} $(( $Ngenes + 1 ))
+                   mv {params.ID}00 {output.count_genes} 
+                   mv {params.ID}01 {output.count_TE}   
                    """     
-
-else:
-     mergetableTE = []
-     count_TE = []
  
 if split :
 
@@ -444,49 +470,45 @@ if split :
         params:
             mp = main_path,
         shell:
-            "python {params.mp}scripts/mergeSummaries.py {output.count_sum_sample} {input}"
+            "python {params.mp}scripts/mergeSummaries.py {counter} {output.count_sum_sample} {input}"
             
-    def aggregate_count_TE(wildcards):
-        checkpoint_output = checkpoints.splitBam.get(**wildcards).output[0]
-        return expand(final_path +"/repeats_"+counter+"/countTables/{{sample}}_000{i}_count_TE.tsv",
-           i=glob_wildcards(os.path.join(checkpoint_output, 'sortByName_000{i}.bam')).i)
-           
+                  
+    if TEanalysis == "yes" or TEanalysis==True :
+        def aggregate_count_TE(wildcards):
+            checkpoint_output = checkpoints.splitBam.get(**wildcards).output[0]
+            return expand(final_path +"/repeats_"+counter+"/countTables/{{sample}}_000{i}_count_TE.tsv",
+           i=glob_wildcards(os.path.join(checkpoint_output, 'sortByName_000{i}.bam')).i) 
+
+        rule mergeCountTE: 
+            input:
+                count_TE = aggregate_count_TE
+            output:
+                mergetableTE = mergetableTE,
+            params:
+                mp = main_path,
+            shell:
+                """
+                python {params.mp}scripts/mergeCounts.py {output.mergetableTE} {input.count_TE} 
+                """   
+            
     def aggregate_count_genes(wildcards):
         checkpoint_output = checkpoints.splitBam.get(**wildcards).output[0]
         return expand(final_path +"/counting_"+counter+"/countTables/{{sample}}_000{i}_count_genes.tsv",
-           i=glob_wildcards(os.path.join(checkpoint_output, 'sortByName_000{i}.bam')).i)             
-            
-    rule mergeCountTables: 
+           i=glob_wildcards(os.path.join(checkpoint_output, 'sortByName_000{i}.bam')).i)
+               
+    rule mergeCountGene: 
         input:
-            count_TE = aggregate_count_TE,
             count_genes = aggregate_count_genes
         output:
-            mergetableTE = mergetableTE,
             mergetable_genes = final_path + "/counting_"+counter+"/countTables/{sample}_countGenes.tsv"
         params:
             mp = main_path,
         shell:
             """
-            python {params.mp}scripts/mergeCounts.py {counter} {output.mergetableTE} {input.count_TE} 
-            python {params.mp}scripts/mergeCounts.py {counter} {output.mergetable_genes} {input.count_genes}
+            python {params.mp}scripts/mergeCounts.py {output.mergetable_genes} {input.count_genes}
             """             
 
-######### ht-seq count and start count not implemented with the split! ##########
-if counter == "htseq-count":
-    rule htseqCount:
-        input:
-            sort = intermediate_path + "/Sorted_bam/{sample}.sort.bam"
-        output:
-            countF = final_path + "/counting_"+ counter + "/countTables/{sample}_countGenes.tsv",
-            count_summary = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv.summary",
-            tmp = temp(final_path + "/counting_"+ counter + "/countTables/{sample}_count.tmp")
-        conda:
-            "env.yaml"
-        params:
-            options = count_options  #### j'ai pas encore testé l'utilisation d'options pour htseq
-        shell:
-            "htseq-count {params.options} -r pos -f bam -i {config[ATTRIBUTE]} -s {config[STRAND]} -t {config[FEATURE]} -c {output.tmp} {input.sort} {gene_gtf} && sed '/^__/ d' {output.tmp} > {output.countF} && grep '__' {output.tmp} > {output.count_summary}"
-
+######### star count not implemented with the split as it is done while mapping ##########
 if counter == "STARcount": 
     if strand == "yes" or strand == True:
         rule starCount:

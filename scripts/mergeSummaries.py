@@ -2,8 +2,9 @@ import pandas as pd
 import sys
 import os
 
-parts = sys.argv[2:]
-output = sys.argv[1]
+parts = sys.argv[3:]
+output = sys.argv[2]
+counter = sys.argv[1]
 
 df = pd.DataFrame()
 for table in parts: 
@@ -18,6 +19,9 @@ for table in parts:
 df['row_sum'] = df.sum(axis=1)
 sample = os.path.dirname(firstline[1])+'/'+os.path.basename(firstline[1]).split('_0')[0]+'.bam'  ### change the name to bam without parts
 df_export = df[["feature","row_sum"]]
-df_export.to_csv(output, sep = "\t", header = [firstline[0],sample], index =False)    
+if counter == 'featureCounts' :
+    df_export.to_csv(output, sep = "\t", header = [firstline[0],sample], index =False)  
+else:
+    df_export.to_csv(output, sep = "\t", index =False) 
 
 

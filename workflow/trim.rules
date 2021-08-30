@@ -6,7 +6,7 @@ samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
 key = config["KEY"]
 input_path = config["READSPATH"]
 end = config["END"]
-intermediate_path = config["BIGDATAPATH"] + "/" + config["PROJECT"] + "/trim"
+intermediate_path = config["BIGDATAPATH"] + "/" + config["PROJECT"] + "/trimming"
 final_path = config["RESULTPATH"] + "/" + config["PROJECT"]
 trim3 = config["TRIM3"]
 trim5 = config["TRIM5"]
@@ -68,10 +68,11 @@ if end == "pair":
             shreverse = intermediate_path + "/{sample}_R2_trimmed.fq.gz"
         conda:
             "env.yaml"
-        params:
-            outputpath = intermediate_path
         shell:
-            "trim_galore {options} --fastqc --j 4 --paired --basename {wildcards.sample} -o {params.outputpath} {input.fw} {input.rv} && rename _val_1 _R1_trimmed {params.outputpath}/{wildcards.sample}*  && rename _val_2 _R2_trimmed {params.outputpath}/{wildcards.sample}*"
+            """
+            trim_galore {options} --fastqc --j 4 --paired --basename {wildcards.sample} -o {intermediate_path} {input.fw} {input.rv} && rename _val_1 _R1_trimmed {intermediate_path}/{wildcards.sample}*  
+            rename _val_2 _R2_trimmed {intermediate_path}/{wildcards.sample}* 
+            """
     
    
    #### single end, to test
@@ -92,10 +93,10 @@ else:
             read_trim = intermediate_path + "/{sample}_trimmed.fq.gz"
         conda:
             "env.yaml"        
-        params:
-            outputpath = intermediate_path
         shell:
-            "trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {params.outputpath} {input.read} && rename _val _trimmed {params.outputpath}/{wildcards.sample}*"
+            """
+            trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {intermediate_path} {input.read}             rename _val _trimmed {intermediate_path}/{wildcards.sample}*          
+            """
 
 rule summaryReport:
     input:
@@ -107,4 +108,9 @@ rule summaryReport:
     params:
         path = intermediate_path
     shell:
-        "multiqc {params.path} --filename {output.report}"
+        """
+        multiqc {params.path} --filename {output.report}
+        mv {intermediate_path}/*fastqc* {final_path}/fastqc_after_trimming
+        mkdir -p {final_path}/trimming
+        mv {intermediate_path}/*report.txt {final_path}/trimming
+        """

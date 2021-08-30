@@ -290,7 +290,21 @@ DEA <- function(control, treat) {
           gene.dea[i] <- h[[gene.id.dea[i]]]
           }
        annotation$GeneID <- gene.dea
-       }
+    }
+    
+    else {
+       simplify_names <- function(string) {
+          if (startsWith(string, '(')){
+             rep <-  unlist(strsplit(string,'\\('))[2]
+          }
+          else {
+             rep <- string
+          }
+          rep <- unlist(strsplit(rep, ":"))[1]
+          rep <- unlist(strsplit(rep, ")n"))[1]
+        }
+        annotation$GeneID <- sapply(annotation$GeneID, simplify_names)    
+    }
         
     anno <- as.data.frame(cbind(annotation$GeneID, DE))      
     
@@ -320,29 +334,43 @@ DEA <- function(control, treat) {
     num.control <- nrow(splan.control) 
     num.treat <- nrow(splan.treat)  
 
-    # instead using all genes, only use the top 30 genes in dea.table
+    # select the top 30 genes in dea.table
     id2 <- row.names(dea.sorted)
-    index.deg <- which(row.names(normalized_counts) %in% id2[1:30])
-    norm.table.deg <- normalized_counts[index.deg,]
-
+    normalized_counts_df <- as.data.frame(normalized_counts)
+    normalized_counts_df$ID <- row.names(normalized_counts_df)  ## add an ID col to merge with index_df
+    index_df <- as.data.frame(id2[1:30],ncol=1)
+    colnames(index_df)=c('ID')
+    index_df$keep.order  <- 1:nrow(index_df)  ## add extra col to keep the order of the genes (pvalue)
+    norm.table.deg <- merge(index_df,normalized_counts_df,by = 'ID',all.x= TRUE)  ## merge the 2 dataframes
+    norm.table.deg <- norm.table.deg[order(norm.table.deg$keep.order), ]  ## sort according to pvalue order
+    norm.table.deg$keep.order <- NULL ## remove the ordering col
+    rownames(norm.table.deg) <- norm.table.deg$ID  ## convert row names 
+    norm.table.deg$ID <- NULL   ## remove ID col to have a numeric df
     gene.id.norm.table <- rownames(norm.table.deg)
     gene.id.norm.table <- sapply(strsplit(as.character(gene.id.norm.table), "\\."),  "[", 1)
-    gene.symbol.norm.table <- tryCatch(
-        {   
-            queryMany(gene.id.norm.table, scopes = 'ensembl.gene', fields = 'symbol')$symbol
-        },
-        error=function(cond) {
-            message("queryMany gave no results, keeping previous IDs")
-            # Choose a return value in case of error
-            return(gene.id.norm.table)
-        }
-        )     
-    # if can't find a symbol for the id, then keep the id as it is
-    gene.norm.table <- gene.symbol.norm.table
-    for (i in c(1:length(gene.norm.table))) {
-      if (is.na(gene.norm.table[i])) {
-        gene.norm.table[i] <- gene.id.norm.table[i]
-      }
+    
+    if (suffix == '_countsGenes.tsv') {
+        gene.symbol.norm.table <- tryCatch(
+            {   
+                queryMany(gene.id.norm.table, scopes = 'ensembl.gene', fields = 'symbol')$symbol
+            },
+            error=function(cond) {
+                message("queryMany gave no results, keeping previous IDs")
+                # Choose a return value in case of error
+                return(gene.id.norm.table)
+            }
+            )     
+        # if can't find a symbol for the id, then keep the id as it is
+        gene.norm.table <- gene.symbol.norm.table
+        for (i in c(1:length(gene.norm.table))) {
+          if (is.na(gene.norm.table[i])) {
+            gene.norm.table[i] <- gene.id.norm.table[i]
+          }
+        }        
+    
+    }
+    if (suffix == '_countsTE.tsv') {
+        gene.norm.table <- sapply(strsplit(as.character(gene.id.norm.table), ":"),  "[", 1)
     }
 
     palette <- c("#000000ac", "#9d9d9dff")

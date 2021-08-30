@@ -2,9 +2,8 @@ import pandas as pd
 import sys
 import os
 
-counter = sys.argv[1]
-output = sys.argv[2]
-parts = sys.argv[3:]
+output = sys.argv[1]
+parts = sys.argv[2:]
 
 
 df = pd.DataFrame()

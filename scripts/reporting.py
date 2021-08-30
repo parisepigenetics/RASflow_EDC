@@ -232,7 +232,7 @@ def main(time_string):
         </p> 
         
         """        
-            f.write(message)
+                f.write(message)
 
     message = """
     </body> 
@@ -248,8 +248,8 @@ def main(time_string):
     
     Tar.add(dirName+'/'+time_string+'_report.html', time_string+'_report.html')
     # Define the folders that you want in the tar.bz2.
-    ToKeep = ["fastqc","fastqc_after_trimming", "logs", "report_align_count_featureCounts_data","Glimma","plots","regionReport"]	
-    ExtraFiles= ["report_quality_control_after_trimming.html","report_align_count_featureCounts.html", "Heatmap_samples.pdf", "PCA.pdf" ]	
+    ToKeep = ["fastqc","fastqc_after_trimming", "logs", "report_align_count_"+counter+"_data","Glimma","plots","regionReport"]	
+    ExtraFiles= ["report_quality_control_after_trimming.html","report_align_count_"+counter+".html", "Heatmap_samples.pdf", "PCA.pdf" ]	
     if repeats == 'yes':
         ExtraFiles= ExtraFiles + ["Heatmap_samples_TE.pdf","PCA_TE.pdf"]
     ToKeepSub = []
