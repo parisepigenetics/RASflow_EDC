@@ -326,7 +326,7 @@ if counter == "featureCounts":
             input:
                 GTFgene = gene_gtf
             output: 
-                #mergeGTF = final_path +"/repeats_"+counter+"/merge_genes_te.gtf",
+                mergeGTF = final_path +"/repeats_"+counter+"/merge_genes_te.gtf",
                 #mergeGTF = "merge_genes_te.gtf",
                 Ngenes = final_path +"/repeats_"+counter+"/Ngenes.txt"
                 #Ngenes = "Ngenes.txt"
@@ -336,14 +336,12 @@ if counter == "featureCounts":
                 """
                 mkdir -p {params.folder_TE}
                 awk  '$3=="gene"' {input.GTFgene} | wc -l > {output.Ngenes}
+                cat {config[ANNOTATION]} {config[GTFTE]} > {output.mergeGTF}
                 """
-        #fc_GTF = final_path +"/repeats_"+counter+"/merge_genes_te.gtf"
-        fc_GTF = "merge_genes_te.gtf"
+        fc_GTF = final_path +"/repeats_"+counter+"/merge_genes_te.gtf"
+        #fc_GTF = "merge_genes_te.gtf"
     else:
         fc_GTF = gene_gtf
-        
-### removed from shell: 
-#cat {config[ANNOTATION]} {config[GTFTE]} > {output.mergeGTF}
 
 
     rule featureCount:
