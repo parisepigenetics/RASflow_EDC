@@ -68,7 +68,7 @@ if bw_stranded == "both":
     
     
 ### get the max fastq size to decide if splitting is necessary 
-if 'max_size' not in globals(): 
+if 'max_size' not in globals(): ## to do it only once. 
     with open(config["METAFILE"]+".samples.txt",'rb') as file_to_check:
         # read contents of the file
         data = file_to_check.read()    
@@ -79,10 +79,8 @@ if 'max_size' not in globals():
         max_size = int(f.readline().strip())  
 
 split=False
-#if seqtype == "pair" and max_size >  3000000000 : split=True
-#if seqtype == "single" and max_size >  6000000000 : split=True
-if seqtype == "pair" and max_size >  300 : split=True
-#if seqtype == "single" and max_size >  600 : split=True
+if seqtype == "pair" and max_size >  int(config["SPLITBY"])*40 : split=True
+if seqtype == "single" and max_size >  int(config["SPLITBY"])*80 : split=True
 
   
 ### final rule
@@ -140,8 +138,8 @@ if mapper == "HISAT2":
                 fw = intermediate_path + "/reads/{sample}_fw.fastq.gz",
                 rv = intermediate_path + "/reads/{sample}_rv.fastq.gz"
             output:
-                #bam = temp(intermediate_path + "/bam_byName/{sample}.sortByName.bam")
-                bam = intermediate_path + "/bam_byName/{sample}.sortByName.bam"
+                bam = temp(intermediate_path + "/bam_byName/{sample}.sortByName.bam")
+                #bam = intermediate_path + "/bam_byName/{sample}.sortByName.bam"
             conda:
                 "env.yaml"
             params:
@@ -157,7 +155,7 @@ if mapper == "HISAT2":
                 splicesites = intermediate_path + "/splicesites.txt",
                 fw = intermediate_path + "/reads/{sample}.fastq.gz"
             output:
-                bam = intermediate_path + "/bam_byName/{sample}.sortByName.bam"
+                bam = temp(intermediate_path + "/bam_byName/{sample}.sortByName.bam")
             conda:
                 "env.yaml"
             params:
@@ -279,7 +277,7 @@ if split :
         input: 
             sort_name = intermediate_path + "/bam_byName/{sample}.sortByName.bam",
         output:
-            directory(intermediate_path + "/{sample}_split")
+            temp(directory(intermediate_path + "/{sample}_split"))
         conda:
             "env.yaml"
         params:
@@ -287,7 +285,7 @@ if split :
         shell:
             """
             mkdir {output}
-            picard SplitSamByNumberOfReads -I {input.sort_name} -O {output}  -N_READS 50000000 -OUT_PREFIX {params.prefix} -VALIDATION_STRINGENCY SILENT
+            picard SplitSamByNumberOfReads -I {input.sort_name} -O {output}  -N_READS {config[SPLITBY]} -OUT_PREFIX {params.prefix} -VALIDATION_STRINGENCY SILENT
             """
      
     fc_bam = intermediate_path + "/{sample}_split/sortByName_000{i}.bam"
