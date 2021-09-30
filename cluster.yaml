@@ -33,17 +33,17 @@ alignmentQC:
   cpus: 8
 
 BigWig:
-  mem: 10000
+  mem: 5000
   name: BigWig
   cpus: 8
 
 BigWigR:
-  mem: 10000
+  mem: 5000
   name: BigWigR
   cpus: 8
 
 BigWigF:
-  mem: 10000
+  mem: 5000
   name: BigWigF
   cpus: 8
 
@@ -53,7 +53,7 @@ featureCount:
   cpus: 4
 
 htseqCount:
-  mem: 50000
+  mem: 100000
   name: htseqCount
 
 plot:
@@ -104,7 +104,7 @@ Samtools:
   cpus: 8
 
 splitBam : 
-  mem: 10000
+  mem: 1000
   name : Picards
   
 sortBam:
@@ -131,3 +131,7 @@ TE_index:
 gene_index:
   name: gene_index
   mem: 1000
+
+mergeGTF:
+  name: mergeGTF
+  mem: 10000
