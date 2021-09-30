@@ -72,6 +72,7 @@ TEPCA:
 
 summaryReport:
   name: multiQC
+  mem: 1000
 
 MappingReport:
   name: multiQC
@@ -114,7 +115,8 @@ sortBam:
 
 spliceSites:
   name: spliceSites
-  
+  mem: 1000
+ 
 splitCountTables:
   name: splitCountTables
   
