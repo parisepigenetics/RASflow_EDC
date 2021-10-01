@@ -44,19 +44,26 @@ with open('configs/config_main.yaml') as yamlfile:
 project = config["PROJECT"]
 metadata = config["METAFILE"]
 resultpath = config["RESULTPATH"]
+njobs = config["NJOBS"]
 
 # differences between clusters
 server = sys.argv[1]
 if server == "rpbs":
     option = " -p epigenetique" ## blank before the option!!
     MainPath = "/scratch/epigenetique/workflows/RASflow_RPBS/"
-elif server == "ifb" :
-    option = " -x cpu-node-53"  ## blank before the option!!
+    server_name = "RPBS"
+if server == "ifb" :
+    option = " -x cpu-node-53"  ## to remove slow nodes, blank before the option!!
     MainPath = ""
-    #writting_dir = os.getcwd().split('projects')[1].split('/')[1]  ## project where it runs. But the disk used is RESULTPATH and BIGDATAPATH which might be different. 
+    server_name = "IFB"
     try: writting_dir = resultpath.split('projects')[1].split('/')[1]
     except: writting_dir = os.getcwd().split('projects')[1].split('/')[1]
-    
+if server == "ipop-up":
+    option = " -p ipop-up"
+    MainPath = ""   
+    server_name = "iPOP-UP"
+    try: writting_dir = resultpath.split('projects')[1].split('/')[1]
+    except: writting_dir = os.getcwd().split('projects')[1].split('/')[1]
     
 # Start the workflow
 print("Starting RASflow on project: " + project)
@@ -121,7 +128,7 @@ def get_free_disk():
     freedisk.write(time_now+'\t'+str(remaining)+'\n')
      #print('running get_free_disk', time_now)
 
-if server == "ifb" :
+if server == "ifb":
     print("Free disk is measured for the project "+writting_dir)
     freedisk = open(LogPath+time_string+"_free_disk.txt", "a+")
     quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir], shell=True)).strip().split()
@@ -149,7 +156,7 @@ def spend_time(start_time, end_time):
 if qc=='yes':
         print("Starting FASTQ Quality Control...")
         start_time = time.time()
-        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs=30 --latency-wait 40 -s "+MainPath+"workflow/quality_control.rules 2> " + LogPath+time_string+"_quality_control.txt")
+        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs="+njobs+" --latency-wait 40 -s "+MainPath+"workflow/quality_control.rules 2> " + LogPath+time_string+"_quality_control.txt")
         end_time = time.time()
         file_main_time.write("Time of running QC: " + spend_time(start_time, end_time) + "\n")
         print("FASTQ quality control is done! ("+spend_time(start_time, end_time)+")\n Please check the report and decide whether trimming is needed or not.\n To run the rest of the analysis, please remember to turn off the QC in the configuration file.")
@@ -158,7 +165,7 @@ else:
     if trim=='yes':
         print("Starting Trimming...")
         start_time = time.time()
-        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs=30 --latency-wait 40 -s "+MainPath+"workflow/trim.rules 2> " + LogPath+time_string+"_trim.txt")
+        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs="+njobs+" --latency-wait 40 -s "+MainPath+"workflow/trim.rules 2> " + LogPath+time_string+"_trim.txt")
         end_time = time.time()
         file_main_time.write("Time of running trimming: " + spend_time(start_time, end_time) + "\n")
         print("Trimming is done! ("+spend_time(start_time, end_time)+")")
@@ -169,7 +176,7 @@ else:
     if mapping =='yes' and reference == "transcriptome":
         print("Starting mapping using ", reference, " as reference...")
         start_time = time.time()
-        os.system("snakemake -k --resources load=100 --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs=30 --latency-wait 40 -s "+MainPath+"workflow/quantify_trans.rules 2> " + LogPath+time_string+"_quantify_trans.txt")
+        os.system("snakemake -k --resources load=100 --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs="+njobs+" --latency-wait 40 -s "+MainPath+"workflow/quantify_trans.rules 2> " + LogPath+time_string+"_quantify_trans.txt")
         end_time = time.time()
         file_main_time.write("Time of running transcripts quantification: " + spend_time(start_time, end_time) + "\n")
         print("Mapping is done! ("+spend_time(start_time, end_time)+")")
@@ -178,8 +185,8 @@ else:
         print("Starting mapping using ", reference, " as reference...")
         start_time = time.time()
         ##### -k removed to put back before production!!!!!!!!
-        #os.system("snakemake -k --resources load=100 --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs=30 --latency-wait 40 -s "+MainPath+"workflow/align_count_genome.rules 2> " + LogPath+time_string+"_align_count_genome.txt")
-        os.system("snakemake --resources load=100 --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs=30 --latency-wait 40 -s "+MainPath+"workflow/align_count_genome.rules 2> " + LogPath+time_string+"_align_count_genome.txt")
+        #os.system("snakemake -k --resources load=100 --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs="+njobs+" --latency-wait 40 -s "+MainPath+"workflow/align_count_genome.rules 2> " + LogPath+time_string+"_align_count_genome.txt")
+        os.system("snakemake --resources load=100 --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs="+njobs+" --latency-wait 40 -s "+MainPath+"workflow/align_count_genome.rules 2> " + LogPath+time_string+"_align_count_genome.txt")
         end_time = time.time()
         file_main_time.write("Time of running genome alignment and counting: " + spend_time(start_time, end_time) + "\n")
         print("Mapping is done! ("+spend_time(start_time, end_time)+")")
@@ -188,16 +195,16 @@ else:
         print("Starting differential expression analysis...")
         if reference == "transcriptome":
             start_time = time.time()
-            os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs=30 --latency-wait 40 -s "+MainPath+"workflow/dea_trans.rules 2> " + LogPath+time_string+"_dea_trans.txt")
+            os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs="+njobs+" --latency-wait 40 -s "+MainPath+"workflow/dea_trans.rules 2> " + LogPath+time_string+"_dea_trans.txt")
             end_time = time.time()
             file_main_time.write("Time of running DEA transcriptome based: " + spend_time(start_time, end_time) + "\n")
         elif reference == "genome":
             start_time = time.time()
-            os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs=30 --latency-wait 40 -s "+MainPath+"workflow/dea_genome.rules 2> " + LogPath+time_string+"_dea_genome.txt")
+            os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --jobs="+njobs+" --latency-wait 40 -s "+MainPath+"workflow/dea_genome.rules 2> " + LogPath+time_string+"_dea_genome.txt")
             end_time = time.time()
             file_main_time.write("Time of running DEA genome based: " + spend_time(start_time, end_time) + "\n")
         print("DEA is done! ("+spend_time(start_time, end_time)+")")
-        reporting.main(time_string)
+        reporting.main(time_string, server_name)
 
         # Visualization can only be done on gene-level
         if reference == "genome":
@@ -218,7 +225,7 @@ else:
 file_main_time.write("Finish time: " + time.ctime() + "\n")
 file_main_time.close()
 
-if server == "ifb" :
+if server == "ifb":
     rt.stop()
     freedisk.close()
 
@@ -233,4 +240,3 @@ else :
 # Save logs
 os.makedirs("logs", exist_ok=True)
 os.system("cp "+LogPath+time_string+"* logs/")
-

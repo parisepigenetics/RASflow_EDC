@@ -4,10 +4,9 @@ import sys
 import os
 import tarfile
 
-def main(time_string):
+def main(time_string, server):
     with open('configs/config_main.yaml') as yamlfile:
         config = yaml.load(yamlfile,Loader=yaml.BaseLoader)
-    server = "IFB"
     project = config["PROJECT"]
     trim = config["TRIMMED"]
     mapping = config["MAPPING"]
