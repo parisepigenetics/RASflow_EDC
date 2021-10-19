@@ -240,4 +240,3 @@ else :
 # Save logs
 os.makedirs("logs", exist_ok=True)
 os.system("cp "+LogPath+time_string+"* logs/")
-
