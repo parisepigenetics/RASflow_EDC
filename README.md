@@ -1061,12 +1061,13 @@ Two other counters are available:
 
 - featureCounts ([SubReads package](http://subread.sourceforge.net/)) 
 
+Both are running with default parameters unless you add parameters in `COUNTOPTIONS`. 
 
-======================TO MODIFY==============  
-Both are running with default parameters unless you add parameters in `COUNTOPTIONS`. Beside the methode that is a bit different, HTseq-count is much slower at the moment (several hours for a human RNAseq sample) than featureCounts (~10 min). This is because HTseq count is not parallelizable yet. featureCounts is very fast, but needs a lot of free storage space (I measure at least 150 Go to process ~100 Go of bam) that is used temporarily. As at the moment the default projet quota in 500 Go you might be exceeding the space you have (and may or may not get error messages). So if featureCounts fails, try removing files to get more space, or ask to increase your quota on [Community support](https://community.cluster.france-bioinformatique.fr). To see the space you have you can run:
+Beside the methode that is a bit different, TO COMPLETE
+difference in time
+difference in storage space
 
-========================================
-
+As at the moment the default projet quota in 500 Go you might be exceeding the space you have (and may or may not get error messages...). So if featureCounts fails, try removing files to get more space, or ask to increase your quota on [Community support](https://community.cluster.france-bioinformatique.fr). To see the space you have you can run:
 
 ``` 
 [username@clust-slurm-client RASflow_IFB]$ du -h --max-depth=1 /shared/projects/YourProjectName/

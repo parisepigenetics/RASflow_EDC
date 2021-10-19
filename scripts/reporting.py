@@ -4,10 +4,9 @@ import sys
 import os
 import tarfile
 
-def main(time_string):
+def main(time_string, server):
     with open('configs/config_main.yaml') as yamlfile:
         config = yaml.load(yamlfile,Loader=yaml.BaseLoader)
-    server = "IFB"
     project = config["PROJECT"]
     trim = config["TRIMMED"]
     mapping = config["MAPPING"]
@@ -23,7 +22,6 @@ def main(time_string):
 
     start_time = time.localtime()
     date_string = time.strftime("%d/%m/%Y", start_time)
-
 
     f = open(resultpath+'/'+project+'/'+time_string+'_report.html','w')
 

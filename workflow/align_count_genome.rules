@@ -139,7 +139,6 @@ if mapper == "HISAT2":
                 rv = intermediate_path + "/reads/{sample}_rv.fastq.gz"
             output:
                 bam = temp(intermediate_path + "/bam_byName/{sample}.sortByName.bam")
-                #bam = intermediate_path + "/bam_byName/{sample}.sortByName.bam"
             conda:
                 "env.yaml"
             params:
@@ -281,25 +280,25 @@ if split :
         conda:
             "env.yaml"
         params:
-            prefix = "sortByName"   #-> output: {sample}_split/sortByName_000{i}.bam 
+            prefix = "sortByName"   #-> output: {sample}_split/sortByName_0{i}.bam 
         shell:
             """
             mkdir {output}
             picard SplitSamByNumberOfReads -I {input.sort_name} -O {output}  -N_READS {config[SPLITBY]} -OUT_PREFIX {params.prefix} -VALIDATION_STRINGENCY SILENT
             """
      
-    fc_bam = intermediate_path + "/{sample}_split/sortByName_000{i}.bam"
+    fc_bam = intermediate_path + "/{sample}_split/sortByName_0{i}.bam"
     if TEanalysis == "yes" or TEanalysis==True:
-        counts = final_path +"/counting_"+counter+"/countTables/{sample}_000{i}_count_all.tsv"
+        counts = final_path +"/counting_"+counter+"/countTables/{sample}_0{i}_count_all.tsv"
     else: 
-        counts = final_path +"/counting_"+counter+"/countTables/{sample}_000{i}_count_genes.tsv"
-    whole_table = final_path + "/counting_"+counter+"/countTables/{sample}_000{i}_table_all.tsv"
-    count_summary = final_path + "/counting_"+counter+"/countTables/{sample}_000{i}_table_all.tsv.summary"
-    count_genes = final_path +"/counting_"+counter+"/countTables/{sample}_000{i}_count_genes.tsv"
-    ID = "{sample}_000{i}"
-    table_T =  main_path + "{sample}_000{i}_TE_count.tsv"
-    table_G =  main_path + "{sample}_000{i}_gene_count.tsv"
-    htseq_tmp = final_path + "/counting_"+ counter + "/countTables/{sample}_000{i}_count.tmp"
+        counts = final_path +"/counting_"+counter+"/countTables/{sample}_0{i}_count_genes.tsv"
+    whole_table = final_path + "/counting_"+counter+"/countTables/{sample}_0{i}_table_all.tsv"
+    count_summary = final_path + "/counting_"+counter+"/countTables/{sample}_0{i}_table_all.tsv.summary"
+    count_genes = final_path +"/counting_"+counter+"/countTables/{sample}_0{i}_count_genes.tsv"
+    ID = "{sample}_0{i}"
+    table_T =  main_path + "{sample}_0{i}_TE_count.tsv"
+    table_G =  main_path + "{sample}_0{i}_gene_count.tsv"
+    htseq_tmp = final_path + "/counting_"+ counter + "/countTables/{sample}_0{i}_count.tmp"
 
 
 else:
@@ -353,7 +352,7 @@ if counter == "featureCounts":
             conda:
                 "env.yaml"
             resources:
-                load = 10
+                load = 1
             params:
                 options = seqtype_dict[seqtype] + " -s " +strand_dict[strand] + " " + count_options,
             shell:
@@ -381,7 +380,7 @@ if counter == "htseq-count":
 if TEanalysis == "yes" or TEanalysis==True :  
     mergetableTE = final_path + "/repeats_"+counter+"/countTables/{sample}_countTE.tsv"
     if split: 
-        count_TE = final_path +"/repeats_"+counter+"/countTables/{sample}_000{i}_count_TE.tsv"
+        count_TE = final_path +"/repeats_"+counter+"/countTables/{sample}_0{i}_count_TE.tsv"
     else:
         count_TE = final_path +"/repeats_"+counter+"/countTables/{sample}_countTE.tsv"
 
@@ -455,8 +454,8 @@ if split :
 
     def aggregate_summaries(wildcards):
         checkpoint_output = checkpoints.splitBam.get(**wildcards).output[0]
-        return expand(final_path + "/counting_"+counter+"/countTables/{{sample}}_000{i}_table_all.tsv.summary",
-           i=glob_wildcards(os.path.join(checkpoint_output, 'sortByName_000{i}.bam')).i)  
+        return expand(final_path + "/counting_"+counter+"/countTables/{{sample}}_0{i}_table_all.tsv.summary",
+           i=glob_wildcards(os.path.join(checkpoint_output, 'sortByName_0{i}.bam')).i)  
 
     rule mergeSummaries:
         input:
@@ -472,8 +471,8 @@ if split :
     if TEanalysis == "yes" or TEanalysis==True :
         def aggregate_count_TE(wildcards):
             checkpoint_output = checkpoints.splitBam.get(**wildcards).output[0]
-            return expand(final_path +"/repeats_"+counter+"/countTables/{{sample}}_000{i}_count_TE.tsv",
-           i=glob_wildcards(os.path.join(checkpoint_output, 'sortByName_000{i}.bam')).i) 
+            return expand(final_path +"/repeats_"+counter+"/countTables/{{sample}}_0{i}_count_TE.tsv",
+           i=glob_wildcards(os.path.join(checkpoint_output, 'sortByName_0{i}.bam')).i) 
 
         rule mergeCountTE: 
             input:
@@ -489,8 +488,8 @@ if split :
             
     def aggregate_count_genes(wildcards):
         checkpoint_output = checkpoints.splitBam.get(**wildcards).output[0]
-        return expand(final_path +"/counting_"+counter+"/countTables/{{sample}}_000{i}_count_genes.tsv",
-           i=glob_wildcards(os.path.join(checkpoint_output, 'sortByName_000{i}.bam')).i)
+        return expand(final_path +"/counting_"+counter+"/countTables/{{sample}}_0{i}_count_genes.tsv",
+           i=glob_wildcards(os.path.join(checkpoint_output, 'sortByName_0{i}.bam')).i)
                
     rule mergeCountGene: 
         input:
