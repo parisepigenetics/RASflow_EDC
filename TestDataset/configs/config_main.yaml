@@ -41,8 +41,11 @@ RESULTPATH: TestDataset/results
 ## is the sequencing paired-end or single-end?
 END: pair  # "pair" or "single"
 
-## number of cores you want to allocate to this workflow
-NCORE: 24  # Use command "getconf _NPROCESSORS_ONLN" to check the number of cores/CPU on your machine
+## maximum number of cores you want to allocate to one job of the workflow (mapping and feature counting)
+NCORE: 32 
+
+## maximum number of jobs running in parallel
+NJOBS: 100
 
 # ================== Configuration for Quality Control ==================
 
