@@ -1,9 +1,9 @@
-# Tutorial : RNA-seq analysis using RASflow implementation by BIBS-EDC (on IFB and RPBS clusters)
+# Tutorial : RNA-seq analysis using RASflow_IFB
 
-<small>Maintained by [Magali Hennion](mailto:hennion@ens.fr). Last update : 26/07/2021.</small>  
+<small>Maintained by [Magali Hennion](mailto:magali.hennion@u-paris.fr). Last update : 17/11/2021.</small>  
 **Important! The RPBS version of the workflow has NOT been updated since February 2021.** 
 
-RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhang](https://doi.org/10.1186/s12859-020-3433-x). It has been modified to run effectively on both IFB and RPBS core cluster and to fit our specific needs. Moreover, several tools and features were added, including a comprehensive report. If you encounter troubles or need additional tools or features, you can create an issue on the [GitHub repository](https://github.com/parisepigenetics/RASflow_IFB/issues), or email directly [Magali](mailto:hennion@ens.fr). The tutorial is detailed for the IFB cluster. A small paragraph at the end gives you the instructions to run it on RPBS cluster. 
+Implemented by BIBS-EDC (on IFB and iPOP-UP clusters), this workflow for RNA-seq data analysis is based on RASflow which was originally published by [X. Zhang](https://doi.org/10.1186/s12859-020-3433-x). It has been modified to run effectively on both IFB and iPOP-UP core cluster and to fit our specific needs. Moreover, several tools and features were added, including a comprehensive report, as well as the possibility to incorporate the repeats in the analysis. If you encounter troubles or need additional tools or features, you can create an issue on the [GitHub repository](https://github.com/parisepigenetics/RASflow_IFB/issues), or email directly [Magali](mailto:magali.hennion@u-paris.fr). The tutorial is detailed for the IFB cluster. A small paragraph at the end gives you the instructions to run it on RPBS cluster. The instructions concerning iPOP-UP cluster are coming soon. 
 
 ---
 ## Table of content
@@ -11,6 +11,8 @@ RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhan
   * [Resources](#resources)
   * [Get an account on IFB core cluster and create a project](#get-an-account-on-ifb-core-cluster-and-create-a-project)
   * [Connect to IFB core cluster](#connect-to-ifb-core-cluster)
+    + [Easy connection : use the Jupyter Hub!](#easy-connection--use-the-jupyter-hub)
+    + [SSH connection](#ssh-connection)
   * [RASflow installation and description](#rasflow-installation-and-description)
   * [Quick start with the test dataset](#quick-start-with-the-test-dataset)
   * [Transfer your data](#transfer-your-data)
@@ -34,6 +36,7 @@ RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhan
     + [FastQC results](#fastqc-results)
     + [Trimming](#trimming)
     + [Mapping and counting](#mapping-and-counting)
+    + [Repeats analysis](#repeats-analysis)
     + [Differential expression analysis and visualization](#differential-expression-analysis-and-visualization)
   * [Workflow results](#workflow-results)
     + [Final report](#final-report)
@@ -49,7 +52,7 @@ RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhan
     + [Running jobs](#running-jobs)
     + [Information about past jobs](#information-about-past-jobs)
     + [Cancelling a job](#cancelling-a-job)
-  * [Having errors?](#having-errors-)
+  * [Having errors?](#having-errors)
   * [Common errors](#common-errors)
     + [Error starting gedit](#error-starting-gedit)
     + [Initial QC fails](#initial-qc-fails)
@@ -74,7 +77,7 @@ RASflow is a workflow for RNA-seq data analysis originally published by [X. Zhan
 - Run the [workflow](#running-the-workflow) typing `sbatch Workflow.sh`
 - Look at the [results](#workflow-results)
 
-Here is a simplified scheme of the workflow as implemented on IFB or RBPS clusters. The main steps are indicated in the blue boxes. RASflow will allow you to choose which steps you want to execute for your project. In the green circles are the input files you have to give for the different steps. 
+Here is a simplified scheme of the workflow. The main steps are indicated in the blue boxes. RASflow will allow you to choose which steps you want to execute for your project. In the green circles are the input files you have to give for the different steps. 
 
 <img src="Tuto_pictures/workflow_chart.pdf.png" alt="drawing" width="600"/>
 
@@ -91,7 +94,7 @@ Here is a simplified scheme of the workflow as implemented on IFB or RBPS cluste
 
 - RASflow, Zhang, X.  
   - [Original article](https://doi.org/10.1186/s12859-020-3433-x): RASflow: an RNA-Seq analysis workflow with Snakemake, Xiaokang Zhang & Inge Jonassen, BMC Bioinformatics  21, 110 (2020)  
-  - RASflow [git repository](https://github.com/zhxiaokang/RASflow)    
+  - RASflow [original git repository](https://github.com/zhxiaokang/RASflow)    
   - [Tutorial](https://github.com/zhxiaokang/RASflow/blob/master/Tutorial.pdf)
 
 - Tools implemented
@@ -171,7 +174,7 @@ You can now go to your project using `cd`.
 
 ## RASflow installation and description
 
-In order to install RASflow, you  have to clone the RASflow_IFB GitHub repository to your IFB project. For now the repository is private, so you need to have a GitHub account and to be a member of [EDC repository](https://github.com/parisepigenetics) to have access. If you're not, please let me know and I will add you. You will have to enter your GitHub username and password to clone the repository. You can then look at the files using `tree` or `ls`.
+In order to install RASflow, you  have to clone the RASflow_IFB GitHub repository to your IFB project. For now the repository is private, so you need to have a GitHub account and to be a member of [EDC repository](https://github.com/parisepigenetics) to have access. If you're not, please let me know and I will add you. You will have to enter your GitHub username and a personnal access tocken to clone the repository. In order to generate such tocken, you have to connect to your github account and follow [those instructions](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token). 
 
 If you're using the Jupyter Hub, you now have to open a terminal by clicking on the corresponding icon. 
 
@@ -182,12 +185,12 @@ And to go to your project using `cd`.
 ```
 [username @ cpu-node-12 ]$ cd /shared/projects/YourProjectName
 ```
-Now you can clone the repository.
+Now you can clone the repository. You can then look at the files using `tree` or `ls`.
 ```bash
 [username@clust-slurm-client YourProjectName]$ git clone https://github.com/parisepigenetics/RASflow_IFB
 Cloning into 'RASflow_IFB'...
 Username for 'https://github.com': GITHUBusername
-Password for 'https://username@github.com': GITHUBpassword
+Password for 'https://username@github.com': GITHUBtocken
 remote: Enumerating objects: 670, done.
 remote: Counting objects: 100% (42/42), done.
 remote: Compressing objects: 100% (41/41), done.
@@ -309,7 +312,9 @@ Check that the transfer went fine using md5sum.
 
 ## Preparing the run
 
-There are **2 files that you have to modify** before running your analysis (`metadata.tsv` and `config_main.yaml` in the `configs` folder), and eventually some others not mandatory. To modify the text files from the terminal you can use **vi**, **emacs**, **nano** or **gedit** (the last one being easier to use). **Never copy/past code to word processor** (like Microsoft Word or LibreOffice Writer), use only text editors.  
+There are **2 files that you have to modify** before running your analysis (`metadata.tsv` and `config_main.yaml` in the `configs` folder), and eventually some others not mandatory. 
+
+To modify the text files from the terminal you can use **vi**, **emacs**, **nano** or **gedit** (the last one being easier to use). **Never copy/past code to word processor** (like Microsoft Word or LibreOffice Writer), use only text editors.  
 
 Nota: in order to use **gedit**, be sure that you included `-X` when connecting to the cluster (`-X` option is necessary to run graphical applications remotely). See [common errors](#error-starting-gedit). 
 
