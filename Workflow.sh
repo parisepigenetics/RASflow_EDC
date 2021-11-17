@@ -33,7 +33,7 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_IFB version: v0.5.3'
+echo 'RASflow_IFB version: v0.6'
 echo '-------------------------'
 echo 'Main module versions:'
 

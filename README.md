@@ -1,6 +1,6 @@
 # Tutorial : RNA-seq analysis using RASflow_IFB
 
-<small>Maintained by [Magali Hennion](mailto:magali.hennion@u-paris.fr). Last update : 17/11/2021.</small>  
+<small>Maintained by [Magali Hennion](mailto:magali.hennion@u-paris.fr). Last update : 17/11/2021. RASflow_IFB v0.6. </small>  
 **Important! The RPBS version of the workflow has NOT been updated since February 2021.** 
 
 Implemented by BIBS-EDC (on IFB and iPOP-UP clusters), this workflow for RNA-seq data analysis is based on RASflow which was originally published by [X. Zhang](https://doi.org/10.1186/s12859-020-3433-x). It has been modified to run effectively on both IFB and iPOP-UP core cluster and to fit our specific needs. Moreover, several tools and features were added, including a comprehensive report, as well as the possibility to incorporate the repeats in the analysis. If you encounter troubles or need additional tools or features, you can create an issue on the [GitHub repository](https://github.com/parisepigenetics/RASflow_IFB/issues), or email directly [Magali](mailto:magali.hennion@u-paris.fr). The tutorial is detailed for the IFB cluster. A small paragraph at the end gives you the instructions to run it on RPBS cluster. The instructions concerning iPOP-UP cluster are coming soon. 
