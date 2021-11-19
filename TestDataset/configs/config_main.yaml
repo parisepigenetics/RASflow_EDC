@@ -80,7 +80,7 @@ BWSTRANDED: yes # "no": bw merging forward and reverse reads, "yes": get 2 bw fi
 COUNTER: featureCounts # "featureCounts" or "htseq-count" or "STARcount" (only with STAR aligner, --quantMode GeneCounts option) or "TEcount" (if REPEATS: yes)
 
 ## counting options
-COUNTOPTIONS: "-O --fraction" # add extra options for the counter (for featureCounts or htseq-count only). 
+COUNTOPTIONS: "-M --fraction" # add extra options for the counter (for featureCounts or htseq-count only). 
 # featureCounts: '-O' (set allowMultiOverlap to TRUE), '-M' (set countMultiMappingReads to TRUE), '--fraction'.
 # htseq-count: -m <mode> ; --nonunique=<nonunique mode>; for instance "-m intersection-nonempty --nonunique=all" ... see https://htseq.readthedocs.io
 ATTRIBUTE: gene_id  # the attribute used in annotation file. It's usually "gene_id", but double check that since it may also be "gene", "ID"...
