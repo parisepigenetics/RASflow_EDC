@@ -24,8 +24,10 @@ TEanalysis = config["REPEATS"]
 bw_stranded = config["BWSTRANDED"]
 main_path = config["MAINPATH"]
 strand = config["STRAND"]
-count_options = config["COUNTOPTIONS"]
+if strand == True: strand = "yes"
+if strand == False: strand = "no"
 strand_dict = {"yes":"1", "no":"0", "reverse":"2"}  # 0 (unstranded), 1 (stranded) and 2 (reversely stranded)
+count_options = config["COUNTOPTIONS"]
 gene_gtf = config["ANNOTATION"]
 te_gtf = config["GTFTE"]
 

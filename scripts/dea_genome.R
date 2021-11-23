@@ -377,7 +377,7 @@ DEA <- function(control, treat) {
     palette.group <- c(rep(palette[1], num.control), rep(palette[2], num.treat)) # number of cotr/treat samples -> need metadata
 
     pdf(file = file.path(output.path, paste('Report/plots/heatmapTop_', control, '_', treat, '.pdf', sep = '')), width = 15, height = 15, title = 'Heatmap using the top features')
-    heatmap.2(as.matrix(norm.table.deg), col=brewer.pal(11,"RdBu"),scale="row", trace="none", ColSideColors = palette.group, margins = c(20,18), labRow = gene.norm.table, cexRow = 1.9, cexCol = 1.9, Rowv=FALSE)
+    heatmap.2(as.matrix(norm.table.deg), col=rev(brewer.pal(11,"RdBu")),scale="row", trace="none", ColSideColors = palette.group, margins = c(20,18), labRow = gene.norm.table, cexRow = 1.9, cexCol = 1.9, Rowv=FALSE)
     legend("topright", title = 'Group', legend=groups, text.font = 15,
          col = palette, fill = palette, cex=1.8)
 
