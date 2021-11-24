@@ -184,9 +184,7 @@ else:
     if mapping =='yes' and reference == "genome":
         print("Starting mapping using ", reference, " as reference...")
         start_time = time.time()
-        ##### -k removed to put back before production!!!!!!!!
-        #os.system("snakemake -k --resources load=100 --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s "+MainPath+"workflow/align_count_genome.rules 2> " + LogPath+time_string+"_align_count_genome.txt")
-        os.system("snakemake --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s "+MainPath+"workflow/align_count_genome.rules 2> " + LogPath+time_string+"_align_count_genome.txt")
+        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix "+MainPath+".snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s "+MainPath+"workflow/align_count_genome.rules 2> " + LogPath+time_string+"_align_count_genome.txt")
         end_time = time.time()
         file_main_time.write("Time of running genome alignment and counting: " + spend_time(start_time, end_time) + "\n")
         print("Mapping is done! ("+spend_time(start_time, end_time)+")")
