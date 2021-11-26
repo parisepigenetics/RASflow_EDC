@@ -26,6 +26,7 @@ hisat2:
 star:
   mem: 40000
   name: star
+  cpus: 2
 
 alignmentQC:
   mem: 10000

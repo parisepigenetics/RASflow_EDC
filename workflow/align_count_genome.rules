@@ -174,34 +174,34 @@ elif mapper == "STAR":
                 fw = intermediate_path + "/reads/{sample}_fw.fastq.gz",
                 rv = intermediate_path + "/reads/{sample}_rv.fastq.gz"
             output:
-                sort = intermediate_path + "/Sorted_bam/{sample}.sort.bam",
-                counts = intermediate_path + "/Sorted_bam/{sample}.ReadsPerGene.out.tab"
+                bam = intermediate_path +"/bam_byName/{sample}.sortByName.bam",
+                counts = intermediate_path + "/bam_byName/{sample}.ReadsPerGene.out.tab"
             conda:
                 "env.yaml"
             params:
                 index = index_path,
-                basename = intermediate_path + "/Sorted_bam/{sample}."
+                basename = intermediate_path + "/bam_byName/{sample}."
             benchmark:
                 intermediate_path + "/benchmarks/{sample}.star.benchmark.txt"
             shell:
-                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN {config[NCORE]} --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {gene_gtf} --outSAMtype BAM SortedByCoordinate --genomeDir {params.index} --readFilesIn  {input.fw} {input.rv} && mv {params.basename}Aligned.sortedByCoord.out.bam {output.sort}"
+                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN {config[NCORE]} --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {gene_gtf} --outSAMtype BAM Unsorted --genomeDir {params.index} --readFilesIn  {input.fw} {input.rv} && mv {params.basename}Aligned.out.bam {output.bam}"
                   
     else:
         rule star:
             input:
                 fw = intermediate_path + "/reads/{sample}.fastq.gz"
             output:
-                sort = intermediate_path + "/Sorted_bam/{sample}.sort.bam",
-                counts = intermediate_path + "/Sorted_bam/{sample}.ReadsPerGene.out.tab"
+                bam = intermediate_path +"/bam_byName/{sample}.sortByName.bam",
+                counts = intermediate_path + "/bam_byName/{sample}.ReadsPerGene.out.tab"
             conda:
                 "env.yaml"
             params:
                 index = index_path,
-                basename = intermediate_path + "/Sorted_bam/{sample}."
+                basename = intermediate_path + "/bam_byName/{sample}."
             benchmark:
                 intermediate_path + "/benchmarks/{sample}.star.benchmark.txt"
             shell:
-                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN {config[NCORE]} --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {gene_gtf} --outSAMtype BAM SortedByCoordinate --genomeDir {params.index} --readFilesIn  {input.fw} && mv {params.basename}Aligned.sortedByCoord.out.bam {output.sort}"  
+                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN {config[NCORE]} --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {gene_gtf} --outSAMtype BAM Unsorted --genomeDir {params.index} --readFilesIn  {input.fw} && mv {params.basename}Aligned.out.bam {output.bam}"  
 
 ### sort, index the bam and make the bigwig files
 rule sortBam :
@@ -353,8 +353,6 @@ if counter == "featureCounts":
                 count_summary = count_summary
             conda:
                 "env.yaml"
-            resources:
-                load = 1
             params:
                 options = seqtype_dict[seqtype] + " -s " +strand_dict[strand] + " " + count_options,
             shell:
