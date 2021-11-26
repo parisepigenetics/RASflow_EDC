@@ -185,9 +185,9 @@ And to go to your project using `cd`.
 ```
 [username @ cpu-node-12 ]$ cd /shared/projects/YourProjectName
 ```
-Now you can clone the repository (use `-b` to specify the version). You can then look at the files using `tree` or `ls`.
+Now you can clone the repository (use `-b v0.6` to specify the version). You can then look at the files using `tree` or `ls`.
 ```bash
-[username@clust-slurm-client YourProjectName]$ git clone https://github.com/parisepigenetics/RASflow_IFB -b v0.6
+[username@clust-slurm-client YourProjectName]$ git clone https://github.com/parisepigenetics/RASflow_IFB
 Cloning into 'RASflow_IFB'...
 Username for 'https://github.com': GITHUBusername
 Password for 'https://username@github.com': GITHUBtocken
