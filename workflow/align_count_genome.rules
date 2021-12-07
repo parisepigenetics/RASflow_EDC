@@ -291,16 +291,16 @@ if split :
      
     fc_bam = intermediate_path + "/{sample}_split/sortByName_0{i}.bam"
     if TEanalysis == "yes" or TEanalysis==True:
-        counts = final_path +"/counting_"+counter+"/countTables/{sample}_0{i}_count_all.tsv"
+        counts = temp(final_path +"/counting_"+counter+"/countTables/{sample}_0{i}_count_all.tsv")
     else: 
-        counts = final_path +"/counting_"+counter+"/countTables/{sample}_0{i}_count_genes.tsv"
-    whole_table = final_path + "/counting_"+counter+"/countTables/{sample}_0{i}_table_all.tsv"
-    count_summary = final_path + "/counting_"+counter+"/countTables/{sample}_0{i}_table_all.tsv.summary"
-    count_genes = final_path +"/counting_"+counter+"/countTables/{sample}_0{i}_count_genes.tsv"
+        counts = temp(final_path +"/counting_"+counter+"/countTables/{sample}_0{i}_count_genes.tsv")
+    whole_table = temp(final_path + "/counting_"+counter+"/countTables/{sample}_0{i}_table_all.tsv")
+    count_summary = temp(final_path + "/counting_"+counter+"/countTables/{sample}_0{i}_table_all.tsv.summary")
+    count_genes = temp(final_path +"/counting_"+counter+"/countTables/{sample}_0{i}_count_genes.tsv")
     ID = "{sample}_0{i}"
-    table_T =  main_path + "{sample}_0{i}_TE_count.tsv"
-    table_G =  main_path + "{sample}_0{i}_gene_count.tsv"
-    htseq_tmp = final_path + "/counting_"+ counter + "/countTables/{sample}_0{i}_count.tmp"
+    table_T =  temp(main_path + "{sample}_0{i}_TE_count.tsv")
+    table_G =  temp(main_path + "{sample}_0{i}_gene_count.tsv")
+    htseq_tmp = temp(final_path + "/counting_"+ counter + "/countTables/{sample}_0{i}_count.tmp")
 
 
 else:
@@ -325,10 +325,8 @@ if counter == "featureCounts":
             input:
                 GTFgene = gene_gtf
             output: 
-                mergeGTF = final_path +"/repeats_"+counter+"/merge_genes_te.gtf",
-                #mergeGTF = "merge_genes_te.gtf",
+                mergeGTF = temp(final_path +"/repeats_"+counter+"/merge_genes_te.gtf"),
                 Ngenes = final_path +"/repeats_"+counter+"/Ngenes.txt"
-                #Ngenes = "Ngenes.txt"
             params:
                 folder_TE = final_path +"/repeats_"+counter
             shell:
@@ -338,7 +336,6 @@ if counter == "featureCounts":
                 cat {config[ANNOTATION]} {config[GTFTE]} > {output.mergeGTF}
                 """
         fc_GTF = final_path +"/repeats_"+counter+"/merge_genes_te.gtf"
-        #fc_GTF = "merge_genes_te.gtf"
     else:
         fc_GTF = gene_gtf
 
@@ -380,7 +377,7 @@ if counter == "htseq-count":
 if TEanalysis == "yes" or TEanalysis==True :  
     mergetableTE = final_path + "/repeats_"+counter+"/countTables/{sample}_countTE.tsv"
     if split: 
-        count_TE = final_path +"/repeats_"+counter+"/countTables/{sample}_0{i}_count_TE.tsv"
+        count_TE = temp(final_path +"/repeats_"+counter+"/countTables/{sample}_0{i}_count_TE.tsv")
     else:
         count_TE = final_path +"/repeats_"+counter+"/countTables/{sample}_countTE.tsv"
 

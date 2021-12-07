@@ -269,27 +269,32 @@ DEA <- function(control, treat) {
     if (suffix == '_countsGenes.tsv') {
        gene.id.dea <- annotation$GeneID
        gene.symbol.dea.all <- queryMany(gene.id.dea, scopes = 'ensembl.gene', fields = 'symbol')
-       h <- hash()
-       for (i in 1:nrow(gene.symbol.dea.all)) {
-          query <- gene.symbol.dea.all$query[i]
-          symbol <- gene.symbol.dea.all$symbol[i]
-          if (has.key(query, h)) {  # if there's duplicate for the same query
-             h[[query]] <- paste(hash::values(h, keys = query), symbol, sep = ', ')
-          }
-          else {
-             if (is.null(symbol) || is.na(symbol)) {  # if there's no hit for the query, keep the original id
-                h[[query]] <- query
-             } 
-             else {
-                h[[query]] <- symbol
-             }
-          }
-       }
-       gene.dea <- gene.id.dea
-       for (i in c(1:length(gene.dea))) {
-          gene.dea[i] <- h[[gene.id.dea[i]]]
-          }
-       annotation$GeneID <- gene.dea
+       if (length(gene.symbol.dea.all) > 10) {
+            h <- hash()
+            for (i in 1:nrow(gene.symbol.dea.all)) {
+                query <- gene.symbol.dea.all$query[i]
+                symbol <- gene.symbol.dea.all$symbol[i]
+                if (has.key(query, h)) {  # if there's duplicate for the same query
+                    h[[query]] <- paste(hash::values(h, keys = query), symbol, sep = ', ')
+                }
+                else {
+                    if (is.null(symbol) || is.na(symbol)) {  # if there's no hit for the query, keep the original id
+                    h[[query]] <- query
+                    } 
+                    else {
+                    h[[query]] <- symbol
+                    }
+                }
+            }
+            gene.dea <- gene.id.dea
+            for (i in c(1:length(gene.dea))) {
+                gene.dea[i] <- h[[gene.id.dea[i]]]
+                }
+            annotation$GeneID <- gene.dea
+        }
+        else {
+        message("queryMany gave no results, keeping previous IDs")
+        }
     }
     
     else {
@@ -376,8 +381,10 @@ DEA <- function(control, treat) {
     palette <- c("#000000ac", "#9d9d9dff")
     palette.group <- c(rep(palette[1], num.control), rep(palette[2], num.treat)) # number of cotr/treat samples -> need metadata
 
-    pdf(file = file.path(output.path, paste('Report/plots/heatmapTop_', control, '_', treat, '.pdf', sep = '')), width = 15, height = 15, title = 'Heatmap using the top features')
-    heatmap.2(as.matrix(norm.table.deg), col=rev(brewer.pal(11,"RdBu")),scale="row", trace="none", ColSideColors = palette.group, margins = c(20,18), labRow = gene.norm.table, cexRow = 1.9, cexCol = 1.9, Rowv=FALSE)
+    pdf(file = file.path(output.path, paste('Report/plots/heatmapTop_', control, '_', treat, '.pdf', sep = '')), width = 20, height = 20, title = 'Heatmap using the top features')
+    par(oma=c(4,4,4,4))
+    heatmap.2(as.matrix(norm.table.deg), col=rev(brewer.pal(11,"RdBu")),scale="row", trace="none", ColSideColors = palette.group, margins = c(30,18), labRow = gene.norm.table, cexCol = 1.9, dendrogram="column", 
+            yaxt="n", key.par = list(cex=1.2, cex.lab=1), keysize=1)  ## control the heatmap legend
     legend("topright", title = 'Group', legend=groups, text.font = 15,
          col = palette, fill = palette, cex=1.8)
 
