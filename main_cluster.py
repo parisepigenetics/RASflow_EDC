@@ -54,7 +54,8 @@ if server == "rpbs":
     MainPath = "/scratch/epigenetique/workflows/RASflow_RPBS/"
     server_name = "RPBS"
 if server == "ifb" :
-    option = " -x cpu-node-53"  ## to remove slow nodes, blank before the option!!
+    account = os.getcwd().split('projects')[1].split('/')[1]
+    option = " -A "+account   # +" -x cpu-node-25" # to remove slow nodes, blank before the option!!
     MainPath = ""
     server_name = "IFB"
     try: writting_dir = resultpath.split('projects')[1].split('/')[1]
