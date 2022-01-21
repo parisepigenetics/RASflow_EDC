@@ -1,12 +1,16 @@
 # Tutorial : RNA-seq analysis using RASflow_IFB
 
-<small>Maintained by [Magali Hennion](mailto:magali.hennion@u-paris.fr). Last update : 17/11/2021. RASflow_IFB v0.6. </small>  
-**Important! The RPBS version of the workflow has NOT been updated since February 2021.** 
+<small>Maintained by [Magali Hennion](mailto:magali.hennion@u-paris.fr). Last update : 21/01/2022. RASflow_IFB v0.6.2. </small>  
 
-Implemented by BIBS-EDC (on IFB and iPOP-UP clusters), this workflow for RNA-seq data analysis is based on RASflow which was originally published by [X. Zhang](https://doi.org/10.1186/s12859-020-3433-x). It has been modified to run effectively on both IFB and iPOP-UP core cluster and to fit our specific needs. Moreover, several tools and features were added, including a comprehensive report, as well as the possibility to incorporate the repeats in the analysis. If you encounter troubles or need additional tools or features, you can create an issue on the [GitHub repository](https://github.com/parisepigenetics/RASflow_IFB/issues), or email directly [Magali](mailto:magali.hennion@u-paris.fr). The tutorial is detailed for the IFB cluster. A small paragraph at the end gives you the instructions to run it on RPBS cluster. The instructions concerning iPOP-UP cluster are coming soon. 
+Implemented by BIBS-EDC (on IFB and iPOP-UP clusters), this workflow for RNA-seq data analysis is based on RASflow which was originally published by [X. Zhang](https://doi.org/10.1186/s12859-020-3433-x). It has been modified to run effectively on both IFB and iPOP-UP core cluster and to fit our specific needs. Moreover, several tools and features were added, including a comprehensive report, as well as the possibility to incorporate the repeats in the analysis. If you encounter troubles or need additional tools or features, you can create an issue on the [GitHub repository](https://github.com/parisepigenetics/RASflow_IFB/issues), or email directly [BiBs](mailto:bibs_umr7216@parisepigenetics.com). 
 
 ---
-## Table of content
+IMPORTANT: The only difference when running the workflow on the IFB core cluster or on the iPOP-UP cluster is the starting sbatch file. Use **Workflow_ifb.sh** for the IFB and **Workflow_ipop.sh** for iPOP-UP. In this tutorial it is named **Workflow_\<cluster\>.sh**. 
+
+
+
+---
+# Table of content
   * [Your analysis in a nutshell](#your-analysis-in-a-nutshell)
   * [Resources](#resources)
   * [Get an account on IFB core cluster and create a project](#get-an-account-on-ifb-core-cluster-and-create-a-project)
@@ -23,7 +27,7 @@ Implemented by BIBS-EDC (on IFB and iPOP-UP clusters), this workflow for RNA-seq
   * [Preparing the run](#preparing-the-run)
     + [1. **metadata.tsv**](#1-metadatatsv)
     + [2. **config_main.yaml**](#2-configmainyaml) 
-    + [3. **Workflow.sh** [Facultative]](#3-workflowsh-facultative)
+    + [3. **Workflow_\<cluster\>.sh** [Facultative]](#3-workflowsh-facultative)
     + [4. **env.yaml** [Facultative]](#4-envyaml-facultative)
   * [Running the workflow](#running-the-workflow)
   * [Running your analysis step by step](#running-your-analysis-step-by-step)
@@ -69,12 +73,12 @@ Implemented by BIBS-EDC (on IFB and iPOP-UP clusters), this workflow for RNA-seq
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 ---
-## Your analysis in a nutshell
+# Your analysis in a nutshell
 - Get an [account](#get-an-account-on-ifb-core-cluster-and-create-a-project) on IFB core cluster and create a project
 - [Transfer your data](#transfer-your-data) to the cluster
 - [Clone](#rasflow-installation-and-description) RASflow_IFB [repository](https://github.com/parisepigenetics/RASflow_IFB)
 - [Modify](#preparing-the-run) `metadata.tsv` and `config_main.yaml`
-- Run the [workflow](#running-the-workflow) typing `sbatch Workflow.sh`
+- Run the [workflow](#running-the-workflow) typing `sbatch Workflow_<cluster>.sh`
 - Look at the [results](#workflow-results)
 
 Here is a simplified scheme of the workflow. The main steps are indicated in the blue boxes. RASflow will allow you to choose which steps you want to execute for your project. In the green circles are the input files you have to give for the different steps. 
@@ -84,7 +88,7 @@ Here is a simplified scheme of the workflow. The main steps are indicated in the
 ---
 ---
 
-## Resources
+# Resources
 
 - IFB  
   - Create and manage your [account](https://my.cluster.france-bioinformatique.fr/manager2/login)  
@@ -117,7 +121,11 @@ Here is a simplified scheme of the workflow. The main steps are indicated in the
 
 ---
 
-## Get an account on IFB core cluster and create a project
+# Before starting : create an account and a project on your favorite cluster
+
+## IFB core cluster 
+
+### Ask for an account and a project
 
 We highly recommend to first read at least the [Quick Start](https://ifb-elixirfr.gitlab.io/cluster/doc/quick-start/) of the cluster [documentation](https://ifb-elixirfr.gitlab.io/cluster/doc/). 
 
@@ -126,15 +134,15 @@ We highly recommend to first read at least the [Quick Start](https://ifb-elixirf
 - [Facultative] If your data are not sensitive and you encounter difficulties running the workflow, you can give Magali access to your project by adding the user `mhennion` on the [project manager webpage](https://my.cluster.france-bioinformatique.fr/manager2/project). You can remove it anytime. 
 
 
----
-## Connect to IFB core cluster
+### Connect to IFB core cluster
+
 It's time to go to the cluster! You can connect to IFB server either via `ssh` or using the Jupyter Hub from IFB, which facilitates a lot file navigation. 
 
-### Easy connection : use the Jupyter Hub!
+* Easy connection : use the Jupyter Hub!
 You can connect to [IFB Jupyter Hub](https://jupyterhub.cluster.france-bioinformatique.fr/) and enter your login and password. On the left pannel, you can navigate to your project (`/shared/projects/YourProjectName`). For now your project folder is empty. 
 
 
-### SSH connection 
+* SSH connection 
 You can also use your terminal and type the following command replacing `username` by your IFB username. 
 
 ```bash
@@ -170,11 +178,64 @@ You can now go to your project using `cd`.
 ```
 [username@clust-slurm-client ~]$ cd /shared/projects/YourProjectName
 ```
+---
+## iPOP-UP cluster
 
+### Ask for an account and a project
+For now, write an email to [BiBs](mailto:bibs_umr7216@parisepigenetics.com) with the following information: 
+- NAME, Surname 
+- Unit
+- Email (institutional adress)
+- Projet name (acronym) 
+- Required disk space (an estimation) 
+- Data type 
 
-## RASflow installation and description
+### Connect to iPOP-UP cluster
 
-In order to install RASflow, you  have to clone the RASflow_IFB GitHub repository to your IFB project. For now the repository is private, so you need to have a GitHub account and to be a member of [EDC repository](https://github.com/parisepigenetics) to have access. If you're not, please let me know and I will add you. You will have to enter your GitHub username and a personnal access tocken to clone the repository. In order to generate such tocken, you have to connect to your GitHub account and follow [those instructions](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token). 
+It's time to go to the cluster! You can connect to iPOP-UP server only via `ssh` for now. To do so, use your terminal and type the following command replacing `username` by your iPOP-UP username (last name in lower case usually). 
+
+```bash
+You@YourComputer:~/PathTo/RNAseqProject$ ssh username@ipop-up.rpbs.univ-paris-diderot.fr
+```
+
+You will have to enter your password, and then you'll be connected. Once your project is created you can access it on the cluster at `/shared/projects/YourProjectName`. 
+
+```
+#################################################################
+#                   ____   ____   ____  ____                    #
+#                  |  _ \ |  _ \ | __ )/ ___|                   #
+#                  | |_) || |_) ||  _ \\___ \                   #
+#                  |  _ < |  __/ | |_) |___) |                  #
+#                  |_| \_\|_|    |____/|____/                   #
+#                                                               #
+#      Ressource Parisienne en Bioinformatique Structurale      #
+#               ---------------------------                     #
+#          All connections are monitored and recorded.          #
+#   Disconnect IMMEDIATELY if you are not an authorized user!   #
+#                                                               #
+#################################################################
+hennion@ipop-up.rpbs.univ-paris-diderot.fr's password: 
+Last login: Fri Jan 21 13:32:35 2022 from 172.28.18.162
+Bienvenue sur le cluster iPOP-UP.
+
+Pour toute question ou demande de support, rejoignez-nous sur le forum de RPBS : https://discourse.rpbs.univ-paris-diderot.fr
+
+Pour changer le compte projet par défaut : sacctmgr update user $USER set defaultaccount=<project-name>
+bi4edc [--------------------]       3 /    1024 GB
+cotech [#-------------------]     913 /   10240 GB
+Update: 2022-01-21 16:00 - default account in bold - More info: status_bars --help
+
+```
+
+You can now go to your project using `cd`.
+
+```
+[username@ipop-up ~]$ cd /shared/projects/YourProjectName
+```
+---
+# RASflow installation and description
+
+In order to install RASflow, you  have to clone the RASflow_IFB GitHub repository to your cluster project. For now the repository is private, so you need to have a GitHub account and to be a member of [EDC repository](https://github.com/parisepigenetics) to have access. If you're not, please let me know and I will add you. You will have to enter your GitHub username and a personnal access tocken to clone the repository. In order to generate such tocken, you have to connect to your GitHub account and follow [those instructions](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token). 
 
 If you're using the Jupyter Hub, you now have to open a terminal by clicking on the corresponding icon. 
 
@@ -235,7 +296,8 @@ Checking out files: 100% (84/84), done.
 │   ├── env.yaml
 │   ├── quality_control.rules
 │   └── trim.rules
-└── Workflow.sh
+└── Workflow_ifb.sh
+└── Workflow_ipop.sh
 ```
 
 RASflow is launched as a python script named `main_cluster.py` which calls the workflow manager named [Snakemake](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html). Snakemake will execute rules that are defined in `workflow/xxx.rules` and distribute the corresponding jobs to the computing nodes via [SLURM](https://ifb-elixirfr.gitlab.io/cluster/doc/slurm_user_guide/). 
@@ -243,7 +305,7 @@ RASflow is launched as a python script named `main_cluster.py` which calls the w
 <img src="Tuto_pictures/cluster_chart.pdf.png" alt="drawing" width="500"/>
 
 
- On the cluster, the main python script is launched via the shell script `Workflow.sh`, which basically contains only one command `python main_cluster.py ifb` (+ information about the run).
+ On the cluster, the main python script is launched via the shell script `Workflow_<cluster>.sh`, which basically contains only one command `python main_cluster.py ifb/ipop-up` (+ loading of basic modules and information about the run).
 
 ----
 
@@ -255,14 +317,14 @@ First copy the configuration file corresponding to the test.
 ```
 Then start the workflow. 
 ```
-[username@clust-slurm-client RASflow_IFB]$ sbatch Workflow.sh
+[username@clust-slurm-client RASflow_IFB]$ sbatch Workflow_<cluster>.sh
 ```
 **Nota:** The first time you run this command, the Conda environment will be made (see [below](#4-envyaml-facultative)). This takes ~30 min as it dowloads and installs all the tools you'll need. 
 
 This will run the quality control of the raw fastq. See [FASTQ quality control](#fastq-quality-control) for detailed explanations. If everything goes find you will see the results in `TestDataset/results/Test1/fastqc`. See also [how to follow your jobs](#how-to-follow-your-jobs) to know how to check that the run went fine.  
 You can now move on with your own data, or run the rest of the workflow on the test dataset. To do so you have to modify `configs/config_main.yaml` turning `QC` entry from "yes" to "no". If you don't know how to do that, see [Preparing the run](#preparing-the-run). Then restart the workflow. 
 ```
-[username@clust-slurm-client RASflow_IFB]$ sbatch Workflow.sh
+[username@clust-slurm-client RASflow_IFB]$ sbatch Workflow_<cluster>.sh
 ```
 Detailed explanation of the outputs are available in [Workflow results](#workflow-results). 
 
@@ -287,7 +349,7 @@ You@YourComputer:~/PathTo/RNAseqProject$ md5sum Fastq/* > Fastq/fastq.md5
 ```
 
 ### Copy to the cluster
-You can then copy the `Fastq` folder to the cluster using `rsync`, replacing `username` by your IFB login: 
+You can then copy the `Fastq` folder to the cluster using `rsync`, replacing `username` by your login: 
 
 ```
 You@YourComputer:~/PathTo/RNAseqProject$ rsync -avP  Fastq/ username@core.cluster.france-bioinformatique.fr:/shared/projects/YourProjectName/Raw_fastq
@@ -463,12 +525,12 @@ COUNTER: featureCounts # "featureCounts" or "htseq-count" or "STARcount" (only w
 [...]
 ```
 
-### 3. **Workflow.sh** [Facultative] 
+### 3. **Workflow_\<cluster\>.sh** [Facultative] 
 
-In `Workflow.sh`, you can modify the **Job name** and the **Output** folder to save SLURM outputs. If you don't change this file, SLURM outputs will be saved in a `slurm_output` folder that will be created in your working directory. The line is read if it starts with one `#` and is not used if it starts with 2 (or more) `#`. For instance here
+In `Workflow_<cluster>.sh`, you can modify the **Job name** and the **Output** folder to save SLURM outputs. If you don't change this file, SLURM outputs will be saved in a `slurm_output` folder that will be created in your working directory. The line is read if it starts with one `#` and is not used if it starts with 2 (or more) `#`. For instance here
 
 ```bash
-[username@clust-slurm-client RASflow_IFB]$ cat Workflow.sh
+[username@clust-slurm-client RASflow_IFB]$ cat Workflow_<cluster>.sh
 #!/bin/bash
 
 ################################ Slurm options #################################
@@ -553,10 +615,10 @@ dependencies:
 ```
 
 ## Running the workflow
-When the configuration files are ready, you can start the run by `sbatch Workflow.sh`.
+When the configuration files are ready, you can start the run by `sbatch Workflow_<cluster>.sh`.
 
 ```
-[username@clust-slurm-client RASflow_IFB]$ sbatch Workflow.sh
+[username@clust-slurm-client RASflow_IFB]$ sbatch Workflow_<cluster>.sh
 ```
 
 Please see below detailed explanation. 
@@ -613,7 +675,7 @@ NCORE: 24  # Use command "getconf _NPROCESSORS_ONLN" to check the number of core
 When this is done, you can start the QC by running:
 
 ```
-[username@clust-slurm-client RASflow_IFB]$ sbatch Workflow.sh
+[username@clust-slurm-client RASflow_IFB]$ sbatch Workflow_<cluster>.sh
 ```
 
 Nota: The first time you run this command, the Conda environment will be made. This takes ~30 min as it dowloads and installs all the tools you'll need. 
@@ -641,7 +703,7 @@ Where to find those outputs and what do they contain?
 
 #### 1. **Main script**
 
- The output is in `slurm_output` (default) or in the specified folder if you modified `Workflow.sh`. It contains global information about your run. 
+ The output is in `slurm_output` (default) or in the specified folder if you modified `Workflow_<cluster>.sh`. It contains global information about your run. 
 Typically the main job output looks like :
 
 ```
@@ -1142,7 +1204,7 @@ FILTER: yes  # Filter out low expressed transcripts/genes or not? (yes or no). I
 When this file is fully adapted to your experimental set up and needs, you can start the workflow by running:
 
 ```
-[username@clust-slurm-client RASflow_IFB]$ sbatch Workflow.sh
+[username@clust-slurm-client RASflow_IFB]$ sbatch Workflow_<cluster>.sh
 ```
 
 ---
@@ -1734,7 +1796,7 @@ If the rule that failed is not listed here, you can add it respecting the format
 
 ### Folder locked
 
-When snakemake is working on a folder, this folder is locked so that you can't start another DAG and create a big mess. If you cancel the main job, snakemake won't be able to unlock the folder and next time you run `Workflow.sh`, you will get the following error:
+When snakemake is working on a folder, this folder is locked so that you can't start another DAG and create a big mess. If you cancel the main job, snakemake won't be able to unlock the folder and next time you run `Workflow_<cluster>.sh`, you will get the following error:
 
 ```
 Error: Directory cannot be locked. Please make sure that no other Snakemake process is trying to create the same files in the following directory:
@@ -1763,7 +1825,7 @@ In principle it should raise an error, but sometimes it doesn't and it's hard to
 ---
 
 ## Good practice
-- Always save **job ID** or the **dateTtime** (ie 20200615T1540) in your notes when launching `Workflow.sh`. It's easier to find the outputs you're interested in days/weeks/months/years later.
+- Always save **job ID** or the **dateTtime** (ie 20200615T1540) in your notes when launching `Workflow_<cluster>.sh`. It's easier to find the outputs you're interested in days/weeks/months/years later.
 
 ---
 
@@ -1853,84 +1915,4 @@ D192T32_R2.fastq.gz
 ```
 
 
-## Running your analysis on RPBS cluster
 
-The exact same version of the workflow is installed on RPBS cluster [NOTA: this is not true since the 2nd lockdown, I'll do it when I come to the lab.]. You don't have to clone the GitHub repository. Here is a quick tutorial with only the differences with IFB cluster.
-
-- Transfer your data to `/home/joule/RPBSusername` 
-
-```
-You@YourComputer:~/PathTo/RNAseqProject$ rsync -avP  Fastq/ RPBSusername@goliath.sdv.univ-paris-diderot.fr:/home/joule/RPBSusername/YourProjectName/Raw_fastq
-```
-
-Nota: you should not use `/scratch` to store data. 
-
-- Login to RPBS cluster:
-
-```
-username@YourComputer:~$ ssh RPBSusername@goliath.sdv.univ-paris-diderot.fr
-```
-
-- Go to your user folder on `scratch`:
-
-``` 
-[RPBSusername @ goliath hh:mm]$ ~ : cd /scratch/user/RPBSusername
-```
-
-It is important to launch the workflow from `scratch` as this is where the conda environnement is built. [This will change with the cluster upgrade]. 
-
-- Create your working directory (named as you want, I put `RASflow` as an example) and copy the `user` files into it:
-
-```
-[RPBSusername @ goliath hh:mm]$ RPBSusername : mkdir RASflow
-[RPBSusername @ goliath hh:mm]$ RPBSusername : cp -pr /scratch/epigenetique/workflows/RASflow_RPBS/user/* RASflow
-```
-
-- Go to your folder and modify the configuration files according to your experiment. In principle you only need to modify `configs/metadata.tsv` and `configs/config_main.yaml`:
-
-```
-[RPBSusername @ goliath hh:mm]$ RPBSusername : cd RASflow
-[RPBSusername @ goliath hh:mm]$ RASflow : ls -l 
-total 16
--rw-r--r-- 1 hennion umr7216  247 Jul 23 17:05 cluster.yaml
-drwxr-xr-x 2 hennion umr7216 4096 Jul 24 09:35 configs
--rw-r--r-- 1 hennion umr7216 1059 Jul 24 10:05 Unlock.sh
--rwxr-xr-x 1 hennion umr7216 1275 Jul 24 10:15 Workflow.sh
-[RPBSusername @ goliath hh:mm]$ RASflow : ls -l configs/
-total 12K
--rw-r--r-- 1 hennion umr7216  315 Jul 24 10:40 metadata.tsv
--rw-r--r-- 1 hennion umr7216 5,0K Jul 24 10:40 config_main.yaml
-```
-
-Please save the outputs in your user directory on `joule`:
-
-```yaml
-# ================== Shared parameters for some or all of the sub-workflows ==================
-
-## key file if the data is stored remotely, otherwise leave it empty
-KEY: 
-
-## the path to fastq files
-READSPATH: /home/joule/RPBSusername/Raw_fastq
-
-## the meta file describing the experiment settings
-METAFILE: /scratch/user/RPBSusername/RASflow/configs/metadata.tsv
-
-## is the sequencing paired-end or single-end?
-END: pair  # "pair" or "single"
-
-## number of cores you want to allocate to this workflow
-NCORE: 30  # Use command "getconf _NPROCESSORS_ONLN" to check the number of cores/CPU on your machine
-
-## paths for intermediate outputs and final outputs
-OUTPUTPATH: /home/joule/RPBSusername/RASflow/data # intermediate output. do not upload to github
-FINALOUTPUT: /home/joule/RPBSusername/RASflow/output
-```
-
-- Run the workflow:
-
-```
-[RPBSusername @ goliath hh:mm]$ RASflow : sbatch Workflow.sh
-```
-- After the run  
-Once you're done, you have to transfer all your data to **goliath.** 
