@@ -37,7 +37,7 @@ from TEToolkit.GeneFeatures import *
 
 
 # Parameters to control the workflow 
-with open('configs/config_main.yaml') as yamlfile:
+with open('config_ongoing_run.yaml') as yamlfile:
     config = yaml.load(yamlfile,Loader=yaml.BaseLoader)
 counter= config["COUNTER"]
     

@@ -430,7 +430,7 @@ DEA <- function(control, treat) {
 
 
 # load the config file
-yaml.file <- yaml.load_file('configs/config_main.yaml')
+yaml.file <- yaml.load_file('config_ongoing_run.yaml')
 
 # extract the information from the yaml file
 project <- yaml.file$PROJECT  # project name of this analysis

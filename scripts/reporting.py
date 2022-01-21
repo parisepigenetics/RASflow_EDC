@@ -5,7 +5,7 @@ import os
 import tarfile
 
 def main(time_string, server):
-    with open('configs/config_main.yaml') as yamlfile:
+    with open('config_ongoing_run.yaml') as yamlfile:
         config = yaml.load(yamlfile,Loader=yaml.BaseLoader)
     project = config["PROJECT"]
     trim = config["TRIMMED"]
@@ -19,6 +19,15 @@ def main(time_string, server):
     deatool = config["DEATOOL"]
     resultpath = config["RESULTPATH"]
     repeats = config["REPEATS"]
+    fromcounts = config["FROMCOUNTS"]
+    if fromcounts != "no" and fromcounts != False:
+        repeats = "no"  # repeat analysis is disable when starting from homemade count tables.
+    qc = config["QC"]
+    if qc == "yes" or qc == True: # deactivate the rest
+        trim = "disabled"
+        mapping = "disabled"
+        dea = "disabled"
+        repeats = "disabled"
 
     start_time = time.localtime()
     date_string = time.strftime("%d/%m/%Y", start_time)
@@ -94,12 +103,13 @@ def main(time_string, server):
     <p> Raw sequences were trimmed. A summary of the quality of the trimmed sequences can be found in 
     <a href="fastqc_after_trimming/report_quality_control_after_trimming.html">report_quality_control_after_trimming.html</a>. <br></p>
     """
-    else :
+        f.write(message)
+    elif  trim != "disabled":
         message="""
     <h2 id="trimming">Trimming</h2>
     <p> The sequences were not trimmed and raw sequences were used for subsequent mapping. <br></p>
     """
-    f.write(message)
+        f.write(message)
 
     if mapping =='yes' and reference == "genome":
         message=f"""
@@ -137,16 +147,20 @@ def main(time_string, server):
             
 
     if dea=='yes':
+        if fromcounts != "no" and fromcounts != False: 
+            outpath = "fromExternalCounts"
+        else:
+            outpath = f"""mapping_{aligner}/counting_{counter}"""
         if mapping != 'yes':
             message=f"""
     <h2 id="exploratory-analysis-of-all-the-samples">Exploratory analysis of all the samples</h2>
     <p>To assess the quality of the experiment and the reproducibility of the replicates, please use the interactive 
-    <a href="mapping_{aligner}/counting_{counter}/Glimma/MDSPlot.html">MDS plot</a>. 
-    <p> <embed type="text/html" src="mapping_{aligner}/counting_{counter}/Glimma/MDSPlot.html" width="1000" height="900"> </p>
-    <p>A static <a href="mapping_{aligner}/counting_{counter}/PCA.pdf">principal component analysis</a> 
+    <a href="{outpath}/Glimma/MDSPlot.html">MDS plot</a>. 
+    <p> <embed type="text/html" src="{outpath}/Glimma/MDSPlot.html" width="1000" height="900"> </p>
+    <p>A static <a href="{outpath}/PCA.pdf">principal component analysis</a> 
     for all the samples is also available,  
-    as well as a <a href="mapping_{aligner}/counting_{counter}/Heatmap_samples.pdf">heatmap with sample clustering</a>.  </p>
-    <p><embed src= "mapping_{aligner}/counting_{counter}/Heatmap_samples.pdf" type="application/pdf" width= "700" height= "700"><br></p>
+    as well as a <a href="{outpath}/Heatmap_samples.pdf">heatmap with sample clustering</a>.  </p>
+    <p><embed src= "{outpath}/Heatmap_samples.pdf" type="application/pdf" width= "700" height= "700"><br></p>
     """
             f.write(message)
             
@@ -171,33 +185,33 @@ def main(time_string, server):
             message=f"""
         <p><br></p>
         <h3 id="Comparison-between-{controlGroup}-and-{treatGroup}">Comparison between {controlGroup} and {treatGroup} for genes</h3>
-        <p>The <a href="mapping_{aligner}/counting_{counter}/DEA_{deatool}/Report/regionReport/{controlGroup}_{treatGroup}/exploration.html">regionReport exploratory report</a> 
+        <p>The <a href="{outpath}/DEA_{deatool}/Report/regionReport/{controlGroup}_{treatGroup}/exploration.html">regionReport exploratory report</a> 
         is a good start to get an idea of the results.</p> 
-        <p>Glimma interactive <a href="mapping_{aligner}/counting_{counter}/DEA_{deatool}/Report/Glimma/MDSPlot_{controlGroup}_{treatGroup}.html">MDS plot</a> 
+        <p>Glimma interactive <a href="{outpath}/DEA_{deatool}/Report/Glimma/MDSPlot_{controlGroup}_{treatGroup}.html">MDS plot</a> 
         can help you to identify problematic samples.</p>
-        <p> <embed type="text/html" src="mapping_{aligner}/counting_{counter}/DEA_{deatool}/Report/Glimma/MDSPlot_{controlGroup}_{treatGroup}.html" width="1000" height="900"> </p>
-        <p>To be easily shared and reused the <a href="mapping_{aligner}/counting_{counter}/DEA_{deatool}/Report/plots/PCA_{controlGroup}_{treatGroup}.pdf">PCA</a> 
+        <p> <embed type="text/html" src="{outpath}/DEA_{deatool}/Report/Glimma/MDSPlot_{controlGroup}_{treatGroup}.html" width="1000" height="900"> </p>
+        <p>To be easily shared and reused the <a href="{outpath}/DEA_{deatool}/Report/plots/PCA_{controlGroup}_{treatGroup}.pdf">PCA</a> 
         and the 
-        <a href="mapping_{aligner}/counting_{counter}/DEA_{deatool}/Report/plots/SampleDistances_{controlGroup}_{treatGroup}.pdf">heatmap with sample clustering </a>
+        <a href="{outpath}/DEA_{deatool}/Report/plots/SampleDistances_{controlGroup}_{treatGroup}.pdf">heatmap with sample clustering </a>
         are also available as PDF files.  </p> 
         <p>
-        <embed src= "mapping_{aligner}/counting_{counter}/DEA_{deatool}/Report/plots/PCA_{controlGroup}_{treatGroup}.pdf" type="application/pdf" width= "700" height= "700">
-        <embed src= "mapping_{aligner}/counting_{counter}/DEA_{deatool}/Report/plots/SampleDistances_{controlGroup}_{treatGroup}.pdf" width= "700" height= "700">
+        <embed src= "{outpath}/DEA_{deatool}/Report/plots/PCA_{controlGroup}_{treatGroup}.pdf" type="application/pdf" width= "700" height= "700">
+        <embed src= "{outpath}/DEA_{deatool}/Report/plots/SampleDistances_{controlGroup}_{treatGroup}.pdf" width= "700" height= "700">
         </p>
         <p>DEA result tables (all genes or significantly differentially expressed genes) are stored in 
-        <a href="mapping_{aligner}/counting_{counter}/DEA_{deatool}/Tables">mapping_{aligner}/counting_{counter}/DEA_{deatool}/Tables</a> [not available in the online report].</p>
+        <a href="{outpath}/DEA_{deatool}/Tables">{outpath}/DEA_{deatool}/Tables</a> [not available in the online report].</p>
         <p>Importantly, the results can be deeply explored thanks to <b>interactive</b>
-        <a href="mapping_{aligner}/counting_{counter}/DEA_{deatool}/Report/Glimma/MDPlot_{controlGroup}_{treatGroup}.html">MD</a>
+        <a href="{outpath}/DEA_{deatool}/Report/Glimma/MDPlot_{controlGroup}_{treatGroup}.html">MD</a>
         and 
-        <a href="mapping_{aligner}/counting_{counter}/DEA_{deatool}/Report/Glimma/Volcano_{controlGroup}_{treatGroup}.html">Volcano</a> 
+        <a href="{outpath}/DEA_{deatool}/Report/Glimma/Volcano_{controlGroup}_{treatGroup}.html">Volcano</a> 
         plots.</p>
-        <p> <embed type="text/html" src="mapping_{aligner}/counting_{counter}/DEA_{deatool}/Report/Glimma/Volcano_{controlGroup}_{treatGroup}.html" width="1050" height="1000"> </p>
-        <p>A static <a href="mapping_{aligner}/counting_{counter}/DEA_{deatool}/Report/plots/volcano_plot_{controlGroup}_{treatGroup}.pdf">Volcano plot</a> 
+        <p> <embed type="text/html" src="{outpath}/DEA_{deatool}/Report/Glimma/Volcano_{controlGroup}_{treatGroup}.html" width="1050" height="1000"> </p>
+        <p>A static <a href="{outpath}/DEA_{deatool}/Report/plots/volcano_plot_{controlGroup}_{treatGroup}.pdf">Volcano plot</a> 
         is also available, as well as a 
-        <a href="mapping_{aligner}/counting_{counter}/DEA_{deatool}/Report/plots/heatmapTop_{controlGroup}_{treatGroup}.pdf">heatmap of the 30 top-regulated genes</a>. </p>
+        <a href="{outpath}/DEA_{deatool}/Report/plots/heatmapTop_{controlGroup}_{treatGroup}.pdf">heatmap of the 30 top-regulated genes</a>. </p>
         <p>
-        <embed src= "mapping_{aligner}/counting_{counter}/DEA_{deatool}/Report/plots/volcano_plot_{controlGroup}_{treatGroup}.pdf" type="application/pdf" width= "700" height= "700">
-        <embed src= "mapping_{aligner}/counting_{counter}/DEA_{deatool}/Report/plots/heatmapTop_{controlGroup}_{treatGroup}.pdf" width= "700" height= "700">
+        <embed src= "{outpath}/DEA_{deatool}/Report/plots/volcano_plot_{controlGroup}_{treatGroup}.pdf" type="application/pdf" width= "700" height= "700">
+        <embed src= "{outpath}/DEA_{deatool}/Report/plots/heatmapTop_{controlGroup}_{treatGroup}.pdf" width= "700" height= "700">
         </p> 
             """ 
             f.write(message)

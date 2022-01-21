@@ -36,64 +36,106 @@ class RepeatedTimer(object):   ## to monitore disk usage
         self._timer.cancel()
         self.is_running = False
 
+## follow memory usage IFB only for now
+def get_free_disk():
+    quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir+" "+server_command], shell=True)).strip().split()
+    used = quotas[2].split('G')[0]
+    remaining=int(float(extra)*1024 - float(used))    
+    time_now= time.localtime()
+    time_now = time.strftime("%Y%m%dT%H%M", time_now)
+    freedisk.write(time_now+'\t'+str(remaining)+'\n')
 
-with open('configs/config_main.yaml') as yamlfile:
-    config = yaml.load(yamlfile,Loader=yaml.BaseLoader)
 
+def spend_time(start_time, end_time):
+    seconds = end_time - start_time
+    hours = seconds // 3600
+    seconds %= 3600
+    minutes = seconds // 60
+    seconds %= 60
+    return "%d:%02d:%02d" % (hours, minutes, seconds)
+        
+        
 # Parameters to control the workflow
+with open('config_ongoing_run.yaml') as yamlfile:
+    config = yaml.load(yamlfile,Loader=yaml.BaseLoader)
 project = config["PROJECT"]
 metadata = config["METAFILE"]
 resultpath = config["RESULTPATH"]
 njobs = config["NJOBS"]
 reference = config["REFERENCE"]
 
-# differences between clusters
+## write the running time in a log file
+start_time = time.localtime()
+time_string = time.strftime("%Y%m%dT%H%M", start_time) # convert to '20200612T1705' format
+LogPath = resultpath+"/"+project+"/logs/"
+os.makedirs(LogPath, exist_ok=True)
+file_main_time = open(LogPath+time_string+"_running_time.txt", "a+")
+file_main_time.write("\nProject name: " + project + "\n")
+file_main_time.write("Start time: " + time.ctime() + "\n")
+
+
+## differences between clusters
 server = sys.argv[1]
-if server == "rpbs":
-    option = " -p epigenetique" ## blank before the option!!
-    MainPath = "/scratch/epigenetique/workflows/RASflow_RPBS/"
-    server_name = "RPBS"
 if server == "ifb" :
     account = os.getcwd().split('projects')[1].split('/')[1]
     option = " -A "+account   # +" -x cpu-node-25" # to remove slow nodes, blank before the option!!
     MainPath = ""
     server_name = "IFB"
-    try: writting_dir = resultpath.split('projects')[1].split('/')[1]
-    except: writting_dir = os.getcwd().split('projects')[1].split('/')[1]
+    server_command = "-p"  # group management is different between ifb and ipop-up
 if server == "ipop-up":
     option = " -p ipop-up"
     MainPath = ""   
     server_name = "iPOP-UP"
-    try: writting_dir = resultpath.split('projects')[1].split('/')[1]
-    except: writting_dir = os.getcwd().split('projects')[1].split('/')[1]
-    
+    server_command = "-g"  # group management is different between ifb and ipop-up
+
+# Monitore disk usage    
+try: writting_dir = resultpath.split('projects')[1].split('/')[1]
+except: writting_dir = os.getcwd().split('projects')[1].split('/')[1]
+freedisk = open(LogPath+time_string+"_free_disk.txt", "a+")
+quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir +" "+server_command], shell=True)).strip().split()
+tot = quotas[0].split('T')[0].split("b'")[1]
+extra = quotas[1].split('T')[0]
+freedisk.write("# quota:"+tot+" limit:"+ extra+ "\ntime\tfree_disk\n")
+rt = RepeatedTimer(60, get_free_disk)
+
+# save the configuration
+os.system("(echo && echo \"==========================================\" && echo && echo \"SAMPLE PLAN\") | cat config_ongoing_run.yaml - "+metadata+" >" + LogPath+time_string+"_configuration.txt")
+os.system("(echo && echo \"==========================================\" && echo && echo \"CONDA ENV\" && echo) | cat - workflow/env.yaml >>" + LogPath+time_string+"_configuration.txt")
+os.system("(echo && echo \"==========================================\" && echo && echo \"CLUSTER\" && echo) | cat - cluster.yaml >>" + LogPath+time_string+"_configuration.txt")
+
+
+
 # Start the workflow
+
+print("-------------------------\n| RUN ID : "+time_string+ " |\n-------------------------")
 print("Starting RASflow on project: " + project)
+print("Free disk is measured for the cluster project (folder): "+writting_dir+"\n-------------------------\nWorkflow summary")
+
 
 ## Do you need to do FASTQ quality control?
 qc = config["QC"]
-print("Is FASTQ quality control required?\n", qc)
+print("Is FASTQ quality control required? ", qc)
 
 if qc!='yes':
     ## Do you need to do trimming?
     trim = config["TRIMMED"]
-    print("Is trimming required?\n", trim)
+    print("Is trimming required? ", trim)
 
     ## Do you need to do mapping?
     mapping = config["MAPPING"]
-    print("Are mapping and counting required?\n", mapping)
+    print("Are mapping and counting required? ", mapping)
     
     if mapping == 'yes': 
         ## Which mapping reference do you want to use? Genome or transcriptome?
-        print("Which mapping reference will be used?\n", reference)
+        print("Which mapping reference will be used? ", reference)
 
         ## Do you want to analyse the repeats? 
         repeats = config["REPEATS"]
-        print("Do you want to analyse the repeats?\n", repeats)         
+        print("Do you want to analyse the repeats? ", repeats)         
 
     ## Do you want to do Differential Expression Analysis (DEA)?
     dea = config["DEA"]
-    print("Is DEA required?\n", dea)
+    print("Is DEA required? ", dea)
     
     # save the size of the biggest fastq in a txt file using md5 sum to have corresponding samples.
     os.system("cat "+metadata+" |  awk '{{print $1}}' > "+metadata+".samples.txt")
@@ -105,54 +147,10 @@ if qc!='yes':
         print("writting "+path_file)
         os.system("ls -l "+config["READSPATH"]+" | grep -f "+metadata+".samples.txt | awk '{{print $5}}' | sort -nr | head -n1 > "+path_file)
 
-
 else:
     print("The workflow will stop after FASTQ quality control.")
-
-## write the running time in a log file
-start_time = time.localtime()
-time_string = time.strftime("%Y%m%dT%H%M", start_time) # convert to '20200612T1705' format
-
-LogPath = resultpath+"/"+project+"/logs/"
-os.makedirs(LogPath, exist_ok=True)
-file_main_time = open(LogPath+time_string+"_running_time.txt", "a+")
-file_main_time.write("\nProject name: " + project + "\n")
-file_main_time.write("Start time: " + time.ctime() + "\n")
-
-## follow memory usage IFB only for now
-def get_free_disk():
-    quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir], shell=True)).strip().split()
-    used = quotas[2].split('G')[0]
-    remaining=int(float(extra)*1024 - float(used))    
-    time_now= time.localtime()
-    time_now = time.strftime("%Y%m%dT%H%M", time_now)
-    freedisk.write(time_now+'\t'+str(remaining)+'\n')
-     #print('running get_free_disk', time_now)
-
-if server == "ifb":
-    print("Free disk is measured for the project "+writting_dir)
-    freedisk = open(LogPath+time_string+"_free_disk.txt", "a+")
-    quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir], shell=True)).strip().split()
-    tot = quotas[0].split('T')[0]
-    extra = quotas[1].split('T')[0]
-    freedisk.write("# quota:"+tot+" limit:"+ extra+ "\ntime\tfree_disk\n")
-    rt = RepeatedTimer(60, get_free_disk)
-            
-# save the configuration
-os.system("(echo && echo \"==========================================\" && echo && echo \"SAMPLE PLAN\") | cat configs/config_main.yaml - "+metadata+" >" + LogPath+time_string+"_configuration.txt")
-os.system("(echo && echo \"==========================================\" && echo && echo \"CONDA ENV\" && echo) | cat - workflow/env.yaml >>" + LogPath+time_string+"_configuration.txt")
-os.system("(echo && echo \"==========================================\" && echo && echo \"CLUSTER\" && echo) | cat - cluster.yaml >>" + LogPath+time_string+"_configuration.txt")
-
-
-
-def spend_time(start_time, end_time):
-    seconds = end_time - start_time
-    hours = seconds // 3600
-    seconds %= 3600
-    minutes = seconds // 60
-    seconds %= 60
-    return "%d:%02d:%02d" % (hours, minutes, seconds)
-
+    
+print("-------------------------\nWorkflow running....")
 
 if qc=='yes':
         print("Starting FASTQ Quality Control...")
@@ -170,9 +168,6 @@ else:
         end_time = time.time()
         file_main_time.write("Time of running trimming: " + spend_time(start_time, end_time) + "\n")
         print("Trimming is done! ("+spend_time(start_time, end_time)+")")
-    else:
-        print("Trimming is not required.")
-
 
     if mapping =='yes' and reference == "transcriptome":
         print("Starting mapping using ", reference, " as reference...")
@@ -203,7 +198,6 @@ else:
             end_time = time.time()
             file_main_time.write("Time of running DEA genome based: " + spend_time(start_time, end_time) + "\n")
         print("DEA is done! ("+spend_time(start_time, end_time)+")")
-        reporting.main(time_string, server_name)
 
         # Visualization can only be done on gene-level
         if reference == "genome":
@@ -221,12 +215,14 @@ else:
     else:
         print("DEA is not required and RASflow is done!")
 
+# generate the html report
+reporting.main(time_string, server_name)
+
 file_main_time.write("Finish time: " + time.ctime() + "\n")
 file_main_time.close()
 
-if server == "ifb":
-    rt.stop()
-    freedisk.close()
+rt.stop()
+freedisk.close()
 
 print("########################################")
 print("---- Errors ----")

@@ -11,9 +11,11 @@ library(ggplot2)
 args <- commandArgs(TRUE)
 counts.path <- args[1]
 suffix <- args[2]
+output.path <- args[3]
+
 
 # extract the information from the yaml file
-yaml.file <- yaml.load_file('configs/config_main.yaml')
+yaml.file <- yaml.load_file('config_ongoing_run.yaml')
 metafile <- yaml.file$METAFILE
 
 ## adding the experimental plan
@@ -31,7 +33,7 @@ countload <-function(input_path, samples){
     counts.exprs
 }
 
-d <- countload(paste(counts.path, "/countTables/", sep = ""),rownames(splan))
+d <- countload(paste(counts.path, sep = ""),rownames(splan))
 
 message("size of the table")
 message("number of genes")
@@ -68,7 +70,7 @@ if (suffix == "_countTE.tsv") {
     title <- "Sample distances for repeats"
     filename <- 'Heatmap_samples_TE.pdf'
 } 
-pheatmap(sampleDistMatrix, clustering_distance_cols = sampleDists, clustering_distance_rows = sampleDists, color = colors, main=title, filename=paste(counts.path,"/",filename, sep = ""))
+pheatmap(sampleDistMatrix, clustering_distance_cols = sampleDists, clustering_distance_rows = sampleDists, color = colors, main=title, filename=paste(output.path,"/",filename, sep = ""))
 
 
 
@@ -84,7 +86,7 @@ if (suffix == "_countTE.tsv") {
     filename <- 'PCA_TE.pdf'
 } 
 
-pdf(file = file.path(paste(counts.path,"/",filename, sep = "")), width = 15, height = 15, title = 'Exploratory analysis')
+pdf(file = file.path(paste(output.path,"/",filename, sep = "")), width = 15, height = 15, title = 'Exploratory analysis')
   par(mfrow = c(2,1))
   # run PCA
   #DESeq2::plotPCA(rld, intgroup =c("condition"), ntop=1000)
@@ -98,4 +100,4 @@ pdf(file = file.path(paste(counts.path,"/",filename, sep = "")), width = 15, hei
 
 ## Glimma interactive MDS
 html <- 'MDSPlot'
-glMDSPlot(dds, groups=dds$samples$group,path=counts.path, folder="Glimma",html=html, launch=FALSE)
+glMDSPlot(dds, groups=dds$samples$group,path=output.path, folder="Glimma",html=html, launch=FALSE)

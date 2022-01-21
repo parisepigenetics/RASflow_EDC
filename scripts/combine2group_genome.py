@@ -13,7 +13,7 @@ def load_globals():
     
     global samples; global groups; global config; global input_path; global output_path
 
-    with open('configs/config_main.yaml') as yamlfile:
+    with open('config_ongoing_run.yaml') as yamlfile:
         config = yaml.load(yamlfile,Loader=yaml.BaseLoader)
     
     samples = np.array(pd.read_table(config["METAFILE"], header = 0)['sample'])

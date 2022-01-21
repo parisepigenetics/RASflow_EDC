@@ -2,7 +2,7 @@ import os
 import subprocess
 import hashlib
 import pandas as pd
-configfile: "configs/config_main.yaml"
+configfile: "config_ongoing_run.yaml"
 
 samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
 trimmed = config["TRIMMED"]
@@ -538,10 +538,11 @@ rule PCA:
     conda:
         "env.yaml"
     params:
-        count_path = final_path + "/counting_"+ counter,
-        mp = main_path
+        count_path = final_path + "/counting_"+ counter + "/countTables/",
+        mp = main_path,
+        output = final_path + "/counting_"+ counter + "/"
     shell:
-        "Rscript {params.mp}scripts/pca.R {params.count_path} _countGenes.tsv"
+        "Rscript {params.mp}scripts/pca.R {params.count_path} _countGenes.tsv {params.output}"
   
 if TEanalysis == "yes" or TEanalysis==True:
     rule TEPCA:
@@ -552,10 +553,11 @@ if TEanalysis == "yes" or TEanalysis==True:
         conda:
             "env.yaml"
         params:
-            count_path = final_path + "/repeats_"+counter,
-            mp = main_path
+            count_path = final_path + "/repeats_"+counter+"/countTables/",
+            mp = main_path,
+            output = final_path + "/repeats_"+counter+"/"
         shell:
-            "Rscript {params.mp}scripts/pca.R {params.count_path} _countTE.tsv"
+            "Rscript {params.mp}scripts/pca.R {params.count_path} _countTE.tsv {params.output}"
     
 if counter == "htseq-count" or counter == "featureCounts":
     rule summaryReport:

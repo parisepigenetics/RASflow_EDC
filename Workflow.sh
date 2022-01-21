@@ -33,7 +33,7 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_IFB version: v0.6.1'
+echo 'RASflow_IFB version: v0.6.2'
 echo '-------------------------'
 echo 'Main module versions:'
 
@@ -50,17 +50,17 @@ echo 'snakemake' && snakemake --version
 echo '-------------------------'
 echo 'PATH:'
 echo $PATH
-echo '-------------------------'
+echo '########################################'
 
 # remove display to make qualimap run:
 unset DISPLAY
 
+# copy configuration file
+cp configs/config_main.yaml config_ongoing_run.yaml && chmod -w config_ongoing_run.yaml
+
 # What you actually want to launch
 python main_cluster.py ifb
 
-# move logs
-mkdir -p slurm_output
-mv *.out slurm_output
 
 echo '########################################'
 echo 'Job finished' $(date --iso-8601=seconds)
@@ -68,3 +68,12 @@ end=`date +%s`
 runtime=$((end-start0))
 minute=60
 echo "---- Total runtime $runtime s ; $((runtime/minute)) min ----"
+
+# remove configuration file copy
+chmod +w config_ongoing_run.yaml && rm config_ongoing_run.yaml
+
+# move logs
+cp "RASflow-$SLURM_JOB_ID.out" logs
+mkdir -p slurm_output
+mv *.out slurm_output
+ 

@@ -1,5 +1,5 @@
 import pandas as pd
-configfile: "configs/config_main.yaml"
+configfile: "config_ongoing_run.yaml"
 
 key = config["KEY"]
 input_path = config["READSPATH"]

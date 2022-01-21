@@ -95,6 +95,9 @@ GTFTE: TestDataset/gtf/hg38_TE_rmsk_chr22.gtf # GTF ANNOTATION file for repeats,
 
 # ================== Configuration for DEA ==================
 
+## Do you want to start the workflow directly from the count tables obtained independently? If yes, give the path of your count tables. 
+FROMCOUNTS: no   # put 'no' when using the whole workflow, or the path of your count tables. Format: one file / sample named {sample}_countGenes.tsv, 2 columns gene'\tab'count. 
+
 ## Do you want to use edgeR or DESeq2 to do DEA?
 DEATOOL: DESeq2 # "edgeR" or "DESeq2"? DESeq2 is recommended for transcriptome-based DEA
 

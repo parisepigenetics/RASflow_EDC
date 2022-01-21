@@ -1,14 +1,13 @@
 import pandas as pd
 import numpy as np
 
-configfile: "configs/config_main.yaml"
+configfile: "config_ongoing_run.yaml"
 
 
 counter = config["COUNTER"]
 mapper = config["ALIGNER"]
 tool = config["DEATOOL"]
 input_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/mapping_" + mapper + "/counting_"+counter
-output_path = input_path + "/DEA_"+tool+"/" 
 repeats_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/mapping_" + mapper + "/repeats_"+counter
 repeats_output_path = repeats_path + "/DEA_"+tool+"/" 
 samples = np.array(pd.read_table(config["METAFILE"], header = 0)['sample'])
@@ -17,6 +16,16 @@ control = config["CONTROL"][0]
 treat = config["TREAT"][0]
 main_path = config["MAINPATH"]
 TEanalysis = config["REPEATS"]
+from_counts = config["FROMCOUNTS"]
+
+if from_counts != "no" and from_counts != False :   
+    TEanalysis = "no"  ## deactivate repeat analysis when starting from count tables
+    count_path = from_counts + "/"
+    input_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/fromExternalCounts" 
+else:
+    count_path = input_path + "/countTables/"
+    
+output_path = input_path + "/DEA_"+tool+"/" 
 
 if TEanalysis == "yes" or TEanalysis==True: 
     pca_repeats = repeats_path +"/PCA_TE.pdf"
@@ -43,35 +52,36 @@ rule all:
        
 rule PCA:
     input:
-        countF = expand(input_path +"/countTables/{sample}_countGenes.tsv", sample=samples)
+        countF = expand(count_path +"{sample}_countGenes.tsv", sample=samples)
     output:
         pca = input_path + "/PCA.pdf"
     conda:
         "env.yaml"
     params:
-        input_path = input_path,
-        mp = main_path
+        count_path = count_path,
+        mp = main_path,
+        output = input_path
     shell:
-        "Rscript {params.mp}scripts/pca.R {params.input_path}  _countGenes.tsv"
+        "Rscript {params.mp}scripts/pca.R {params.count_path}  _countGenes.tsv {params.output}"
         
         
 rule combineSamples:
     input:
-        countF = expand(input_path +"/countTables/{sample}_countGenes.tsv", sample=samples)
+        countF = expand(count_path + "{sample}_countGenes.tsv", sample=samples)
     output:
-        groupCount = expand(input_path + "/countTables/{group}_countsGenes.tsv", group = groups)
+        groupCount = expand(count_path + "{group}_countsGenes.tsv", group = groups)
     conda:
         "env.yaml"
     params:
-        input_path = input_path +"/countTables/",
+        count_path = count_path,
         mp = main_path
     shell:
-        "python {params.mp}scripts/combine2group_genome.py {params.input_path} _countGenes.tsv _countsGenes.tsv"
+        "python {params.mp}scripts/combine2group_genome.py {params.count_path} _countGenes.tsv _countsGenes.tsv"
         
         
 rule DEA:
     input:
-        groupCount = expand(input_path + "/countTables/{group}_countsGenes.tsv", group = groups)
+        groupCount = expand(count_path + "{group}_countsGenes.tsv", group = groups)
     output:
         volcano = output_path + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf",
         dea = output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
@@ -81,7 +91,7 @@ rule DEA:
     params:
         mp = main_path,
         output_path = output_path,
-        counts_path = input_path + "/countTables/"
+        counts_path = count_path + ""
     shell:
         "Rscript {params.mp}scripts/dea_genome.R {params.counts_path} {params.output_path} _countsGenes.tsv"
 
@@ -93,13 +103,13 @@ if TEanalysis == "yes" or TEanalysis==True:
         output:
             pca_repeats = repeats_path +"/PCA_TE.pdf"
         conda:
-            "env.yaml"
+            "env.yaml"  
         params:
-            count_path = repeats_path,
-            mp = main_path
+            count_path = repeats_path + "/countTables/",
+            mp = main_path,
+            output = repeats_path
         shell:
-            "Rscript {params.mp}scripts/pca.R {params.count_path} _countTE.tsv"    
-            
+            "Rscript {params.mp}scripts/pca.R {params.count_path}  _countTE.tsv {params.output}"  
             
     rule TE_combineSamples:
         input:

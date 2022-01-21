@@ -1,4 +1,4 @@
-configfile: "configs/config_main.yaml"
+configfile: "config_ongoing_run.yaml"
 
 import pandas as pd
 samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
