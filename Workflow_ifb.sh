@@ -76,4 +76,3 @@ chmod +w config_ongoing_run.yaml && rm config_ongoing_run.yaml
 cp "RASflow-$SLURM_JOB_ID.out" logs
 mkdir -p slurm_output
 mv *.out slurm_output
- 
