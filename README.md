@@ -1246,7 +1246,7 @@ FILTER: yes  # Filter out low expressed transcripts/genes or not? (yes or no). I
 
 ## Differential expression analysis from external count tables
 
-You have the possibility to analyse count tables obtained independently from the workflow. This might raise reproducibility issues, be sure to document as much as possible the way those tables were obtained. They have to be raw count tables, not normalized. You need one file / sample, named as `{sample}_countGenes.tsv` and formatted with 2 tab-separated columns : `gene'\tab'count`. 
+You have the possibility to analyse count tables obtained independently from the workflow. This might raise reproducibility issues, be sure to document as much as possible the way those tables were obtained. They have to be raw count tables, not normalized. You need one file / sample, named as `{sample}_countGenes.tsv` and formatted with 2 tab-separated columns : `gene'\tab'count`. The path to your count tables should be indicated in `FROMCOUNTS` entry. 
 
 
 ## Start the workflow
