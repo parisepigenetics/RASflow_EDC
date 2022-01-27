@@ -228,12 +228,14 @@ You will have to enter your password, and then you'll be connected. Once your pr
 ```
 You@YourComputer:~/PathTo/RNAseqProject$ ssh username@ipop-up.rpbs.univ-paris-diderot.fr
 #################################################################
-#                   ____   ____   ____  ____                    #
-#                  |  _ \ |  _ \ | __ )/ ___|                   #
-#                  | |_) || |_) ||  _ \\___ \                   #
-#                  |  _ < |  __/ | |_) |___) |                  #
-#                  |_| \_\|_|    |____/|____/                   #
+#           _ _____   ____  _____        _    _ _____           #
+#          (_)  __ \ / __ \|  __ \      | |  | |  __ \          #
+#           _| |__) | |  | | |__) |_____| |  | | |__) |         #
+#          | |  ___/| |  | |  ___/______| |  | |  ___/          #
+#          | | |    | |__| | |          | |__| | |              #
+#          |_|_|     \____/|_|           \____/|_|              #
 #                                                               #
+#      Hosted by:                                               #
 #      Ressource Parisienne en Bioinformatique Structurale      #
 #               ---------------------------                     #
 #          All connections are monitored and recorded.          #
@@ -241,7 +243,7 @@ You@YourComputer:~/PathTo/RNAseqProject$ ssh username@ipop-up.rpbs.univ-paris-di
 #                                                               #
 #################################################################
 username@ipop-up.rpbs.univ-paris-diderot.fr's password: 
-Last login: Fri Jan 21 13:32:35 2022 from 172.28.18.162
+Last login: Tue Jan 25 15:21:45 2022 from 172.28.18.162
 Bienvenue sur le cluster iPOP-UP.
 
 Pour toute question ou demande de support, rejoignez-nous sur le forum de RPBS : https://discourse.rpbs.univ-paris-diderot.fr
