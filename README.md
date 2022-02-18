@@ -1,8 +1,8 @@
 # Tutorial : RNA-seq analysis using RASflow_EDC
 
-<small>Maintained by [Magali Hennion](mailto:magali.hennion@u-paris.fr). Last update : 25/01/2022. RASflow_EDC v0.6.2. </small>  
+<small>Maintained by [Magali Hennion](mailto:magali.hennion@u-paris.fr). Last update : 18/02/2022. RASflow_EDC v0.6.2. </small>  
 
-Implemented by [BiBs-EDC](https://parisepigenetics.github.io/umr7216bioinfofacility/) (on IFB and iPOP-UP clusters), this workflow for RNA-seq data analysis is based on RASflow which was originally published by [X. Zhang](https://doi.org/10.1186/s12859-020-3433-x). It has been modified to run effectively on both IFB and iPOP-UP clusters and to fit our specific needs. Moreover, several tools and features were added, including a comprehensive report, as well as the possibility to incorporate the repeats in the analysis. If you encounter troubles or need additional tools or features, you can create an issue on the [GitHub repository](https://github.com/parisepigenetics/RASflow_EDC/issues), email directly [BiBs](mailto:bibs_umr7216@parisepigenetics.com), or pass by the 329 room.  
+Implemented by [BiBs-EDC](https://parisepigenetics.github.io/umr7216bioinfofacility/) (on IFB and iPOP-UP clusters), this workflow for RNA-seq data analysis is based on RASflow which was originally published by [X. Zhang](https://doi.org/10.1186/s12859-020-3433-x). It has been modified to run effectively on both IFB and iPOP-UP clusters and to fit our specific needs. Moreover, several tools and features were added, including a comprehensive report, as well as the possibility to incorporate the repeats in the analysis. If you encounter troubles or need additional tools or features, you can create an issue on the [GitHub repository](https://github.com/parisepigenetics/RASflow_EDC/issues), email directly [BiBs](mailto:bibsATparisepigenetics.com), or pass by the 329 room.  
 
 ---
 IMPORTANT: The only difference when running the workflow on the IFB core cluster or on the iPOP-UP cluster is the starting sbatch file. Use **Workflow_ifb.sh** for the IFB and **Workflow_ipop.sh** for iPOP-UP. In this tutorial, it is named **Workflow_\<cluster\>.sh**. 
@@ -263,7 +263,7 @@ You can now go to your project using the `cd` command.
 ---
 # RASflow_EDC installation and description
 
-In order to install RASflow_EDC, you  have to clone the RASflow_EDC GitHub repository to your cluster project. For now the repository is private, so you need to have a GitHub account and to be a member of [EDC repository](https://github.com/parisepigenetics) to have access. If you're not, please let me know and I will add you. You will have to enter your GitHub username and a personnal access tocken to clone the repository. In order to generate such tocken, you have to connect to your GitHub account and follow [those instructions](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token). 
+In order to install RASflow_EDC, you  have to clone the RASflow_EDC GitHub repository to your cluster project. 
 
 If you're using the Jupyter Hub on IFB, you can open a **Terminal** by clicking on the corresponding icon. 
 
@@ -274,12 +274,10 @@ Before clonning RASflow_EDC, go to your project using the `cd` command.
 ```
 [username @ cpu-node-12 ]$ cd /shared/projects/YourProjectName
 ```
-Now you can clone the repository (use `-b v0.7` to specify the version). 
+Now you can clone the repository (use `-b v0.6.2` to specify the version). 
 ```bash
 [username@clust-slurm-client YourProjectName]$ git clone https://github.com/parisepigenetics/RASflow_EDC
 Cloning into 'RASflow_EDC'...
-Username for 'https://github.com': GITHUBusername
-Password for 'https://username@github.com': GITHUBtocken
 remote: Enumerating objects: 670, done.
 remote: Counting objects: 100% (42/42), done.
 remote: Compressing objects: 100% (41/41), done.
