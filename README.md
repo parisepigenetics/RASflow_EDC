@@ -447,7 +447,11 @@ The first column contains the **sample** names that have to **correspond to the 
 
 ## 2. **config_main.yaml**
  
-The configuration of the workflow (see [step by step description](#running-your-analysis-step-by-step) below) is done in `config/config_main.yaml`. This is the most important file. It controls the workflow and many tool parameters. It contains 3 parts:  
+The configuration of the workflow (see [step by step description](#running-your-analysis-step-by-step) below) is done in `config/config_main.yaml`. This is the most important file. It controls the workflow and many tool parameters. 
+
+**Important:** The [yaml format](https://yaml.org/) is `key:[space]value`. The space is mandatory. 
+
+The configuration file contains 3 parts:  
 
    1. Define a project name and the steps of the workflow you want to run
 
