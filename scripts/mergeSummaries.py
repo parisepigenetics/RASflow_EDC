@@ -17,7 +17,7 @@ for table in parts:
         df2 = pd.read_table(table, names=['feature','counts'], skiprows=1)
         df = pd.merge(df,df2,on='feature', how="outer")
 df['row_sum'] = df.sum(axis=1)
-sample = os.path.dirname(firstline[1])+'/'+os.path.basename(firstline[1]).split('_0')[0]+'.bam'  ### change the name to bam without parts
+sample = os.path.dirname(firstline[1])+'_'+os.path.basename(firstline[1]).split('_0')[0]+'.bam'  ### change the name to bam without parts
 df_export = df[["feature","row_sum"]]
 if counter == 'featureCounts' :
     df_export.to_csv(output, sep = "\t", header = [firstline[0],sample], index =False)  
