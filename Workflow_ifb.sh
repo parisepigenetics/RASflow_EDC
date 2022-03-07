@@ -33,7 +33,7 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_EDC version: v0.6.2'
+echo 'RASflow_EDC version: v0.6.3'
 echo '-------------------------'
 echo 'Main module versions:'
 
@@ -55,24 +55,27 @@ echo '########################################'
 # remove display to make qualimap run:
 unset DISPLAY
 
-# copy configuration file
-cp configs/config_main.yaml config_ongoing_run.yaml && chmod -w config_ongoing_run.yaml
+# check if the workflow is already running, if not copy the configuration file and start the workflow
+CONFIG_FILE="config_ongoing_run.yaml"
+if test -f "$CONFIG_FILE"; then
+    echo "Another run is on going, please wait for its end before restarting RASflow_EDC. "
+else 
+    cp configs/config_main.yaml $CONFIG_FILE && chmod 444 $CONFIG_FILE
+    # run the workflow
+    python main_cluster.py ifb
+    # remove configuration file copy
+    chmod 777 $CONFIG_FILE && rm $CONFIG_FILE
+    
+    echo '########################################'
+    echo 'Job finished' $(date --iso-8601=seconds)
+    end=`date +%s`
+    runtime=$((end-start0))
+    minute=60
+    echo "---- Total runtime $runtime s ; $((runtime/minute)) min ----"
 
-# What you actually want to launch
-python main_cluster.py ifb
-
-
-echo '########################################'
-echo 'Job finished' $(date --iso-8601=seconds)
-end=`date +%s`
-runtime=$((end-start0))
-minute=60
-echo "---- Total runtime $runtime s ; $((runtime/minute)) min ----"
-
-# remove configuration file copy
-chmod +w config_ongoing_run.yaml && rm config_ongoing_run.yaml
-
-# move logs
-cp "RASflow-$SLURM_JOB_ID.out" logs
-mkdir -p slurm_output
-mv *.out slurm_output
+    # move logs
+    cp "RASflow-$SLURM_JOB_ID.out" logs
+    mkdir -p slurm_output
+    mv *.out slurm_output
+    
+fi

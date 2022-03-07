@@ -6,6 +6,7 @@ import time
 import sys
 import subprocess
 import scripts.reporting as reporting
+import scripts.check_config as ch
 import sched
 from datetime import datetime
 from threading import Timer
@@ -58,6 +59,11 @@ def spend_time(start_time, end_time):
 # Parameters to control the workflow
 with open('config_ongoing_run.yaml') as yamlfile:
     config = yaml.load(yamlfile,Loader=yaml.BaseLoader)
+    
+config_error = ch.check_configuration('config_ongoing_run.yaml')
+
+if config_error : sys.exit()
+    
 project = config["PROJECT"]
 metadata = config["METAFILE"]
 resultpath = config["RESULTPATH"]
