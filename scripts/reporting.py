@@ -23,6 +23,9 @@ def main(time_string, server):
     if fromcounts != "no" and fromcounts != False:
         repeats = "no"  # repeat analysis is disable when starting from homemade count tables.
     qc = config["QC"]
+    sra = config["SRA"]
+    if sra == "yes" or sra == True: 
+        qc = "yes"
     if qc == "yes" or qc == True: # deactivate the rest
         trim = "disabled"
         mapping = "disabled"
@@ -77,22 +80,34 @@ def main(time_string, server):
     <body style="background-color:#d9e4ec;font-family:verdana;">
     <p><br></p>
     <h1 >RNA-seq analysis report</h1>
-    <p style="text-align:center;">This report was generated on {date_string} by BIBS-EDC RASflow implementation on {server} cluster.<br><br></p>
+    <p style="text-align:center;">This report was generated on {date_string} by RASflow_EDC on {server} cluster.<br><br></p>
     <h2 id="project-name-projectname">  Project {project}</h2>
     <p><br></p>
     <h2 id="project-settings">  Analysis settings</h2>
     <p>The settings used for the analysis can be found in the <a href="logs/{time_string}_configuration.txt">logs/{time_string}_configuration.txt</a>.<br></p>
     """
     f.write(message)
+    
+    if os.path.isfile(resultpath+'/'+project+"/fastqc/SRA.log"):
+        message="""
+    <h2 id="SRA">FASTQ files from SRA</h2>
+    <p>FASTQ files were downloaded from SRA. Information about the download can be found in <a href="fastqc/SRA.log">fastqc/SRA.log</a>. <br></p>
+    """
+    else : 
+        message="""
+    <h2 id="SRA">FASTQ files from personal data</h2>
+    <p> The FASTQ files were not downloaded from SRA, but come from your personal data. <br></p>
+    """
+    f.write(message)
 
     if os.path.isfile(resultpath+'/'+project+"/fastqc/report_quality_control.html"):
         message="""
-    <h2 id="fastq-quality-control">Fastq quality control</h2>
+    <h2 id="fastq-quality-control">FASTQ quality control</h2>
     <p>A summary of the quality of the raw sequences can be found in <a href="fastqc/report_quality_control.html">fastqc/report_quality_control.html</a>. <br></p>
     """
     else : 
         message="""
-    <h2 id="fastq-quality-control">Fastq quality control</h2>
+    <h2 id="fastq-quality-control">FASTQ quality control</h2>
     <p> QC report could not be found. Have you run QC before the rest of the analysis? If not, all the results might be impaired by low quality FASTQ reads. Running QC on raw sequences is highly recommended!<br></p>
     """
     f.write(message)

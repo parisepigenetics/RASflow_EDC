@@ -22,7 +22,6 @@ final_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/mapping_" + mapp
 counter = config["COUNTER"]
 TEanalysis = config["REPEATS"]
 bw_stranded = config["BWSTRANDED"]
-main_path = config["MAINPATH"]
 strand = config["STRAND"]
 if strand == True: strand = "yes"
 if strand == False: strand = "no"
@@ -298,8 +297,8 @@ if split :
     count_summary = temp(final_path + "/counting_"+counter+"/countTables/{sample}_0{i}_table_all.tsv.summary")
     count_genes = temp(final_path +"/counting_"+counter+"/countTables/{sample}_0{i}_count_genes.tsv")
     ID = "{sample}_0{i}"
-    table_T =  temp(main_path + "{sample}_0{i}_TE_count.tsv")
-    table_G =  temp(main_path + "{sample}_0{i}_gene_count.tsv")
+    table_T =  temp("{sample}_0{i}_TE_count.tsv")
+    table_G =  temp("{sample}_0{i}_gene_count.tsv")
     htseq_tmp = temp(final_path + "/counting_"+ counter + "/countTables/{sample}_0{i}_count.tmp")
 
 
@@ -313,8 +312,8 @@ else:
     count_summary = final_path + "/counting_"+counter+"/countTables/{sample}_table.tsv.summary"
     count_genes = final_path +"/counting_"+counter+"/countTables/{sample}_countGenes.tsv"
     ID = "{sample}"
-    table_T =  main_path + "{sample}_TE_count.tsv"
-    table_G =  main_path + "{sample}_gene_count.tsv"
+    table_T =  "{sample}_TE_count.tsv"
+    table_G =  "{sample}_gene_count.tsv"
     htseq_tmp = temp(final_path + "/counting_"+ counter + "/countTables/{sample}_count.tmp")
 
 
@@ -390,10 +389,8 @@ if TEanalysis == "yes" or TEanalysis==True :
                 TE_index = final_path +"/repeats_"+counter+"/TE.ind"
             conda:
                 "env.yaml"
-            params:
-                mp = main_path
             shell:
-                "python {params.mp}scripts/TEtranscripts_indexer.py --afile {input.TE_gtf} --itype TE --output {output.TE_index}"
+                "python scripts/TEtranscripts_indexer.py --afile {input.TE_gtf} --itype TE --output {output.TE_index}"
                 
         rule gene_index:
             input: 
@@ -402,10 +399,8 @@ if TEanalysis == "yes" or TEanalysis==True :
                 G_index = final_path +"/repeats_"+counter+"/genes.ind"
             conda:
                 "env.yaml"
-            params:
-                mp = main_path
             shell:
-                "python {params.mp}scripts/TEtranscripts_indexer.py --afile {input.gene_gtf} --itype gene --output {output.G_index}"    
+                "python scripts/TEtranscripts_indexer.py --afile {input.gene_gtf} --itype gene --output {output.G_index}"    
     
         rule TEcount :
             input: 
@@ -418,12 +413,11 @@ if TEanalysis == "yes" or TEanalysis==True :
             conda:
                 "env.yaml"
             params:
-                mp = main_path,
                 ID = ID,
                 table_T =  table_T,
                 table_G =  table_G
             shell:
-                "python {params.mp}scripts/TEcount.py --format BAM --mode multi -b {input.sub} --GTF {input.G_index} --TE {input.TE_index} --stranded {strand} --project {params.ID} && tail -n +2 {params.table_T} > {output.countT} && tail -n +2 {params.table_G} > {output.countG} && rm {params.table_T} {params.table_G}"
+                "python scripts/TEcount.py --format BAM --mode multi -b {input.sub} --GTF {input.G_index} --TE {input.TE_index} --stranded {strand} --project {params.ID} && tail -n +2 {params.table_T} > {output.countT} && tail -n +2 {params.table_G} > {output.countG} && rm {params.table_T} {params.table_G}"
 
     elif counter == "featureCounts" : 
         rule splitCountTables : 
@@ -459,10 +453,8 @@ if split :
             aggregate_summaries
         output: 
             count_sum_sample = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv.summary"
-        params:
-            mp = main_path,
         shell:
-            "python {params.mp}scripts/mergeSummaries.py {counter} {output.count_sum_sample} {input}"
+            "python scripts/mergeSummaries.py {counter} {output.count_sum_sample} {input}"
             
                   
     if TEanalysis == "yes" or TEanalysis==True :
@@ -475,12 +467,10 @@ if split :
             input:
                 count_TE = aggregate_count_TE
             output:
-                mergetableTE = mergetableTE,
-            params:
-                mp = main_path,
+                mergetableTE = mergetableTE
             shell:
                 """
-                python {params.mp}scripts/mergeCounts.py {output.mergetableTE} {input.count_TE} 
+                python scripts/mergeCounts.py {output.mergetableTE} {input.count_TE} 
                 """   
             
     def aggregate_count_genes(wildcards):
@@ -493,11 +483,9 @@ if split :
             count_genes = aggregate_count_genes
         output:
             mergetable_genes = final_path + "/counting_"+counter+"/countTables/{sample}_countGenes.tsv"
-        params:
-            mp = main_path,
         shell:
             """
-            python {params.mp}scripts/mergeCounts.py {output.mergetable_genes} {input.count_genes}
+            python scripts/mergeCounts.py {output.mergetable_genes} {input.count_genes}
             """             
 
 ######### star count not implemented with the split as it is done while mapping ##########
@@ -539,10 +527,9 @@ rule PCA:
         "env.yaml"
     params:
         count_path = final_path + "/counting_"+ counter + "/countTables/",
-        mp = main_path,
         output = final_path + "/counting_"+ counter + "/"
     shell:
-        "Rscript {params.mp}scripts/pca.R {params.count_path} _countGenes.tsv {params.output}"
+        "Rscript scripts/pca.R {params.count_path} _countGenes.tsv {params.output}"
   
 if TEanalysis == "yes" or TEanalysis==True:
     rule TEPCA:
@@ -554,10 +541,9 @@ if TEanalysis == "yes" or TEanalysis==True:
             "env.yaml"
         params:
             count_path = final_path + "/repeats_"+counter+"/countTables/",
-            mp = main_path,
             output = final_path + "/repeats_"+counter+"/"
         shell:
-            "Rscript {params.mp}scripts/pca.R {params.count_path} _countTE.tsv {params.output}"
+            "Rscript scripts/pca.R {params.count_path} _countTE.tsv {params.output}"
     
 if counter == "htseq-count" or counter == "featureCounts":
     rule summaryReport:

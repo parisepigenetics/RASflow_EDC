@@ -5,42 +5,68 @@ key = config["KEY"]
 input_path = config["READSPATH"]
 samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
 end = config["END"]
-intermediate_path = config["BIGDATAPATH"] + "/" + config["PROJECT"]
+intermediate_path = config["BIGDATAPATH"] + "/" + config["PROJECT"] + "/"
 final_path = config["RESULTPATH"] + "/" + config["PROJECT"]
 
 if input_path[0] != "/": 
     import os
     input_path = os.getcwd()+"/"+input_path
 
+    
+if config["SRA"] == "yes" or config["SRA"] == True:
+    catlogs = final_path + "/fastqc/SRA.log"
+else: 
+    catlogs = []
 
 rule end:
     input:
-        report = final_path + "/fastqc/report_quality_control.html"
+        report = final_path + "/fastqc/report_quality_control.html", 
+        cat_logs = catlogs
         
 if end == "pair":
-    rule getReads:
-        output:
-            fw = temp(intermediate_path + "/reads/{sample}_fw.fastq.gz"),
-            rv = temp(intermediate_path + "/reads/{sample}_rv.fastq.gz")
-        params:
-            key = key,
-            input_path = input_path
-        run:
-            #shell("scp -i {params.key} {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.fw}"),
-            #shell("scp -i {params.key} {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.rv}")
-            shell("echo creating link {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.rv}"),
-            shell("ln -s {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.rv}"),
-            shell("echo creating link {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.fw}"),
-            shell("ln -s {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.fw}")
 
+    if config["SRA"] == "yes" or config["SRA"] == True: 
+    
+        rule fastqDump:
+            output:
+                fastq_R1 = input_path + "/{sample}_R1.fastq.gz",
+                fastq_R2 = input_path + "/{sample}_R2.fastq.gz"
+            conda:
+                "env.yaml"
+            params:
+                file_1 = input_path + "/{sample}_1.fastq.gz",
+                file_2 = input_path + "/{sample}_2.fastq.gz"
+            log: 
+                input_path + "/{sample}.log"
+            shell:
+                """
+                parallel-fastq-dump --sra-id {wildcards.sample} --threads 4 --outdir {input_path} --split-files \
+                --gzip --tmpdir {input_path} &> {log}
+                mv {params.file_1} {output.fastq_R1}
+                mv {params.file_2} {output.fastq_R2}
+                """
+                
+        rule catLogs:
+            input: 
+                logs = expand(input_path + "/{sample}.log", sample=samples)
+            output: 
+                catlogs = final_path + "/fastqc/SRA.log"
+            shell:
+                "sed -s -e $'$a\\\n-----' {input_path}/*.log > {output.catlogs}" 
+        
+    else: 
+        rule getReads:
+            output:
+                fastq_R1 = input_path + "/{sample}_R1.fastq.gz",
+                fastq_R2 = input_path + "/{sample}_R2.fastq.gz"
             
     rule qualityControl:
         input:
-            fw = intermediate_path + "/reads/{sample}_fw.fastq.gz",
-            rv = intermediate_path + "/reads/{sample}_rv.fastq.gz"
+            fw = input_path + "/{sample}_R1.fastq.gz",
+            rv = input_path + "/{sample}_R2.fastq.gz"
         output:
-            fastqc_fw = final_path + "/fastqc/{sample}_fw_fastqc.html",
-            fastqc_rv = final_path + "/fastqc/{sample}_rv_fastqc.html"
+            fastqc_fw = final_path + "/fastqc/{sample}_R1_fastqc.html",
+            fastqc_rv = final_path + "/fastqc/{sample}_R2_fastqc.html"
         conda:
             "env.yaml"
         params:
@@ -50,8 +76,8 @@ if end == "pair":
             
     rule summaryReport:
         input:
-            fastqc_fw = expand(final_path + "/fastqc/{sample}_fw_fastqc.html", sample = samples),
-            fastqc_rv = expand(final_path + "/fastqc/{sample}_rv_fastqc.html", sample = samples)
+            fastqc_fw = expand(final_path + "/fastqc/{sample}_R1_fastqc.html", sample = samples),
+            fastqc_rv = expand(final_path + "/fastqc/{sample}_R2_fastqc.html", sample = samples)
         output:
             report = final_path + "/fastqc/report_quality_control.html",
             folder = directory(final_path + "/fastqc/report_quality_control_data")
@@ -62,19 +88,39 @@ if end == "pair":
         shell:
             "rm -fr {output.report} {output.folder} && multiqc {params.path} --filename {output.report}"
             
-else:
-    rule getReads:
-        output:
-            read = temp(intermediate_path + "/reads/{sample}.fastq.gz")
-        params:
-            key = key,
-            input_path = input_path
-        run:
-            shell("scp -i {params.key} {params.input_path}/{wildcards.sample}*.f*q.gz {output.read}")
+else:  
+    
+    if config["SRA"] == "yes" or config["SRA"] == True: 
+    
+        rule fastqDump:
+            output:
+                fastq = input_path + "/{sample}.fastq.gz"
+            conda:
+                "env.yaml"           
+            log: 
+                input_path + "/{sample}.log"
+            shell:
+                """
+                parallel-fastq-dump --sra-id {wildcards.sample} --threads 4 --outdir {input_path} \
+                --gzip --tmpdir {input_path} &> {log}
+                """
+                
+        rule catLogs:
+            input: 
+                logs = expand(input_path + "/{sample}.log", sample=samples)
+            output: 
+                catlogs = final_path + "/fastqc/SRA.log"
+            shell:
+                "sed -s -e $'$a\\\n-----' {input_path}/*.log > {output.catlogs}" 
+        
+    else: 
+        rule getReads:
+            output:
+                fastq = input_path + "/{sample}.fastq.gz"
             
     rule qualityControl:
         input:
-            read = intermediate_path + "/reads/{sample}.fastq.gz"
+            fastq = input_path + "/{sample}.fastq.gz"
         output:
             fastqc = final_path + "/fastqc/{sample}_fastqc.html"
         conda:
@@ -82,7 +128,7 @@ else:
         params:
             outputpath = final_path + "/fastqc"
         shell:
-            "fastqc -o {params.outputpath} {input.read}"
+            "fastqc -o {params.outputpath} {input.fastq}"
             
     rule summaryReport:
         input:

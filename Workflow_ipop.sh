@@ -33,7 +33,7 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_EDC version: v0.6.3, on iPOP-UP cluster'
+echo 'RASflow_EDC version: v0.6.4, on iPOP-UP cluster'
 echo '-------------------------'
 echo 'Main module versions:'
 
@@ -75,6 +75,7 @@ else
     echo "---- Total runtime $runtime s ; $((runtime/minute)) min ----"
 
     # move logs
+    mkdir -p logs
     cp "RASflow-$SLURM_JOB_ID.out" logs
     mkdir -p slurm_output
     mv *.out slurm_output

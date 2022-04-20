@@ -1,14 +1,17 @@
 # Please check the parameters, and adjust them according to your circumstance
 
 # Project name
-PROJECT: mapping
+PROJECT: Awesome_experience
 # ================== Control of the workflow ==================
 
+## Do you want to download FASTQ files from public from Sequence Read Archive (SRA) ? 
+SRA: no  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
+
 ## Do you need to do quality control?
-QC: no  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
+QC: yes  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
 
 ## Do you need to do trimming?
-TRIMMED: no  # "yes" or "no"? 
+TRIMMED: yes  # "yes" or "no"? 
 
 ## Do you need to do mapping and feature counting?
 MAPPING: yes # "yes" or "no"
@@ -28,14 +31,14 @@ DEA: yes  # "yes" or "no"
 KEY: 
 
 ## the path to fastq files
-READSPATH: TestDataset/Raw_fastq  # for testing purpose we put here the relative paths, but we recommend to always use full paths such as /shared/projects/YourProjectName/Raw_Fastq
+READSPATH: /shared/projects/YourProjectName/Raw_fastq  # for testing purpose we put here the relative paths, but we recommend to always use full paths such as /shared/projects/YourProjectName/Raw_Fastq
 
 ## the meta file describing the experiment settings
-METAFILE: TestDataset/configs/metadata.tsv 
+METAFILE: /shared/projects/YourProjectName/RASflow_EDC/configs/metadata.tsv
 
 ## paths for intermediate final results
-BIGDATAPATH: TestDataset/data # for big files
-RESULTPATH: TestDataset/results
+BIGDATAPATH: /shared/projects/YourProjectName/RASflow_EDC/data # for big files
+RESULTPATH: /shared/projects/YourProjectName/RASflow_EDC/results
 
 ## is the sequencing paired-end or single-end?
 END: pair  # "pair" or "single"
@@ -68,18 +71,18 @@ TRANS: /shared/.. # not yet implemented
 ALIGNER: HISAT2 # "STAR" or "HISAT2"
 
 ## genome and annotation files
-INDEXPATH: TestDataset/hisat2_index  # /shared/bank/homo_sapiens/hg38/hisat2 # folder containing index files
-INDEXBASE: hisat2_hg38_chr22 # for hisat2, base of the name of the index files (ie "genome" if the file format is as genome.1.ht2)
-ANNOTATION: TestDataset/gtf/gencode.v34.annotation_chr22.gtf # GTF file 
+INDEXPATH: /shared/banks/homo_sapiens/hg38/hisat2 # folder containing index files
+INDEXBASE: genome # for hisat2, base of the name of the index files (ie genome.1.ht2)
+ANNOTATION: /shared/projects/YourProjectName/RASflow_EDC/gtf/gencode.v34.annotation.gtf # GTF file  
 
 ## bigwig option
-BWSTRANDED: no # "no": bw merging forward and reverse reads, "yes": get 2 bw files, one forward and one reverse; "both": get the two bw per strand as well as the merge one. 
+BWSTRANDED: yes # "no": bw merging forward and reverse reads, "yes": get 2 bw files, one forward and one reverse; "both": get the two bw per strand as well as the merge one. 
 
 ## tool for feature count
 COUNTER: featureCounts # "featureCounts" or "htseq-count" or "STARcount" (only with STAR aligner, --quantMode GeneCounts option) or "TEcount" (if REPEATS: yes)
 
 ## counting options
-COUNTOPTIONS: " -M --fraction " # add extra options for the counter (for featureCounts or htseq-count only). 
+COUNTOPTIONS: "-M --fraction" # add extra options for the counter (for featureCounts or htseq-count only). 
 # featureCounts: '-O' (set allowMultiOverlap to TRUE), '-M' (set countMultiMappingReads to TRUE), '--fraction'.
 # htseq-count: -m <mode> ; --nonunique=<nonunique mode>; for instance "-m intersection-nonempty --nonunique=all" ... see https://htseq.readthedocs.io
 ATTRIBUTE: gene_id  # the attribute used in annotation file. It's usually "gene_id", but double check that since it may also be "gene", "ID"...
@@ -89,13 +92,13 @@ SPLITBY: 50000000 # To get efficient counting, the big bam files have to be spli
 
 # ================== Configuration for repeat analysis ==================
 
-GTFTE: TestDataset/gtf/hg38_TE_rmsk_chr22.gtf # GTF ANNOTATION file for repeats, must be adapted to have the FEATURE you chose ("exon", "gene", "transcript") as 3rd column. 
+GTFTE: /shared/projects/YourProjectName/RASflow_EDC/gtf/mm39_TE_rmsk.gtf # GTF ANNOTATION file for repeats, must be adapted to have the FEATURE you chose ("exon", "gene", "transcript") as 3rd column. 
 
 
 # ================== Configuration for DEA ==================
 
 ## Do you want to start the workflow directly from the count tables obtained independently? If yes, give the path of your count tables. 
-FROMCOUNTS: no # TestDataset/MyCounts   # put 'no' when using the whole workflow, or the path of your count tables. Format: one file / sample named {sample}_countGenes.tsv, 2 columns gene'\tab'count. 
+FROMCOUNTS: no   # put 'no' when using the whole workflow, or the path of your count tables. Format: one file / sample named {sample}_countGenes.tsv, 2 columns gene'\tab'count. 
 
 ## Do you want to use edgeR or DESeq2 to do DEA?
 DEATOOL: DESeq2 # "edgeR" or "DESeq2"? DESeq2 is recommended for transcriptome-based DEA
@@ -104,8 +107,8 @@ DEATOOL: DESeq2 # "edgeR" or "DESeq2"? DESeq2 is recommended for transcriptome-b
 PAIR: no  # Is this a pair test or not? (yes or no). For instance 2 samples from the same patient taken at different times.
 
 ## the comparison(s) you want to do. If multiple comparisons, specify each pair (CONTROL & TREAT) in order respectively
-CONTROL: ["J0_WT"]
-TREAT: ["J10_WT"]
+CONTROL: ["J0_WT","J0_WT","J10_WT","J0_KO"]
+TREAT: ["J0_KO","J10_WT","J10_KO","J10_KO"
 ## length of 'CONTROL' should agree with that of 'TREAT'
 ## what you fill in there should agree with the "group" column in metadata.tsv
 
@@ -115,7 +118,3 @@ FILTER: yes  # Filter out low expressed transcripts/genes or not? (yes or no) It
 # ================== Configuration for visualization ==================
 
 ## All required params have already been defined in the public params
-
-# ================== Path to main scripts  ==================
-
-MAINPATH: "" # leave "" empty for IFB core cluster, "/scratch/epigenetique/workflows/RASflow_RPBS/" for RPBS cluster.
