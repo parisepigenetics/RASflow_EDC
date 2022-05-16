@@ -37,7 +37,7 @@ class RepeatedTimer(object):   ## to monitore disk usage
         self._timer.cancel()
         self.is_running = False
 
-## follow memory usage IFB only for now
+## follow memory usage
 def get_free_disk():
     quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir+" "+server_command], shell=True)).strip().split()
     used = quotas[2].split('G')[0]

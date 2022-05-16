@@ -74,6 +74,7 @@ else
     echo "---- Total runtime $runtime s ; $((runtime/minute)) min ----"
 
     # move logs
+    mkdir -p logs
     cp "RASflow-$SLURM_JOB_ID.out" logs
     mkdir -p slurm_output
     mv *.out slurm_output

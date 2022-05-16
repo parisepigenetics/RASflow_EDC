@@ -70,7 +70,7 @@ else:
             key = key,
             input_path = input_path
         run:
-            shell("scp -i {params.key} {params.input_path}/{wildcards.sample}*.f*q.gz {output.read}")
+            shell("ln -s {params.input_path}/{wildcards.sample}*.f*q.gz {output.read}")
             
     rule qualityControl:
         input:
