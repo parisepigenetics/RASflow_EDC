@@ -5,6 +5,9 @@ PROJECT: Test1
 
 # ================== Control of the workflow ==================
 
+## Do you want to download FASTQ files from public from Sequence Read Archive (SRA) ? 
+SRA: no # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
+
 ## Do you need to do quality control?
 QC: yes  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
 
@@ -116,7 +119,3 @@ FILTER: yes  # Filter out low expressed transcripts/genes or not? (yes or no) It
 # ================== Configuration for visualization ==================
 
 ## All required params have already been defined in the public params
-
-# ================== Path to main scripts  ==================
-
-MAINPATH: "" # leave "" empty for IFB core cluster, "/scratch/epigenetique/workflows/RASflow_RPBS/" for RPBS cluster.

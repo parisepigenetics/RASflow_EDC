@@ -138,3 +138,8 @@ gene_index:
 mergeGTF:
   name: mergeGTF
   mem: 10000
+
+fastqDump:
+  mem: 10000
+  name: parallel-fastq-dump
+  cpus: 4

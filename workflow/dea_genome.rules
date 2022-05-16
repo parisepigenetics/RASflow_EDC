@@ -14,7 +14,6 @@ samples = np.array(pd.read_table(config["METAFILE"], header = 0)['sample'])
 groups = np.unique(np.array(pd.read_table(config["METAFILE"], header = 0)['group']))
 control = config["CONTROL"][0]
 treat = config["TREAT"][0]
-main_path = config["MAINPATH"]
 TEanalysis = config["REPEATS"]
 from_counts = config["FROMCOUNTS"]
 
@@ -59,10 +58,9 @@ rule PCA:
         "env.yaml"
     params:
         count_path = count_path,
-        mp = main_path,
         output = input_path
     shell:
-        "Rscript {params.mp}scripts/pca.R {params.count_path}  _countGenes.tsv {params.output}"
+        "Rscript scripts/pca.R {params.count_path}  _countGenes.tsv {params.output}"
         
         
 rule combineSamples:
@@ -73,10 +71,9 @@ rule combineSamples:
     conda:
         "env.yaml"
     params:
-        count_path = count_path,
-        mp = main_path
+        count_path = count_path
     shell:
-        "python {params.mp}scripts/combine2group_genome.py {params.count_path} _countGenes.tsv _countsGenes.tsv"
+        "python scripts/combine2group_genome.py {params.count_path} _countGenes.tsv _countsGenes.tsv"
         
         
 rule DEA:
@@ -89,11 +86,10 @@ rule DEA:
     conda:
         "env.yaml"
     params:
-        mp = main_path,
         output_path = output_path,
         counts_path = count_path + ""
     shell:
-        "Rscript {params.mp}scripts/dea_genome.R {params.counts_path} {params.output_path} _countsGenes.tsv"
+        "Rscript scripts/dea_genome.R {params.counts_path} {params.output_path} _countsGenes.tsv"
 
 
 if TEanalysis == "yes" or TEanalysis==True:
@@ -106,10 +102,9 @@ if TEanalysis == "yes" or TEanalysis==True:
             "env.yaml"  
         params:
             count_path = repeats_path + "/countTables/",
-            mp = main_path,
             output = repeats_path
         shell:
-            "Rscript {params.mp}scripts/pca.R {params.count_path}  _countTE.tsv {params.output}"  
+            "Rscript scripts/pca.R {params.count_path}  _countTE.tsv {params.output}"  
             
     rule TE_combineSamples:
         input:
@@ -119,10 +114,9 @@ if TEanalysis == "yes" or TEanalysis==True:
         conda:
             "env.yaml"
         params:
-            count_path = repeats_path +"/countTables/",
-            mp = main_path
+            count_path = repeats_path +"/countTables/"
         shell:
-            "python {params.mp}scripts/combine2group_genome.py {params.count_path} _countTE.tsv _countsTE.tsv"
+            "python scripts/combine2group_genome.py {params.count_path} _countTE.tsv _countsTE.tsv"
             
             
     rule TE_DEA:
@@ -135,9 +129,8 @@ if TEanalysis == "yes" or TEanalysis==True:
         conda:
             "env.yaml"
         params:
-            mp = main_path,
             output_path = repeats_output_path ,
             counts_path = repeats_path + "/countTables/"
         shell:
-            "Rscript {params.mp}scripts/dea_genome.R {params.counts_path} {params.output_path} _countsTE.tsv"
+            "Rscript scripts/dea_genome.R {params.counts_path} {params.output_path} _countsTE.tsv"
 
