@@ -493,7 +493,7 @@ if counter == "STARcount":
     if strand == "yes" or strand == True:
         rule starCount:
             input:
-                counts = intermediate_path + "/Sorted_bam/{sample}.ReadsPerGene.out.tab"
+                counts = intermediate_path + "/bam_byName/{sample}.ReadsPerGene.out.tab"
             output:
                 countF = final_path + "/counting_" + counter + "/countTables/{sample}_countGenes.tsv",
                 count_summary = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv.summary"
@@ -502,7 +502,7 @@ if counter == "STARcount":
     if strand == "no" or strand == False: 
         rule starCount:
             input:
-                counts = intermediate_path + "/Sorted_bam/{sample}.ReadsPerGene.out.tab"
+                counts = intermediate_path + "/bam_byName/{sample}.ReadsPerGene.out.tab"
             output:
                 countF = final_path + "/counting_"+ counter + "/countTables/{sample}_countGenes.tsv",
                 count_summary = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv.summary"
@@ -511,7 +511,7 @@ if counter == "STARcount":
     if strand == "reverse":
         rule starCount:
             input:
-                counts = intermediate_path + "/Sorted_bam/{sample}.ReadsPerGene.out.tab"
+                counts = intermediate_path + "/bam_byName/{sample}.ReadsPerGene.out.tab"
             output:
                 countF = final_path + "/counting_"+ counter + "/countTables/{sample}_countGenes.tsv",
                 count_summary = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv.summary"
@@ -560,14 +560,14 @@ if counter == "htseq-count" or counter == "featureCounts":
 if counter =="STARcount": 
     rule summaryReport:
         input:
-            counts = expand(intermediate_path + "/Sorted_bam/{sample}.ReadsPerGene.out.tab", sample = samples),
+            counts = expand(intermediate_path + "/bam_byName/{sample}.ReadsPerGene.out.tab", sample = samples),
             bamqc = expand(final_path + "/alignmentQC/{sample}_BAMqc", sample = samples)
         output:
             report = final_path + "/report_align_count_"+counter+".html"
         conda:
             "env.yaml"
         params:
-            mapping = intermediate_path + "/Sorted_bam/",
+            mapping = intermediate_path + "/bam_byName/",
         shell:
             "multiqc {params.mapping} {input.bamqc} --filename {output.report}"
 
