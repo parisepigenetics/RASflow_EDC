@@ -82,8 +82,8 @@ if 'max_size' not in globals(): ## to do it only once.
 split=False
 if seqtype == "pair" and max_size >  int(config["SPLITBY"])*40 : split=True
 if seqtype == "single" and max_size >  int(config["SPLITBY"])*80 : split=True
-
-  
+if counter == "STARcount": split=False  # no split with STARcount - counting during the mapping. 
+   
 ### final rule
 rule end:
     input:
