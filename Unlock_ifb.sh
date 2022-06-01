@@ -36,7 +36,9 @@ echo '########################################'
 module load snakemake/5.7.4 python slurm-drmaa
 
 # unlock 
-snakemake --unlock --drmaa -s workflow/quality_control.rules
+cp configs/config_main.yaml config_ongoing_run.yaml
+snakemake --unlock --drmaa --cores 1 -s workflow/quality_control.rules
+rm config_ongoing_run.yaml
 
 mkdir -p slurm_output
 mv Unlock-* slurm_output
