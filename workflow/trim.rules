@@ -95,7 +95,7 @@ else:
             "env.yaml"        
         shell:
             """
-            trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {intermediate_path} {input.read}             rename _val _trimmed {intermediate_path}/{wildcards.sample}*          
+            trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {intermediate_path} {input.read} && rename _val _trimmed {intermediate_path}/{wildcards.sample}*          
             """
 
 rule summaryReport:
