@@ -40,12 +40,16 @@ class RepeatedTimer(object):   ## to monitore disk usage
 ## follow memory usage
 def get_free_disk():
     quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir+" "+server_command], shell=True)).strip().split()
-    used = quotas[2].split('G')[0]
-    remaining=int(float(extra)*1024 - float(used))    
+    used = quotas[2].split('\\n')[0]
+    unit = used[-1]
+    if unit == 'G' : 
+        remaining=int(total*1024 - float(used[0:-1]))    # modified, /quota and not /limit
+    if unit == 'T': 
+        remaining=int(total*1024 - float(used[0:-1])*1024)
     time_now= time.localtime()
     time_now = time.strftime("%Y%m%dT%H%M", time_now)
     freedisk.write(time_now+'\t'+str(remaining)+'\n')
-
+    
 
 def spend_time(start_time, end_time):
     seconds = end_time - start_time
@@ -96,11 +100,21 @@ if server == "ipop-up":
 try: writting_dir = resultpath.split('projects')[1].split('/')[1]
 except: writting_dir = os.getcwd().split('projects')[1].split('/')[1]
 freedisk = open(LogPath+time_string+"_free_disk.txt", "a+")
-quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir +" "+server_command], shell=True)).strip().split()
-tot = quotas[0].split('T')[0].split("b'")[1]
-extra = quotas[1].split('T')[0]
-freedisk.write("# quota:"+tot+" limit:"+ extra+ "\ntime\tfree_disk\n")
-rt = RepeatedTimer(60, get_free_disk)
+quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir +" "+server_command], shell=True)).strip().split() # format: quotas = ["b'2T", '3T', "1.645T\\n'"]
+unit = quotas[0][-1]
+if unit == 'T': 
+    total = float(quotas[0].split('T')[0].split("b'")[1])
+    extra = float(quotas[1].split('T')[0])    
+if unit == 'G': 
+    total = float(quotas[0].split('G')[0].split("b'")[1])/1024
+    unit_extra = quotas[1][-1]
+    if unit_extra == 'T' : # in case total in G and extra in T 
+        extra = float(quotas[1].split('T')[0])
+    if unit_extra == 'G' : 
+        extra = float(quotas[1].split('G')[0])/1024
+        
+freedisk.write("# quota:"+str(total)+"T limit:"+ str(extra)+ "T\ntime\tfree_disk\n")
+rt = RepeatedTimer(60, get_free_disk)        
 
 # save the configuration
 os.system("(echo && echo \"==========================================\" && echo && echo \"SAMPLE PLAN\") | cat config_ongoing_run.yaml - "+metadata+" >" + LogPath+time_string+"_configuration.txt")
