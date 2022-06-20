@@ -40,12 +40,16 @@ class RepeatedTimer(object):   ## to monitore disk usage
 ## follow memory usage
 def get_free_disk():
     quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir+" "+server_command], shell=True)).strip().split()
-    used = quotas[2].split('G')[0]
-    remaining=int(float(extra)*1024 - float(used))    
+    used = quotas[2].split('\\n')[0]
+    unit = used[-1]
+    if unit == 'G' : 
+        remaining=int(total*1024 - float(used[0:-1]))    # modified, /quota and not /limit
+    if unit == 'T': 
+        remaining=int(total*1024 - float(used[0:-1])*1024)
     time_now= time.localtime()
     time_now = time.strftime("%Y%m%dT%H%M", time_now)
     freedisk.write(time_now+'\t'+str(remaining)+'\n')
-
+    
 
 def spend_time(start_time, end_time):
     seconds = end_time - start_time
@@ -96,11 +100,21 @@ if server == "ipop-up":
 try: writting_dir = resultpath.split('projects')[1].split('/')[1]
 except: writting_dir = os.getcwd().split('projects')[1].split('/')[1]
 freedisk = open(LogPath+time_string+"_free_disk.txt", "a+")
-quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir +" "+server_command], shell=True)).strip().split()
-tot = quotas[0].split('T')[0].split("b'")[1]
-extra = quotas[1].split('T')[0]
-freedisk.write("# quota:"+tot+" limit:"+ extra+ "\ntime\tfree_disk\n")
-rt = RepeatedTimer(60, get_free_disk)
+quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir +" "+server_command], shell=True)).strip().split() # format: quotas = ["b'2T", '3T', "1.645T\\n'"]
+unit = quotas[0][-1]
+if unit == 'T': 
+    total = float(quotas[0].split('T')[0].split("b'")[1])
+    extra = float(quotas[1].split('T')[0])    
+if unit == 'G': 
+    total = float(quotas[0].split('G')[0].split("b'")[1])/1024
+    unit_extra = quotas[1][-1]
+    if unit_extra == 'T' : # in case total in G and extra in T 
+        extra = float(quotas[1].split('T')[0])
+    if unit_extra == 'G' : 
+        extra = float(quotas[1].split('G')[0])/1024
+        
+freedisk.write("# quota:"+str(total)+"T limit:"+ str(extra)+ "T\ntime\tfree_disk\n")
+rt = RepeatedTimer(60, get_free_disk)        
 
 # save the configuration
 os.system("(echo && echo \"==========================================\" && echo && echo \"SAMPLE PLAN\") | cat config_ongoing_run.yaml - "+metadata+" >" + LogPath+time_string+"_configuration.txt")
@@ -164,7 +178,7 @@ print("-------------------------\nWorkflow running....")
 if qc=='yes':
         print("Starting FASTQ Quality Control...")
         start_time = time.time()
-        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix  ~/.snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/quality_control.rules 2> " + LogPath+time_string+"_quality_control.txt")
+        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix  .snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/quality_control.rules 2> " + LogPath+time_string+"_quality_control.txt")
         end_time = time.time()
         file_main_time.write("Time of running QC: " + spend_time(start_time, end_time) + "\n")
         print("FASTQ quality control is done! ("+spend_time(start_time, end_time)+")\n Please check the report and decide whether trimming is needed or not.\n To run the rest of the analysis, please remember to turn off the QC in the configuration file.")
@@ -173,7 +187,7 @@ else:
     if trim=='yes':
         print("Starting Trimming...")
         start_time = time.time()
-        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix ~/.snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/trim.rules 2> " + LogPath+time_string+"_trim.txt")
+        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix .snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/trim.rules 2> " + LogPath+time_string+"_trim.txt")
         end_time = time.time()
         file_main_time.write("Time of running trimming: " + spend_time(start_time, end_time) + "\n")
         print("Trimming is done! ("+spend_time(start_time, end_time)+")")
@@ -181,7 +195,7 @@ else:
     if mapping =='yes' and reference == "transcriptome":
         print("Starting mapping using ", reference, " as reference...")
         start_time = time.time()
-        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix ~/.snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/quantify_trans.rules 2> " + LogPath+time_string+"_quantify_trans.txt")
+        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix .snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/quantify_trans.rules 2> " + LogPath+time_string+"_quantify_trans.txt")
         end_time = time.time()
         file_main_time.write("Time of running transcripts quantification: " + spend_time(start_time, end_time) + "\n")
         print("Mapping is done! ("+spend_time(start_time, end_time)+")")
@@ -189,7 +203,7 @@ else:
     if mapping =='yes' and reference == "genome":
         print("Starting mapping using ", reference, " as reference...")
         start_time = time.time()
-        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix ~/.snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/align_count_genome.rules 2> " + LogPath+time_string+"_align_count_genome.txt")
+        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix .snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/align_count_genome.rules 2> " + LogPath+time_string+"_align_count_genome.txt")
         end_time = time.time()
         file_main_time.write("Time of running genome alignment and counting: " + spend_time(start_time, end_time) + "\n")
         print("Mapping is done! ("+spend_time(start_time, end_time)+")")
@@ -198,12 +212,12 @@ else:
         print("Starting differential expression analysis...")
         if reference == "transcriptome":
             start_time = time.time()
-            os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix ~/.snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/dea_trans.rules 2> " + LogPath+time_string+"_dea_trans.txt")
+            os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix .snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/dea_trans.rules 2> " + LogPath+time_string+"_dea_trans.txt")
             end_time = time.time()
             file_main_time.write("Time of running DEA transcriptome based: " + spend_time(start_time, end_time) + "\n")
         elif reference == "genome":
             start_time = time.time()
-            os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix ~/.snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/dea_genome.rules 2> " + LogPath+time_string+"_dea_genome.txt")
+            os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix .snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/dea_genome.rules 2> " + LogPath+time_string+"_dea_genome.txt")
             end_time = time.time()
             file_main_time.write("Time of running DEA genome based: " + spend_time(start_time, end_time) + "\n")
         print("DEA is done! ("+spend_time(start_time, end_time)+")")

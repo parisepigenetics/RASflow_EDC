@@ -116,7 +116,7 @@ else:
             key = key,
             input_path = input_path
         run:
-            shell("ln -s {params.input_path}/{wildcards.sample}*.f*q.gz {output.read}")
+            shell("ln -s {params.input_path}/{wildcards.sample}_*.f*q.gz {output.read}")
 
 
 ### Mapping depending on the tool chosen

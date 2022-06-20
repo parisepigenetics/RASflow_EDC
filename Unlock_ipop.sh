@@ -36,8 +36,9 @@ echo '########################################'
 module load snakemake/5.19.2
 
 # unlock 
+cp configs/config_main.yaml config_ongoing_run.yaml
 snakemake --unlock --drmaa --cores 1 -s workflow/quality_control.rules
-chmod 777 config_ongoing_run.yaml && rm config_ongoing_run.yaml
+rm config_ongoing_run.yaml
 
 mkdir -p slurm_output
 mv Unlock-* slurm_output

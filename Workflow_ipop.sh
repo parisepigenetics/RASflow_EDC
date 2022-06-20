@@ -17,7 +17,7 @@
 #SBATCH --partition=ipop-up
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem-per-cpu=5GB
+#SBATCH --mem-per-cpu=10GB
 
 ### Email
 ##SBATCH --mail-user=email@address
@@ -33,7 +33,7 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_EDC version: v0.7, on iPOP-UP cluster'
+echo 'RASflow_EDC version: v0.7.2, on iPOP-UP cluster'
 echo '-------------------------'
 echo 'Main module versions:'
 
