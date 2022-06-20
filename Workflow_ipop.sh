@@ -33,7 +33,7 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_EDC version: v0.7.1, on iPOP-UP cluster'
+echo 'RASflow_EDC version: v0.7.2, on iPOP-UP cluster'
 echo '-------------------------'
 echo 'Main module versions:'
 
