@@ -17,7 +17,7 @@
 #SBATCH --partition=ipop-up
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem-per-cpu=5GB
+#SBATCH --mem-per-cpu=10GB
 
 ### Email
 ##SBATCH --mail-user=email@address
@@ -42,7 +42,7 @@ start0=`date +%s`
 
 # modules loading
 module purge
-module load snakemake/7.7.0
+module load snakemake/5.19.2
 
 conda --version
 python --version
