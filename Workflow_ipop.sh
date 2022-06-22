@@ -33,7 +33,7 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_EDC version: v0.7.2, on iPOP-UP cluster'
+echo 'RASflow_EDC version: v0.7.3, on iPOP-UP cluster'
 echo '-------------------------'
 echo 'Main module versions:'
 
@@ -42,7 +42,7 @@ start0=`date +%s`
 
 # modules loading
 module purge
-module load snakemake/5.19.2
+module load snakemake/7.7.0
 
 conda --version
 python --version

@@ -1,4 +1,4 @@
-# The main script to manage the subworkflows of RASflow
+# The main script to manage the subworkflows of RASflow_EDC
 
 import yaml
 import os
@@ -88,19 +88,25 @@ file_main_time.write("Start time: " + time.ctime() + "\n")
 server = sys.argv[1]
 if server == "ifb" :
     account = os.getcwd().split('projects')[1].split('/')[1]
-    option = " -A "+account   # +" -x cpu-node-25" # to remove slow nodes, blank before the option!!
+    option = "-A "+account+"\""   # + -x cpu-node-25 # to remove slow nodes
     server_name = "IFB"
     server_command = "-p"  # group management is different between ifb and ipop-up
 if server == "ipop-up":
-    option = " -p ipop-up"   
+    option = "-p ipop-up\" --conda-frontend conda"    # no mamba (default with recent Snakemake versions) on ipop-up server -> use conda    
     server_name = "iPOP-UP"
     server_command = "-g"  # group management is different between ifb and ipop-up
+    
+# Snakemake command with all options
+snakemake_cmd = "snakemake -k --cluster-config cluster.yaml --drmaa  \
+    \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus} "+option+\
+    " --use-conda --conda-prefix .snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 "
 
 # Monitore disk usage    
 try: writting_dir = resultpath.split('projects')[1].split('/')[1]
 except: writting_dir = os.getcwd().split('projects')[1].split('/')[1]
 freedisk = open(LogPath+time_string+"_free_disk.txt", "a+")
-quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir +" "+server_command], shell=True)).strip().split() # format: quotas = ["b'2T", '3T', "1.645T\\n'"]
+quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir +" "+server_command], shell=True)).strip().split() \
+    # format: quotas = ["b'2T", '3T', "1.645T\\n'"]
 unit = quotas[0][-1]
 if unit == 'T': 
     total = float(quotas[0].split('T')[0].split("b'")[1])
@@ -117,9 +123,12 @@ freedisk.write("# quota:"+str(total)+"T limit:"+ str(extra)+ "T\ntime\tfree_disk
 rt = RepeatedTimer(60, get_free_disk)        
 
 # save the configuration
-os.system("(echo && echo \"==========================================\" && echo && echo \"SAMPLE PLAN\") | cat config_ongoing_run.yaml - "+metadata+" >" + LogPath+time_string+"_configuration.txt")
-os.system("(echo && echo \"==========================================\" && echo && echo \"CONDA ENV\" && echo) | cat - workflow/env.yaml >>" + LogPath+time_string+"_configuration.txt")
-os.system("(echo && echo \"==========================================\" && echo && echo \"CLUSTER\" && echo) | cat - cluster.yaml >>" + LogPath+time_string+"_configuration.txt")
+os.system("(echo && echo \"==========================================\" && echo && echo \"SAMPLE PLAN\") \
+    | cat config_ongoing_run.yaml - "+metadata+" >" + LogPath+time_string+"_configuration.txt")
+os.system("(echo && echo \"==========================================\" && echo && echo \"CONDA ENV\" && echo) \
+    | cat - workflow/env.yaml >>" + LogPath+time_string+"_configuration.txt")
+os.system("(echo && echo \"==========================================\" && echo && echo \"CLUSTER\" && echo) \
+    | cat - cluster.yaml >>" + LogPath+time_string+"_configuration.txt")
 
 
 
@@ -178,16 +187,18 @@ print("-------------------------\nWorkflow running....")
 if qc=='yes':
         print("Starting FASTQ Quality Control...")
         start_time = time.time()
-        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix  .snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/quality_control.rules 2> " + LogPath+time_string+"_quality_control.txt")
+        os.system(snakemake_cmd+"-s workflow/quality_control.rules 2> " + LogPath+time_string+"_quality_control.txt")
         end_time = time.time()
         file_main_time.write("Time of running QC: " + spend_time(start_time, end_time) + "\n")
-        print("FASTQ quality control is done! ("+spend_time(start_time, end_time)+")\n Please check the report and decide whether trimming is needed or not.\n To run the rest of the analysis, please remember to turn off the QC in the configuration file.")
+        print("FASTQ quality control is done! ("+spend_time(start_time, end_time)+")\n \
+              Please check the report and decide whether trimming is needed or not.\n \
+              To run the rest of the analysis, please remember to turn off the QC in the configuration file.")
 
 else:
     if trim=='yes':
         print("Starting Trimming...")
         start_time = time.time()
-        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix .snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/trim.rules 2> " + LogPath+time_string+"_trim.txt")
+        os.system(snakemake_cmd+"-s workflow/trim.rules 2> " + LogPath+time_string+"_trim.txt")
         end_time = time.time()
         file_main_time.write("Time of running trimming: " + spend_time(start_time, end_time) + "\n")
         print("Trimming is done! ("+spend_time(start_time, end_time)+")")
@@ -195,7 +206,7 @@ else:
     if mapping =='yes' and reference == "transcriptome":
         print("Starting mapping using ", reference, " as reference...")
         start_time = time.time()
-        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix .snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/quantify_trans.rules 2> " + LogPath+time_string+"_quantify_trans.txt")
+        os.system(snakemake_cmd+"-s workflow/quantify_trans.rules 2> " + LogPath+time_string+"_quantify_trans.txt")
         end_time = time.time()
         file_main_time.write("Time of running transcripts quantification: " + spend_time(start_time, end_time) + "\n")
         print("Mapping is done! ("+spend_time(start_time, end_time)+")")
@@ -203,7 +214,7 @@ else:
     if mapping =='yes' and reference == "genome":
         print("Starting mapping using ", reference, " as reference...")
         start_time = time.time()
-        os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix .snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/align_count_genome.rules 2> " + LogPath+time_string+"_align_count_genome.txt")
+        os.system(snakemake_cmd+"-s workflow/align_count_genome.rules 2> " + LogPath+time_string+"_align_count_genome.txt")
         end_time = time.time()
         file_main_time.write("Time of running genome alignment and counting: " + spend_time(start_time, end_time) + "\n")
         print("Mapping is done! ("+spend_time(start_time, end_time)+")")
@@ -212,12 +223,12 @@ else:
         print("Starting differential expression analysis...")
         if reference == "transcriptome":
             start_time = time.time()
-            os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix .snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/dea_trans.rules 2> " + LogPath+time_string+"_dea_trans.txt")
+            os.system(snakemake_cmd+"-s workflow/dea_trans.rules 2> " + LogPath+time_string+"_dea_trans.txt")
             end_time = time.time()
             file_main_time.write("Time of running DEA transcriptome based: " + spend_time(start_time, end_time) + "\n")
         elif reference == "genome":
             start_time = time.time()
-            os.system("snakemake -k --cluster-config cluster.yaml --drmaa \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus}"+option+"\" --use-conda --conda-prefix .snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 -s workflow/dea_genome.rules 2> " + LogPath+time_string+"_dea_genome.txt")
+            os.system(snakemake_cmd+"-s workflow/dea_genome.rules 2> " + LogPath+time_string+"_dea_genome.txt")
             end_time = time.time()
             file_main_time.write("Time of running DEA genome based: " + spend_time(start_time, end_time) + "\n")
         print("DEA is done! ("+spend_time(start_time, end_time)+")")
@@ -249,7 +260,8 @@ freedisk.close()
 
 print("########################################")
 print("---- Errors ----")
-returned_output = subprocess.check_output(["grep -A 5 -B 5 'error message\|error:\|Errno\|MissingInputException\|SyntaxError' " + LogPath+time_string+"*;exit 0"], shell=True)
+returned_output = subprocess.check_output(["grep -A 5 -B 5 'error message\|error:\|Errno\|MissingInputException\|SyntaxError' "\
+    +LogPath+time_string+"*;exit 0"], shell=True)
 if returned_output == b'' :
     print("There were no errors ! It's time to look at your results, enjoy!")
 else :
