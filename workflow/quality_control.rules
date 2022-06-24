@@ -67,8 +67,10 @@ if end == "pair":
         output:
             fastqc_fw = final_path + "/fastqc/{sample}_R1_fastqc.html",
             fastqc_rv = final_path + "/fastqc/{sample}_R2_fastqc.html"
-        conda:
-            "env.yaml"
+        #conda:
+        #    "env.yaml"
+        singularity:
+            "/shared/projects/cotech/Tests_Mag/Singularity/rasflow.simg"
         params:
             outputpath = final_path + "/fastqc"
         shell:
@@ -81,8 +83,10 @@ if end == "pair":
         output:
             report = final_path + "/fastqc/report_quality_control.html",
             folder = directory(final_path + "/fastqc/report_quality_control_data")
-        conda:
-            "env.yaml"
+        #conda:
+        #    "env.yaml"
+        singularity:
+            "/shared/projects/cotech/Tests_Mag/Singularity/rasflow.simg"
         params:
             path = final_path + "/fastqc"
         shell:
@@ -95,8 +99,10 @@ else:
         rule fastqDump:
             output:
                 fastq = input_path + "/{sample}.fastq.gz"
-            conda:
-                "env.yaml"           
+            #conda:
+            #    "env.yaml"          
+            singularity:
+                "/shared/projects/cotech/Tests_Mag/Singularity/rasflow.simg"
             log: 
                 input_path + "/{sample}.log"
             shell:
@@ -123,8 +129,10 @@ else:
             fastq = input_path + "/{sample}.fastq.gz"
         output:
             fastqc = final_path + "/fastqc/{sample}_fastqc.html"
-        conda:
-            "env.yaml"
+        #conda:
+        #    "env.yaml"
+        singularity:
+            "/shared/projects/cotech/Tests_Mag/Singularity/rasflow.simg"
         params:
             outputpath = final_path + "/fastqc"
         shell:
@@ -136,8 +144,10 @@ else:
         output:
             report = final_path + "/fastqc/report_quality_control.html",
             folder = directory(final_path + "/fastqc/report_quality_control_data")
-        conda:
-            "env.yaml"
+        #conda:
+        #    "env.yaml"
+        singularity:
+            "/shared/projects/cotech/Tests_Mag/Singularity/rasflow.simg"
         params:
             path = final_path + "/fastqc"
         shell:
