@@ -269,7 +269,7 @@ DEA <- function(control, treat) {
     if (suffix == '_countsGenes.tsv') {
        gene.id.dea <- annotation$GeneID
        gene.symbol.dea.all <- queryMany(gene.id.dea, scopes = 'ensembl.gene', fields = 'symbol')
-       if (length(gene.symbol.dea.all) > 10) {
+       if (nrow(gene.symbol.dea.all) > 10) {
             h <- hash()
             for (i in 1:nrow(gene.symbol.dea.all)) {
                 query <- gene.symbol.dea.all$query[i]
@@ -383,7 +383,8 @@ DEA <- function(control, treat) {
 
     pdf(file = file.path(output.path, paste('Report/plots/heatmapTop_', control, '_', treat, '.pdf', sep = '')), width = 20, height = 20, title = 'Heatmap using the top features')
     par(oma=c(4,4,4,4))
-    heatmap.2(as.matrix(norm.table.deg), col=rev(brewer.pal(11,"RdBu")),scale="row", trace="none", ColSideColors = palette.group, margins = c(30,18), labRow = gene.norm.table, cexCol = 1.9, dendrogram="column", 
+    heatmap.2(as.matrix(norm.table.deg), col=rev(brewer.pal(11,"RdBu")),scale="row", trace="none", ColSideColors = palette.group, margins = c(30,18), 
+            labRow = gene.norm.table, cexCol = 2.5, cexRow = 2.5, dendrogram="column",   #  size of the labels, clustering by cols
             yaxt="n", key.par = list(cex=1.2, cex.lab=1), keysize=1)  ## control the heatmap legend
     legend("topright", title = 'Group', legend=groups, text.font = 15,
          col = palette, fill = palette, cex=1.8)
