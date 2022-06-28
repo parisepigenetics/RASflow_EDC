@@ -129,7 +129,8 @@ os.system("(echo && echo \"==========================================\" && echo 
     | cat - workflow/env.yaml >>" + LogPath+time_string+"_configuration.txt")
 os.system("(echo && echo \"==========================================\" && echo && echo \"CLUSTER\" && echo) \
     | cat - cluster.yaml >>" + LogPath+time_string+"_configuration.txt")
-
+os.system("(echo && echo \"==========================================\" && echo && echo \"VERSION\" && echo) >>" + LogPath+time_string+"_configuration.txt")
+os.system("(git log | head -3) >>" + LogPath+time_string+"_configuration.txt")
 
 
 # Start the workflow
