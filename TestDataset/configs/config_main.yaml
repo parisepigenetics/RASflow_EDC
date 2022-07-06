@@ -32,7 +32,7 @@ DEA: yes  # "yes" or "no"
 KEY: 
 
 ## place to save singularity/apptainer image (1.5Go) 
-SINGULARITY: TestDataset
+SINGULARITY: /shared/projects/bi4edc
 
 ## the path to fastq files
 READSPATH: TestDataset/Raw_fastq  # for testing purpose we put here the relative paths, but we recommend to always use full paths such as /shared/projects/YourProjectName/Raw_Fastq
