@@ -30,6 +30,9 @@ DEA: yes  # "yes" or "no"
 ## key file if the data is stored remotely, otherwise leave it empty
 KEY: 
 
+## place to save singularity/apptainer image (1.5Go) 
+SINGULARITY: TestDataset
+
 ## the path to fastq files
 READSPATH: /shared/projects/YourProjectName/Raw_fastq  # for testing purpose we put here the relative paths, but we recommend to always use full paths such as /shared/projects/YourProjectName/Raw_Fastq
 
