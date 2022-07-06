@@ -7,6 +7,7 @@ samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
 end = config["END"]
 intermediate_path = config["BIGDATAPATH"] + "/" + config["PROJECT"] + "/"
 final_path = config["RESULTPATH"] + "/" + config["PROJECT"]
+singularity_folder = config["SINGULARITY"]
 
 if input_path[0] != "/": 
     import os
@@ -23,16 +24,35 @@ rule end:
         report = final_path + "/fastqc/report_quality_control.html", 
         cat_logs = catlogs
         
+rule download_singularity_img:
+    output: 
+        singularity_folder + "/rasflowedc.simg_latest.sif"
+    shell: 
+        """
+        singularity pull --arch amd64 --dir {singularity_folder} library://kirsho/rasflowedc/rasflowedc.simg:latest
+        """
+        
+rule link_singularity_img: 
+    input: 
+        singularity_folder + "/rasflowedc.simg_latest.sif"
+    output: 
+        "rasflow.simg"
+    shell:
+        "ln -s {input} {output}"
+        
+        
 if end == "pair":
 
     if config["SRA"] == "yes" or config["SRA"] == True: 
     
         rule fastqDump:
+            input: 
+                "rasflow.simg"
             output:
                 fastq_R1 = input_path + "/{sample}_R1.fastq.gz",
                 fastq_R2 = input_path + "/{sample}_R2.fastq.gz"
-            conda:
-                "env.yaml"
+            singularity:
+                "rasflow.simg"
             params:
                 file_1 = input_path + "/{sample}_1.fastq.gz",
                 file_2 = input_path + "/{sample}_2.fastq.gz"
@@ -53,24 +73,18 @@ if end == "pair":
                 catlogs = final_path + "/fastqc/SRA.log"
             shell:
                 "sed -s -e $'$a\\\n-----' {input_path}/*.log > {output.catlogs}" 
-        
-    else: 
-        rule getReads:
-            output:
-                fastq_R1 = input_path + "/{sample}_R1.fastq.gz",
-                fastq_R2 = input_path + "/{sample}_R2.fastq.gz"
+
             
     rule qualityControl:
         input:
+            "rasflow.simg",
             fw = input_path + "/{sample}_R1.fastq.gz",
             rv = input_path + "/{sample}_R2.fastq.gz"
         output:
             fastqc_fw = final_path + "/fastqc/{sample}_R1_fastqc.html",
             fastqc_rv = final_path + "/fastqc/{sample}_R2_fastqc.html"
-        #conda:
-        #    "env.yaml"
         singularity:
-            "/shared/projects/cotech/Tests_Mag/Singularity/rasflow.simg"
+            "rasflow.simg"
         params:
             outputpath = final_path + "/fastqc"
         shell:
@@ -83,10 +97,8 @@ if end == "pair":
         output:
             report = final_path + "/fastqc/report_quality_control.html",
             folder = directory(final_path + "/fastqc/report_quality_control_data")
-        #conda:
-        #    "env.yaml"
         singularity:
-            "/shared/projects/cotech/Tests_Mag/Singularity/rasflow.simg"
+            "rasflow.simg"
         params:
             path = final_path + "/fastqc"
         shell:
@@ -97,12 +109,12 @@ else:
     if config["SRA"] == "yes" or config["SRA"] == True: 
     
         rule fastqDump:
+            input: 
+                "rasflow.simg"
             output:
-                fastq = input_path + "/{sample}.fastq.gz"
-            #conda:
-            #    "env.yaml"          
+                fastq = input_path + "/{sample}.fastq.gz"         
             singularity:
-                "/shared/projects/cotech/Tests_Mag/Singularity/rasflow.simg"
+                "rasflow.simg"
             log: 
                 input_path + "/{sample}.log"
             shell:
@@ -119,20 +131,15 @@ else:
             shell:
                 "sed -s -e $'$a\\\n-----' {input_path}/*.log > {output.catlogs}" 
         
-    else: 
-        rule getReads:
-            output:
-                fastq = input_path + "/{sample}.fastq.gz"
             
     rule qualityControl:
         input:
+            "rasflow.simg",
             fastq = input_path + "/{sample}.fastq.gz"
         output:
             fastqc = final_path + "/fastqc/{sample}_fastqc.html"
-        #conda:
-        #    "env.yaml"
         singularity:
-            "/shared/projects/cotech/Tests_Mag/Singularity/rasflow.simg"
+            "rasflow.simg"
         params:
             outputpath = final_path + "/fastqc"
         shell:
@@ -144,10 +151,8 @@ else:
         output:
             report = final_path + "/fastqc/report_quality_control.html",
             folder = directory(final_path + "/fastqc/report_quality_control_data")
-        #conda:
-        #    "env.yaml"
         singularity:
-            "/shared/projects/cotech/Tests_Mag/Singularity/rasflow.simg"
+            "rasflow.simg"
         params:
             path = final_path + "/fastqc"
         shell:

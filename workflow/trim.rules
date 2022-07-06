@@ -66,12 +66,13 @@ if end == "pair":
         output:
             shforward = intermediate_path + "/{sample}_R1_trimmed.fq.gz",
             shreverse = intermediate_path + "/{sample}_R2_trimmed.fq.gz"
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow.simg"
         shell:
             """
-            trim_galore {options} --fastqc --j 4 --paired --basename {wildcards.sample} -o {intermediate_path} {input.fw} {input.rv} && rename _val_1 _R1_trimmed {intermediate_path}/{wildcards.sample}*  
-            rename _val_2 _R2_trimmed {intermediate_path}/{wildcards.sample}* 
+            trim_galore {options} --fastqc --j 4 --paired --basename {wildcards.sample} -o {intermediate_path} {input.fw} {input.rv}
+            rename 's/\_val_1/\_R1_trimmed/' {intermediate_path}/{wildcards.sample}*    # rename 's/\.DAT/\.dat/' *
+            rename 's/\_val_2/\_R2_trimmed/' {intermediate_path}/{wildcards.sample}* 
             """
     
    
@@ -91,11 +92,12 @@ else:
             read = intermediate_path + "/reads/{sample}.fastq.gz"
         output:
             read_trim = intermediate_path + "/{sample}_trimmed.fq.gz"
-        conda:
-            "env.yaml"        
+        singularity:
+            "rasflow.simg"        
         shell:
             """
-            trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {intermediate_path} {input.read} && rename _val _trimmed {intermediate_path}/{wildcards.sample}*          
+            trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {intermediate_path} {input.read}
+            rename 's/\_val/\_trimmed/' {intermediate_path}/{wildcards.sample}*          
             """
 
 rule summaryReport:
@@ -103,14 +105,10 @@ rule summaryReport:
         trimFiles
     output:
         report = final_path + "/fastqc_after_trimming/report_quality_control_after_trimming.html"
-    conda:
-        "env.yaml"
-    params:
-        path = intermediate_path
+    singularity:
+        "rasflow.simg"
     shell:
         """
-        multiqc {params.path} --filename {output.report}
-        mv {intermediate_path}/*fastqc* {final_path}/fastqc_after_trimming
-        mkdir -p {final_path}/trimming
-        mv {intermediate_path}/*report.txt {final_path}/trimming
+        cp {intermediate_path}/*fastqc* {final_path}/fastqc_after_trimming
+        multiqc {final_path}/fastqc_after_trimming --filename {output.report}   
         """

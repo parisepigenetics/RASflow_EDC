@@ -3,6 +3,9 @@ __default__:
   name: snakejob
   cpus: 1
 
+download_singularity_img:
+  name: singImage
+
 qualityControl:
   mem: 6000
   name: QC
@@ -26,7 +29,7 @@ hisat2:
 star:
   mem: 40000
   name: star
-  cpus: 2
+  cpus: 4
 
 alignmentQC:
   mem: 10000

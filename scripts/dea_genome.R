@@ -269,7 +269,7 @@ DEA <- function(control, treat) {
     if (suffix == '_countsGenes.tsv') {
        gene.id.dea <- annotation$GeneID
        gene.symbol.dea.all <- queryMany(gene.id.dea, scopes = 'ensembl.gene', fields = 'symbol')
-       if (length(gene.symbol.dea.all) > 10) {
+       if (nrow(gene.symbol.dea.all) > 10) {
             h <- hash()
             for (i in 1:nrow(gene.symbol.dea.all)) {
                 query <- gene.symbol.dea.all$query[i]

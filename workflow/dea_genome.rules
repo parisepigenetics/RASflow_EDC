@@ -54,8 +54,8 @@ rule PCA:
         countF = expand(count_path +"{sample}_countGenes.tsv", sample=samples)
     output:
         pca = input_path + "/PCA.pdf"
-    conda:
-        "env.yaml"
+    singularity:
+        "rasflow.simg"
     params:
         count_path = count_path,
         output = input_path
@@ -68,8 +68,8 @@ rule combineSamples:
         countF = expand(count_path + "{sample}_countGenes.tsv", sample=samples)
     output:
         groupCount = expand(count_path + "{group}_countsGenes.tsv", group = groups)
-    conda:
-        "env.yaml"
+    singularity:
+        "rasflow.simg"
     params:
         count_path = count_path
     shell:
@@ -83,8 +83,8 @@ rule DEA:
         volcano = output_path + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf",
         dea = output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
         glimma = output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
-    conda:
-        "env.yaml"
+    singularity:
+        "rasflow.simg"
     params:
         output_path = output_path,
         counts_path = count_path + ""
@@ -98,8 +98,8 @@ if TEanalysis == "yes" or TEanalysis==True:
             countT = expand(repeats_path + "/countTables/{sample}_countTE.tsv", sample=samples)
         output:
             pca_repeats = repeats_path +"/PCA_TE.pdf"
-        conda:
-            "env.yaml"  
+        singularity:
+            "rasflow.simg"  
         params:
             count_path = repeats_path + "/countTables/",
             output = repeats_path
@@ -111,8 +111,8 @@ if TEanalysis == "yes" or TEanalysis==True:
             countT = expand(repeats_path + "/countTables/{sample}_countTE.tsv", sample=samples)
         output:
             groupCount = expand(repeats_path + "/countTables/{group}_countsTE.tsv", group = groups)
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow.simg"
         params:
             count_path = repeats_path +"/countTables/"
         shell:
@@ -126,8 +126,8 @@ if TEanalysis == "yes" or TEanalysis==True:
             volcano = repeats_output_path + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf",
             dea = repeats_output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
             glimma = repeats_output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow.simg"
         params:
             output_path = repeats_output_path ,
             counts_path = repeats_path + "/countTables/"

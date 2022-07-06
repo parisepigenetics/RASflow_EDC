@@ -126,8 +126,8 @@ if mapper == "HISAT2":
     rule spliceSites:
         output:
             splicesites = intermediate_path + "/splicesites.txt"
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow.simg"
         shell:
             "hisat2_extract_splice_sites.py {gene_gtf} > {output.splicesites}"
 
@@ -140,8 +140,8 @@ if mapper == "HISAT2":
                 rv = intermediate_path + "/reads/{sample}_rv.fastq.gz"
             output:
                 bam = temp(intermediate_path + "/bam_byName/{sample}.sortByName.bam")
-            conda:
-                "env.yaml"
+            singularity:
+                "rasflow.simg"
             params:
                 index = index_path +"/" + index_base
             benchmark:
@@ -156,8 +156,8 @@ if mapper == "HISAT2":
                 fw = intermediate_path + "/reads/{sample}.fastq.gz"
             output:
                 bam = temp(intermediate_path + "/bam_byName/{sample}.sortByName.bam")
-            conda:
-                "env.yaml"
+            singularity:
+                "rasflow.simg"
             params:
                 index = index_path +"/" + index_base,
             benchmark:
@@ -175,15 +175,15 @@ elif mapper == "STAR":
             output:
                 bam = intermediate_path +"/bam_byName/{sample}.sortByName.bam",
                 counts = intermediate_path + "/bam_byName/{sample}.ReadsPerGene.out.tab"
-            conda:
-                "env.yaml"
+            singularity:
+                "rasflow.simg"
             params:
                 index = index_path,
                 basename = intermediate_path + "/bam_byName/{sample}."
             benchmark:
                 intermediate_path + "/benchmarks/{sample}.star.benchmark.txt"
             shell:
-                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN {config[NCORE]} --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {gene_gtf} --outSAMtype BAM Unsorted --genomeDir {params.index} --readFilesIn  {input.fw} {input.rv} && mv {params.basename}Aligned.out.bam {output.bam}"
+                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN 4 --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {gene_gtf} --outSAMtype BAM Unsorted --genomeDir {params.index} --readFilesIn  {input.fw} {input.rv} && mv {params.basename}Aligned.out.bam {output.bam}"
                   
     else:
         rule star:
@@ -192,15 +192,15 @@ elif mapper == "STAR":
             output:
                 bam = intermediate_path +"/bam_byName/{sample}.sortByName.bam",
                 counts = intermediate_path + "/bam_byName/{sample}.ReadsPerGene.out.tab"
-            conda:
-                "env.yaml"
+            singularity:
+                "rasflow.simg"
             params:
                 index = index_path,
                 basename = intermediate_path + "/bam_byName/{sample}."
             benchmark:
                 intermediate_path + "/benchmarks/{sample}.star.benchmark.txt"
             shell:
-                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN {config[NCORE]} --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {gene_gtf} --outSAMtype BAM Unsorted --genomeDir {params.index} --readFilesIn  {input.fw} && mv {params.basename}Aligned.out.bam {output.bam}"  
+                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN 4 --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {gene_gtf} --outSAMtype BAM Unsorted --genomeDir {params.index} --readFilesIn  {input.fw} && mv {params.basename}Aligned.out.bam {output.bam}"  
 
 ### sort, index the bam and make the bigwig files
 rule sortBam :
@@ -208,8 +208,8 @@ rule sortBam :
         bam = intermediate_path +"/bam_byName/{sample}.sortByName.bam"
     output:
         sort = intermediate_path +"/Sorted_bam/{sample}.sort.bam"
-    conda:
-        "env.yaml"
+    singularity:
+        "rasflow.simg"
     params:
         tmp_folder = "/tmp/RASflow_Hennion_{sample}/"
     shell:
@@ -220,8 +220,8 @@ rule BamIndex:
         sort = intermediate_path + "/Sorted_bam/{sample}.sort.bam"
     output:
         bai = intermediate_path + "/Sorted_bam/{sample}.sort.bam.bai"
-    conda:
-        "env.yaml"
+    singularity:
+        "rasflow.simg"
     shell:
         "samtools index {input.sort}"
 
@@ -232,8 +232,8 @@ if bw_stranded == "yes" or bw_stranded == "both" or bw_stranded==True:
             bai = intermediate_path + "/Sorted_bam/{sample}.sort.bam.bai"
         output:
             bw_fw = final_path + "/bw_str/{sample}_fw.bw"
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow.simg"
         shell:
             "bamCoverage -b {input.sort} --filterRNAstrand forward -o {output.bw_fw} -p max"
             
@@ -243,8 +243,8 @@ if bw_stranded == "yes" or bw_stranded == "both" or bw_stranded==True:
             bai = intermediate_path + "/Sorted_bam/{sample}.sort.bam.bai"
         output:
             bw_rv = final_path + "/bw_str/{sample}_rv.bw"
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow.simg"
         shell:
             "bamCoverage -b {input.sort} --filterRNAstrand reverse -o {output.bw_rv} -p max"
             
@@ -256,8 +256,8 @@ if bw_stranded == "no" or bw_stranded == "both" or bw_stranded==False:
             bai = intermediate_path + "/Sorted_bam/{sample}.sort.bam.bai"
         output:
             bw = final_path + "/bw/{sample}.bw"
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow.simg"
         shell:
             "bamCoverage -b {input.sort} -o {output.bw} -p max"
 
@@ -267,8 +267,8 @@ rule alignmentQC:
         sort = intermediate_path + "/Sorted_bam/{sample}.sort.bam"
     output:
         bamqc = directory(final_path + "/alignmentQC/{sample}_BAMqc")
-    conda:
-        "env.yaml"
+    singularity:
+        "rasflow.simg"
     shell:
         "qualimap bamqc -bam {input.sort} -nt {config[NCORE]} --java-mem-size=6G -outdir {output.bamqc}"
 
@@ -278,8 +278,8 @@ if split :
             sort_name = intermediate_path + "/bam_byName/{sample}.sortByName.bam",
         output:
             temp(directory(intermediate_path + "/{sample}_split"))
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow.simg"
         params:
             prefix = "sortByName"   #-> output: {sample}_split/sortByName_0{i}.bam 
         shell:
@@ -347,8 +347,8 @@ if counter == "featureCounts":
                 counts = counts,
                 whole_table = whole_table, 
                 count_summary = count_summary
-            conda:
-                "env.yaml"
+            singularity:
+                "rasflow.simg"
             params:
                 options = seqtype_dict[seqtype] + " -s " +strand_dict[strand] + " " + count_options,
             shell:
@@ -365,8 +365,8 @@ if counter == "htseq-count":
             counts = counts,
             count_summary = count_summary,
             tmp = htseq_tmp
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow.simg"
         params:
             options = count_options  #### j'ai pas encore testé l'utilisation d'options pour htseq
         shell:
@@ -387,8 +387,8 @@ if TEanalysis == "yes" or TEanalysis==True :
                 TE_gtf = te_gtf
             output:
                 TE_index = final_path +"/repeats_"+counter+"/TE.ind"
-            conda:
-                "env.yaml"
+            singularity:
+                "rasflow.simg"
             shell:
                 "python scripts/TEtranscripts_indexer.py --afile {input.TE_gtf} --itype TE --output {output.TE_index}"
                 
@@ -397,8 +397,8 @@ if TEanalysis == "yes" or TEanalysis==True :
                 gene_gtf = gene_gtf
             output:
                 G_index = final_path +"/repeats_"+counter+"/genes.ind"
-            conda:
-                "env.yaml"
+            singularity:
+                "rasflow.simg"
             shell:
                 "python scripts/TEtranscripts_indexer.py --afile {input.gene_gtf} --itype gene --output {output.G_index}"    
     
@@ -410,8 +410,8 @@ if TEanalysis == "yes" or TEanalysis==True :
             output:
                 countT = count_TE,
                 countG = count_genes
-            conda:
-                "env.yaml"
+            singularity:
+                "rasflow.simg"
             params:
                 ID = ID,
                 table_T =  table_T,
@@ -523,8 +523,8 @@ rule PCA:
         countF = expand(final_path +"/counting_"+counter+"/countTables/{sample}_countGenes.tsv",sample=samples)
     output:
         pca = final_path + "/counting_"+ counter + "/PCA.pdf"
-    conda:
-        "env.yaml"
+    singularity:
+        "rasflow.simg"
     params:
         count_path = final_path + "/counting_"+ counter + "/countTables/",
         output = final_path + "/counting_"+ counter + "/"
@@ -537,8 +537,8 @@ if TEanalysis == "yes" or TEanalysis==True:
             countTE = expand(final_path +"/repeats_"+counter+"/countTables/{sample}_countTE.tsv",sample=samples)
         output:
             pca_repeats = final_path +"/repeats_"+counter+ "/PCA_TE.pdf"
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow.simg"
         params:
             count_path = final_path + "/repeats_"+counter+"/countTables/",
             output = final_path + "/repeats_"+counter+"/"
@@ -552,8 +552,8 @@ if counter == "htseq-count" or counter == "featureCounts":
             bamqc = expand(final_path + "/alignmentQC/{sample}_BAMqc", sample = samples)
         output:
             report = final_path + "/report_align_count_"+counter+".html"
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow.simg"
         shell:
             "multiqc {input.bamqc} {input.countF} --filename {output.report}"
 
@@ -564,8 +564,8 @@ if counter =="STARcount":
             bamqc = expand(final_path + "/alignmentQC/{sample}_BAMqc", sample = samples)
         output:
             report = final_path + "/report_align_count_"+counter+".html"
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow.simg"
         params:
             mapping = intermediate_path + "/bam_byName/",
         shell:
