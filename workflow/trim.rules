@@ -70,8 +70,9 @@ if end == "pair":
             "env.yaml"
         shell:
             """
-            trim_galore {options} --fastqc --j 4 --paired --basename {wildcards.sample} -o {intermediate_path} {input.fw} {input.rv} && rename _val_1 _R1_trimmed {intermediate_path}/{wildcards.sample}*  
-            rename _val_2 _R2_trimmed {intermediate_path}/{wildcards.sample}* 
+            trim_galore {options} --fastqc --j 4 --paired --basename {wildcards.sample} -o {intermediate_path} {input.fw} {input.rv}
+            rename 's/\_val_1/\_R1_trimmed/' {intermediate_path}/{wildcards.sample}*    # rename 's/\.DAT/\.dat/' *
+            rename 's/\_val_2/\_R2_trimmed/' {intermediate_path}/{wildcards.sample}* 
             """
     
    
@@ -95,7 +96,8 @@ else:
             "env.yaml"        
         shell:
             """
-            trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {intermediate_path} {input.read} && rename _val _trimmed {intermediate_path}/{wildcards.sample}*          
+            trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {intermediate_path} {input.read}
+            rename 's/\_val/\_trimmed/' {intermediate_path}/{wildcards.sample}*          
             """
 
 rule summaryReport:

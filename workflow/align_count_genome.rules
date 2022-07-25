@@ -183,7 +183,7 @@ elif mapper == "STAR":
             benchmark:
                 intermediate_path + "/benchmarks/{sample}.star.benchmark.txt"
             shell:
-                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN {config[NCORE]} --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {gene_gtf} --outSAMtype BAM Unsorted --genomeDir {params.index} --readFilesIn  {input.fw} {input.rv} && mv {params.basename}Aligned.out.bam {output.bam}"
+                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN 4 --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {gene_gtf} --outSAMtype BAM Unsorted --genomeDir {params.index} --readFilesIn  {input.fw} {input.rv} && mv {params.basename}Aligned.out.bam {output.bam}"
                   
     else:
         rule star:
@@ -200,7 +200,7 @@ elif mapper == "STAR":
             benchmark:
                 intermediate_path + "/benchmarks/{sample}.star.benchmark.txt"
             shell:
-                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN {config[NCORE]} --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {gene_gtf} --outSAMtype BAM Unsorted --genomeDir {params.index} --readFilesIn  {input.fw} && mv {params.basename}Aligned.out.bam {output.bam}"  
+                "STAR --readFilesCommand zcat --outFileNamePrefix {params.basename} --runMode alignReads  --runThreadN 4 --quantMode GeneCounts TranscriptomeSAM --sjdbGTFfile {gene_gtf} --outSAMtype BAM Unsorted --genomeDir {params.index} --readFilesIn  {input.fw} && mv {params.basename}Aligned.out.bam {output.bam}"  
 
 ### sort, index the bam and make the bigwig files
 rule sortBam :
