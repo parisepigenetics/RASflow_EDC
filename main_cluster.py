@@ -235,15 +235,15 @@ else:
         print("DEA is done! ("+spend_time(start_time, end_time)+")")
 
         # Visualization can only be done on gene-level
-        if reference == "genome":
-                pass
-        elif reference == "transcriptome":
-                gene_level = config["GENE_LEVEL"]
-                if gene_level:
-                    pass
-                else:
-                    print("Sorry! RASflow currently can only visualize on gene-level")
-                    os._exit(1)
+        #if reference == "genome":
+        #        pass
+        #elif reference == "transcriptome":
+        #        gene_level = config["GENE_LEVEL"]
+        #        if gene_level:
+                #pass
+                #else:
+                 #   print("Sorry! RASflow currently can only visualize on gene-level")
+                  #  os._exit(1)
 
         print("RASflow is done!")
 

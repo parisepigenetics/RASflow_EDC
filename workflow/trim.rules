@@ -112,11 +112,10 @@ rule summaryReport:
     conda:
         "env.yaml"
     params:
-        path = intermediate_path
+        path = final_path + "/fastqc_after_trimming"
     shell:
         """
+        cp {intermediate_path}/*fastqc* {params.path}
+        cp {intermediate_path}/*report.txt {params.path}
         multiqc {params.path} --filename {output.report}
-        mv {intermediate_path}/*fastqc* {final_path}/fastqc_after_trimming
-        mkdir -p {final_path}/trimming
-        mv {intermediate_path}/*report.txt {final_path}/trimming
         """
