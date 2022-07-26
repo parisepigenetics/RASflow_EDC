@@ -31,16 +31,17 @@ else:
     else: # no triming of a fix number of bases
         options = ""
 
+# add full path for the symlinks
 if input_path[0] != "/": 
     import os
     input_path = os.getcwd()+"/"+input_path
 
 def trimFiles(wildcards):
     if (end == "pair"):
-        forward_trim = expand(intermediate_path + "/{sample}_R1_trimmed.fq.gz", sample = samples)
+        forward_trim = expand(intermediate_path + "/{sample}_R1_clean.fastq.gz", sample = samples)
         return forward_trim
     else:
-        read_trim = expand(intermediate_path + "/{sample}_trimmed.fq.gz", sample = samples)
+        read_trim = expand(intermediate_path + "/{sample}_clean.fastq.gz", sample = samples)
         return read_trim
 
 rule all:
@@ -64,15 +65,17 @@ if end == "pair":
             fw = intermediate_path + "/reads/{sample}_forward.fastq.gz",
             rv = intermediate_path + "/reads/{sample}_reverse.fastq.gz"
         output:
-            shforward = intermediate_path + "/{sample}_R1_trimmed.fq.gz",
-            shreverse = intermediate_path + "/{sample}_R2_trimmed.fq.gz"
+            shforward = intermediate_path + "/{sample}_R1_clean.fastq.gz",
+            shreverse = intermediate_path + "/{sample}_R2_clean.fastq.gz"
         conda:
             "env.yaml"
         shell:
             """
             trim_galore {options} --fastqc --j 4 --paired --basename {wildcards.sample} -o {intermediate_path} {input.fw} {input.rv}
-            rename 's/\_val_1/\_R1_trimmed/' {intermediate_path}/{wildcards.sample}*    # rename 's/\.DAT/\.dat/' *
-            rename 's/\_val_2/\_R2_trimmed/' {intermediate_path}/{wildcards.sample}* 
+            #rename 's/\_val_1.fq/\_R1_clean.fastq/' {intermediate_path}/{wildcards.sample}*    # rename 's/\.DAT/\.dat/' *
+            #rename 's/\_val_2.fq/\_R2_clean.fastq/' {intermediate_path}/{wildcards.sample}* 
+            rename _val_2.fq _R2_clean.fastq {intermediate_path}/{wildcards.sample}*
+            rename _val_1.fq _R1_clean.fastq {intermediate_path}/{wildcards.sample}*
             """
     
    
@@ -91,13 +94,14 @@ else:
         input:
             read = intermediate_path + "/reads/{sample}.fastq.gz"
         output:
-            read_trim = intermediate_path + "/{sample}_trimmed.fq.gz"
+            read_trim = intermediate_path + "/{sample}_clean.fastq.gz"
         conda:
             "env.yaml"        
         shell:
             """
             trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {intermediate_path} {input.read}
-            rename 's/\_val/\_trimmed/' {intermediate_path}/{wildcards.sample}*          
+            #rename 's/\_val.fq/\_clean.fastq/' {intermediate_path}/{wildcards.sample}*        
+            rename _val.fq _clean.fastq {intermediate_path}/{wildcards.sample}*
             """
 
 rule summaryReport:
