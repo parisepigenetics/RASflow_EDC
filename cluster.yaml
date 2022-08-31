@@ -26,7 +26,7 @@ hisat2:
 star:
   mem: 40000
   name: star
-  cpus: 2
+  cpus: 4
 
 alignmentQC:
   mem: 10000
@@ -143,3 +143,18 @@ fastqDump:
   mem: 10000
   name: parallel-fastq-dump
   cpus: 4
+  
+indexTrans:
+  mem: 10000
+  name: salmon_index
+  cpus: 8
+  
+quantify:
+  mem: 10000
+  name: salmon_quant
+  cpu: 8
+
+combineSamples:
+  mem: 5000
+  name: combine_trans
+  

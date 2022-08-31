@@ -41,17 +41,25 @@ def check_configuration(yaml_file):
     if (config["MAPPING"] == 'yes' or config["MAPPING"] == True):  # check reference files
         if config["ALIGNER"] == "HISAT2":
             if len(config["INDEXBASE"].split('/')) > 1: 
-                print("Error: The index base is not a path but the prefix of the index files for HISAT2, ie 'genome' if the index files are named 'genome.1.ht2', 'genome.2.ht2', ...")
+                print("Error in the configuration file 'config_main.yaml'.\nThe index base should not be a path but the prefix of the index files for HISAT2, ie 'genome' if the index files are named 'genome.1.ht2', 'genome.2.ht2', ...")
                 error = True
             if not path.exists(config["INDEXPATH"]+'/'+config["INDEXBASE"]+".1.ht2"):
-                print("Error: Index files "+config["INDEXPATH"]+'/'+config["INDEXBASE"]+".xx.ht2 not found. Please check your configuration file (keys INDEXPATH and INDEXBASE).") 
+                print("Error in the configuration file 'config_main.yaml'.\nIndex files "+config["INDEXPATH"]+'/'+config["INDEXBASE"]+".xx.ht2 not found. Please check your configuration file (keys INDEXPATH and INDEXBASE).") 
                 error = True
         else : 
             if not path.exists(config["INDEXPATH"]): 
-                print("Error: STAR index folder "+config["INDEXPATH"]+" not found. Please check your configuration file (key INDEXPATH).")               
+                print("Error in the configuration file 'config_main.yaml'.\nSTAR index folder "+config["INDEXPATH"]+" not found. Please check your configuration file (key INDEXPATH).")               
                 error = True
         if not path.exists(config["ANNOTATION"]):
-            print("Error: Annotation file "+config["ANNOTATION"]+" not found. Please check your configuration file (key ANNOTATION).")
+            print("Error in the configuration file 'config_main.yaml'.\nAnnotation file "+config["ANNOTATION"]+" not found. Please check your configuration file (key ANNOTATION).")
             error = True
+            
+        if config["REPEATS"] == "yes" or config["REPEATS"] ==True: 
+            if config["COUNTER"] not in ["featureCounts", "TEcount"]: 
+                print("Error in the configuration file 'config_main.yaml'.\nRepeat analysis is only possible with featureCounts or TEcount (key COUNTER).")
+                error=True
+            if not path.exists(config["GTFTE"]): 
+                print("Error in the configuration file 'config_main.yaml'.\nGTFTE "+config["GTFTE"]+" not found. Please check your configuration file (key GTFTE).")               
+                error = True
             
     return error

@@ -3,23 +3,22 @@
 ################################ Slurm options #################################
 
 ### Job name
-#SBATCH --job-name=Unlock
+#SBATCH --job-name=STARindex
 
 ### Limit run time "days-hours:minutes:seconds"
 #SBATCH --time=24:00:00
 
 ### Requirements
-#SBATCH --partition=fast
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-##SBATCH --mem-per-cpu=8GB
+#SBATCH --partition=ipop-up
+#SBATCH --cpus-per-task=20
+#SBATCH --mem-per-cpu=10GB
 
 ### Email
 ##SBATCH --mail-user=email@address
 ##SBATCH --mail-type=ALL
 
 ### Output
-#SBATCH --output=Unlock-%j.out
+#SBATCH --output=STARindex-%j.out
 
 ################################################################################
 
@@ -32,13 +31,18 @@ echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
 
+start0=`date +%s`
+
 # modules loading
-module load snakemake/5.7.4 python slurm-drmaa
+module load star/2.7.5a
 
-# unlock 
-snakemake --unlock --drmaa -s workflow/quality_control.rules
+# index hg38 with star
+STAR  --runThreadN 20 --runMode genomeGenerate --genomeDir $2 --genomeFastaFiles $1
 
-mkdir -p slurm_output
-mv Unlock-* slurm_output
 
-echo "Working directory unlocked"
+echo '########################################'
+echo 'Job finished' $(date --iso-8601=seconds)
+end=`date +%s`
+runtime=$((end-start0))
+minute=60
+echo "---- Total runtime $runtime s ; $((runtime/minute)) min ----"
