@@ -116,7 +116,7 @@ PAIR: no  # Is this a pair test or not? (yes or no). For instance 2 samples from
 
 ## the comparison(s) you want to do. If multiple comparisons, specify each pair (CONTROL & TREAT) in order respectively
 CONTROL: ["J0_WT","J0_WT","J10_WT","J0_KO"]
-TREAT: ["J0_KO","J10_WT","J10_KO","J10_KO"
+TREAT: ["J0_KO","J10_WT","J10_KO","J10_KO"]
 ## length of 'CONTROL' should agree with that of 'TREAT'
 ## what you fill in there should agree with the "group" column in metadata.tsv
 
