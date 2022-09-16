@@ -267,7 +267,7 @@ if returned_output == b'' :
     print("There were no errors ! It's time to look at your results, enjoy!")
 else :
     decode = returned_output.decode("utf-8")
-    print(decode.replace(".txt",".txt\t"))
+    print(decode.replace(".txt",".txt\t"))  # make the output readable
 # Save logs
 os.makedirs("logs", exist_ok=True)
 os.system("cp "+LogPath+time_string+"* logs/")
