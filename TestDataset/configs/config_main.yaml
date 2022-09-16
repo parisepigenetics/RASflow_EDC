@@ -1,4 +1,4 @@
-# Please check the parameters, and adjust them according to your circumstance
+# Please check the parameters, and adjust them according to your needs
 
 # Project name
 PROJECT: Test1
@@ -6,10 +6,14 @@ PROJECT: Test1
 # ================== Control of the workflow ==================
 
 ## Do you want to download FASTQ files from public from Sequence Read Archive (SRA) ? 
-SRA: no # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
+SRA: no # "yes" or "no". 
+# If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. 
+# In order to run the rest of the workflow, you have to set it to "no".
 
 ## Do you need to do quality control?
-QC: no  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
+QC: yes  # "yes" or "no". 
+# If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. 
+# In order to run the rest of the workflow, you have to set it to "no".
 
 ## Do you need to do trimming?
 TRIMMED: yes  # "yes" or "no"? 
