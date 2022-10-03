@@ -161,7 +161,7 @@ def main(time_string, server):
             f.write(message)
             
 
-    if dea=='yes':
+    if dea=='yes' and reference == "genome":
         if fromcounts != "no" and fromcounts != False: 
             outpath = "fromExternalCounts"
         else:
