@@ -101,7 +101,7 @@ else:
             """
             trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {intermediate_path} {input.read}
             #rename 's/\_val.fq/\_clean.fastq/' {intermediate_path}/{wildcards.sample}*        
-            rename _val.fq _clean.fastq {intermediate_path}/{wildcards.sample}*
+            rename _trimmed.fq _clean.fastq {intermediate_path}/{wildcards.sample}*
             """
 
 rule summaryReport:
