@@ -23,22 +23,12 @@ rule end:
     input:
         report = final_path + "/fastqc/report_quality_control.html", 
         cat_logs = catlogs
-        
-rule download_singularity_img:
+              
+rule download_singularity_img: 
     output: 
-        singularity_folder + "/rasflowedc.simg_latest.sif"
-    shell: 
-        """
-        singularity pull --arch amd64 --dir {singularity_folder} library://kirsho/rasflowedc/rasflowedc.simg:latest
-        """
-        
-rule link_singularity_img: 
-    input: 
-        singularity_folder + "/rasflowedc.simg_latest.sif"
-    output: 
-        "rasflow.simg"
+        "rasflow_edc.simg"
     shell:
-        "ln -s {input} {output}"
+        "wget https://zenodo.org/record/7267598/files/rasflow_edc.simg"
         
         
 if end == "pair":
@@ -47,12 +37,12 @@ if end == "pair":
     
         rule fastqDump:
             input: 
-                "rasflow.simg"
+                "rasflow_edc.simg"
             output:
                 fastq_R1 = input_path + "/{sample}_R1.fastq.gz",
                 fastq_R2 = input_path + "/{sample}_R2.fastq.gz"
             singularity:
-                "rasflow.simg"
+                "rasflow_edc.simg"
             params:
                 file_1 = input_path + "/{sample}_1.fastq.gz",
                 file_2 = input_path + "/{sample}_2.fastq.gz"
@@ -77,14 +67,14 @@ if end == "pair":
             
     rule qualityControl:
         input:
-            "rasflow.simg",
+            sing = "rasflow_edc.simg",
             fw = input_path + "/{sample}_R1.fastq.gz",
             rv = input_path + "/{sample}_R2.fastq.gz"
         output:
             fastqc_fw = final_path + "/fastqc/{sample}_R1_fastqc.html",
             fastqc_rv = final_path + "/fastqc/{sample}_R2_fastqc.html"
         singularity:
-            "rasflow.simg"
+            "rasflow_edc.simg"
         params:
             outputpath = final_path + "/fastqc"
         shell:
@@ -98,7 +88,7 @@ if end == "pair":
             report = final_path + "/fastqc/report_quality_control.html",
             folder = directory(final_path + "/fastqc/report_quality_control_data")
         singularity:
-            "rasflow.simg"
+            "rasflow_edc.simg"
         params:
             path = final_path + "/fastqc"
         shell:
@@ -110,11 +100,11 @@ else:
     
         rule fastqDump:
             input: 
-                "rasflow.simg"
+                "rasflow_edc.simg"
             output:
                 fastq = input_path + "/{sample}.fastq.gz"         
             singularity:
-                "rasflow.simg"
+                "rasflow_edc.simg"
             log: 
                 input_path + "/{sample}.log"
             shell:
@@ -134,12 +124,12 @@ else:
             
     rule qualityControl:
         input:
-            "rasflow.simg",
+            sing = "rasflow_edc.simg",
             fastq = input_path + "/{sample}.fastq.gz"
         output:
             fastqc = final_path + "/fastqc/{sample}_fastqc.html"
         singularity:
-            "rasflow.simg"
+            "rasflow_edc.simg"
         params:
             outputpath = final_path + "/fastqc"
         shell:
@@ -152,7 +142,7 @@ else:
             report = final_path + "/fastqc/report_quality_control.html",
             folder = directory(final_path + "/fastqc/report_quality_control_data")
         singularity:
-            "rasflow.simg"
+            "rasflow_edc.simg"
         params:
             path = final_path + "/fastqc"
         shell:

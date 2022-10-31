@@ -48,14 +48,20 @@ rule all:
         dea = output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
         glimma = output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
 
+rule download_singularity_img: 
+    output: 
+        "rasflow_edc.simg"
+    shell:
+        "wget https://zenodo.org/record/7267598/files/rasflow_edc.simg"
        
 rule PCA:
     input:
+        sing = "rasflow_edc.simg",
         countF = expand(count_path +"{sample}_countGenes.tsv", sample=samples)
     output:
         pca = input_path + "/PCA.pdf"
     singularity:
-        "rasflow.simg"
+        "rasflow_edc.simg"
     params:
         count_path = count_path,
         output = input_path
@@ -65,11 +71,12 @@ rule PCA:
         
 rule combineSamples:
     input:
+        sing = "rasflow_edc.simg",
         countF = expand(count_path + "{sample}_countGenes.tsv", sample=samples)
     output:
         groupCount = expand(count_path + "{group}_countsGenes.tsv", group = groups)
     singularity:
-        "rasflow.simg"
+        "rasflow_edc.simg"
     params:
         count_path = count_path
     shell:
@@ -84,7 +91,7 @@ rule DEA:
         dea = output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
         glimma = output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
     singularity:
-        "rasflow.simg"
+        "rasflow_edc.simg"
     params:
         output_path = output_path,
         counts_path = count_path + ""
@@ -99,7 +106,7 @@ if TEanalysis == "yes" or TEanalysis==True:
         output:
             pca_repeats = repeats_path +"/PCA_TE.pdf"
         singularity:
-            "rasflow.simg"  
+            "rasflow_edc.simg"
         params:
             count_path = repeats_path + "/countTables/",
             output = repeats_path
@@ -112,7 +119,7 @@ if TEanalysis == "yes" or TEanalysis==True:
         output:
             groupCount = expand(repeats_path + "/countTables/{group}_countsTE.tsv", group = groups)
         singularity:
-            "rasflow.simg"
+            "rasflow_edc.simg"
         params:
             count_path = repeats_path +"/countTables/"
         shell:
@@ -127,7 +134,7 @@ if TEanalysis == "yes" or TEanalysis==True:
             dea = repeats_output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
             glimma = repeats_output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
         singularity:
-            "rasflow.simg"
+            "rasflow_edc.simg"
         params:
             output_path = repeats_output_path ,
             counts_path = repeats_path + "/countTables/"

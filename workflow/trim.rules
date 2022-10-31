@@ -47,6 +47,12 @@ rule all:
     input:
         report = final_path + "/fastqc_after_trimming/report_quality_control_after_trimming.html"
 
+rule download_singularity_img: 
+    output: 
+        "rasflow_edc.simg"
+    shell:
+        "wget https://zenodo.org/record/7267598/files/rasflow_edc.simg"
+        
 if end == "pair":
     rule getReads:
         output:
@@ -61,13 +67,14 @@ if end == "pair":
 
     rule trim:
         input:
+            "rasflow_edc.simg",
             fw = intermediate_path + "/reads/{sample}_forward.fastq.gz",
             rv = intermediate_path + "/reads/{sample}_reverse.fastq.gz"
         output:
             shforward = intermediate_path + "/{sample}_R1_trimmed.fq.gz",
             shreverse = intermediate_path + "/{sample}_R2_trimmed.fq.gz"
         singularity:
-            "rasflow.simg"
+            "rasflow_edc.simg"
         shell:
             """
             trim_galore {options} --fastqc --j 4 --paired --basename {wildcards.sample} -o {intermediate_path} {input.fw} {input.rv}
@@ -89,11 +96,12 @@ else:
             
     rule trimS:
         input:
+            "rasflow_edc.simg",
             read = intermediate_path + "/reads/{sample}.fastq.gz"
         output:
             read_trim = intermediate_path + "/{sample}_trimmed.fq.gz"
         singularity:
-            "rasflow.simg"        
+            "rasflow_edc.simg"       
         shell:
             """
             trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {intermediate_path} {input.read}
@@ -106,7 +114,7 @@ rule summaryReport:
     output:
         report = final_path + "/fastqc_after_trimming/report_quality_control_after_trimming.html"
     singularity:
-        "rasflow.simg"
+        "rasflow_edc.simg"
     shell:
         """
         cp {intermediate_path}/*fastqc* {final_path}/fastqc_after_trimming
