@@ -66,7 +66,15 @@ TRIM3: no # integer or "no", remove N bp from the 3' end of reads AFTER adapter/
 # ================== Configuration for quantification using transcriptome ==================
 
 ## transcriptome file
-TRANS: /shared/.. # not yet implemented
+TRANS: /shared/banks/homo_sapiens/hg38/transcriptome/gencode.v41.transcripts.fa # tests on going
+
+## Do you need to do gene-level differential expression analysis?
+GENE_LEVEL: TRUE  # TRUE or FALSE. If FALSE, ignore the following 3 parameters.
+## If TRUE, specify the corresponding dataset in ENSEMBL for your interested organism or provide your own tx2gene
+ENSEMBL: TRUE  # TRUE or FALSE. Specify whether you're using transcriptome from Ensembl 
+EnsemblDataSet: hsapiens_gene_ensembl  # only if ENSEMBL was set to TRUE. Search for your dataset in the file EnsemblDataSet_look_up_table.csv 
+## If you're not using ENSEMBL, you have to provide your homemade tx2gene file (two columns, 1st col: transcript ID; 2nd col: gene ID)
+TX2GENE: tx2gene_custom.tsv  # only if ENSEMBL was set to FALSE
 
 # ================== Configuration for alignment to genome and feature count ==================
 
@@ -111,7 +119,7 @@ PAIR: no  # Is this a pair test or not? (yes or no). For instance 2 samples from
 
 ## the comparison(s) you want to do. If multiple comparisons, specify each pair (CONTROL & TREAT) in order respectively
 CONTROL: ["J0_WT","J0_WT","J10_WT","J0_KO"]
-TREAT: ["J0_KO","J10_WT","J10_KO","J10_KO"
+TREAT: ["J0_KO","J10_WT","J10_KO","J10_KO"]
 ## length of 'CONTROL' should agree with that of 'TREAT'
 ## what you fill in there should agree with the "group" column in metadata.tsv
 

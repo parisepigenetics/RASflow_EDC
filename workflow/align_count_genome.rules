@@ -104,8 +104,8 @@ rule download_singularity_img:
 if seqtype == "pair":
     rule getReads:
         output:
-            fw = intermediate_path + "/reads/{sample}_fw.fastq.gz",
-            rv = intermediate_path + "/reads/{sample}_rv.fastq.gz"
+            fw = temp(intermediate_path + "/reads/{sample}_fw.fastq.gz"),
+            rv = temp(intermediate_path + "/reads/{sample}_rv.fastq.gz")
         params:
             key = key,
             input_path = input_path
@@ -182,7 +182,7 @@ elif mapper == "STAR":
                 fw = intermediate_path + "/reads/{sample}_fw.fastq.gz",
                 rv = intermediate_path + "/reads/{sample}_rv.fastq.gz"
             output:
-                bam = intermediate_path +"/bam_byName/{sample}.sortByName.bam",
+                bam = temp(intermediate_path +"/bam_byName/{sample}.sortByName.bam"),
                 counts = intermediate_path + "/bam_byName/{sample}.ReadsPerGene.out.tab"
             singularity:
                 "rasflow_edc.simg"
@@ -200,7 +200,7 @@ elif mapper == "STAR":
                 sing = "rasflow_edc.simg",
                 fw = intermediate_path + "/reads/{sample}.fastq.gz"
             output:
-                bam = intermediate_path +"/bam_byName/{sample}.sortByName.bam",
+                bam = temp(intermediate_path +"/bam_byName/{sample}.sortByName.bam"),
                 counts = intermediate_path + "/bam_byName/{sample}.ReadsPerGene.out.tab"
             singularity:
                 "rasflow_edc.simg"

@@ -1,0 +1,99 @@
+import pandas as pd
+configfile: "config_ongoing_run.yaml"
+
+samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
+trimmed = config["TRIMMED"]
+if trimmed:
+    input_path = config["BIGDATAPATH"] + "/" + config["PROJECT"] + "/trimming"
+else:
+    input_path = config["READSPATH"]
+key = config["KEY"]
+seqtype = config["END"]
+intermediate_path = config["BIGDATAPATH"] + "/" + config["PROJECT"] + "/Salmon"
+final_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/Salmon"
+
+# add full path for the symlinks
+if input_path[0] != "/": 
+    import os
+    input_path = os.getcwd()+"/"+input_path
+
+rule end:
+    input:
+        report = final_path + "/report_quantify.html"
+
+### get reads (for now simlink, could be removed / replaced by copy of the files)            
+if seqtype == "pair":
+    rule getReads:
+        output:
+            fw = intermediate_path + "/reads/{sample}_fw.fastq.gz",
+            rv = intermediate_path + "/reads/{sample}_rv.fastq.gz"
+        params:
+            input_path = input_path
+        shell:
+            """
+            ln -s {params.input_path}/{wildcards.sample}_*R1*.f*q.gz {output.fw}
+            ln -s {params.input_path}/{wildcards.sample}_*R2*.f*q.gz {output.rv}
+            """
+else:
+    rule getReads:
+        output:
+            read = intermediate_path + "/reads/{sample}.fastq.gz"
+        params:
+            key = key,
+            input_path = input_path
+        run:
+            shell("ln -s {params.input_path}/{wildcards.sample}_*.f*q.gz {output.read}")            
+            
+            
+rule indexTrans:
+    input:
+        trans = config["TRANS"]
+    output:
+        index = directory(intermediate_path + "/transcripts_index")
+    conda:
+        "env.yaml"
+    shell:
+        "salmon index -t {input} -i {output} -k 31 -p 8"   # k=length of the kmers (default)
+
+if seqtype == "pair":
+    rule quantify:
+        input:
+            fw = intermediate_path + "/reads/{sample}_fw.fastq.gz",
+            rv = intermediate_path + "/reads/{sample}_rv.fastq.gz",
+            index = intermediate_path + "/transcripts_index"
+        output:
+            quant_dir = directory(final_path + "/quantification/{sample}"),
+            tpm = final_path + "/tpmFile/{sample}_tpm.tsv"
+        conda:
+            "env.yaml"
+        shell:
+            """
+            salmon quant -i {input.index} -l A -1 {input.fw} -2 {input.rv} -o {output.quant_dir} -p 8 --seqBias --useVBOpt --validateMappings
+            awk 'NR==1{{next}}{{print $1"\\t"$4}}' {output.quant_dir}/quant.sf > {output.tpm}
+            """
+else:
+    rule quantify:
+        input:
+            read = temp(intermediate_path + "/reads/{sample}.fastq.gz"),
+            index = intermediate_path + "/transcripts_index"
+        output:
+            quant_dir = directory(final_path + "/quantification/{sample}"),
+            tpm = final_path + "/tpmFile/{sample}_tpm.tsv"
+        conda:
+            "env.yaml"
+        shell:
+            """
+            salmon quant -i {input.index} -l A -r {input.read} -o {output.quant_dir} -p 8 --seqBias --useVBOpt --validateMappings
+            awk 'NR==1{{next}}{{print $1"\\t"$4}}' {output.quant_dir}/quant.sf > {output.tpm}
+            """
+
+rule summaryReport:
+    input:
+        quant_dir = expand(final_path + "/quantification/{sample}", sample = samples)
+    output:
+        report = final_path + "/report_quantify.html"
+    conda:
+        "env.yaml"
+    shell:
+        "multiqc {input} --filename {output}"
+        
