@@ -1,0 +1,8 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+description: workflow configuration
+required:
+    - PROJECT
+properties:
+  PROJECT:
+    default: 1
+    type: string 
