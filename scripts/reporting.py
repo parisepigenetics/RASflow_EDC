@@ -20,8 +20,9 @@ def main(time_string, server):
     resultpath = config["RESULTPATH"]
     repeats = config["REPEATS"]
     fromcounts = config["FROMCOUNTS"]
-    if fromcounts != "no" and fromcounts != False:
-        repeats = "no"  # repeat analysis is disable when starting from homemade count tables.
+    genelevel = config["GENE_LEVEL"]
+    if (fromcounts != "no" and fromcounts != False) or reference == "transcriptome":
+        repeats = "no"  # repeat analysis is disable when starting from homemade count tables or doing transcriptome analysis. 
     qc = config["QC"]
     sra = config["SRA"]
     if sra == "yes" or sra == True: 
@@ -31,6 +32,63 @@ def main(time_string, server):
         mapping = "disabled"
         dea = "disabled"
         repeats = "disabled"
+        fromcounts = "no"
+    
+    # Define the folders and files that you want in the tar.bz2.
+    ToKeep = ["logs"]	
+    ExtraFiles= ["report_quality_control.html",]
+    
+    # "report_align_count_"+counter+"_data" ?
+    # "report_quality_control_data" ?
+    
+    if trim=='yes' :
+        ExtraFiles = ExtraFiles + ["report_quality_control_after_trimming.html"]
+        
+    if mapping == 'yes': 
+        ExtraFiles = ExtraFiles + ["report_quality_control_after_trimming.html","report_align_count_"+counter+".html", "Heatmap_samples.pdf", "PCA.pdf", "report_quantify.html", "Heatmap_samples_TE.pdf","PCA_TE.pdf"]
+        ToKeep = ToKeep + ["Glimma"]
+        
+    if repeats == 'yes':
+        ExtraFiles= ExtraFiles + ["Heatmap_samples_TE.pdf","PCA_TE.pdf"]
+    
+    if dea == 'yes': 
+        ToKeep = ToKeep + ["Glimma", "plots","regionReport"]
+    
+    if fromcounts != "no" and fromcounts != False:
+        ExtraFiles= ExtraFiles + ["Heatmap_samples.pdf", "PCA.pdf"]
+        
+            ############# Tar.bz2 file ############
+    dirName = resultpath+'/'+project
+    Tar = tarfile.open(dirName+'/'+time_string+'_report.tar.bz2', 'w:bz2')
+    
+    
+    ToKeepSub = []
+    for folderName, subfolders, filenames in os.walk(dirName):
+        if os.path.basename(folderName) in ToKeep:
+            ToKeepSub += subfolders	
+            for filename in filenames:	
+                #create complete filepath of file in directory
+                filePath = os.path.join(folderName, filename)
+                relativePath = filePath.replace(dirName, '')
+                # Add file to tar	
+                Tar.add(filePath, relativePath)	
+        else:	
+            for filename in filenames: 	
+                if filename in ExtraFiles:	
+                    filePath = os.path.join(folderName, filename)	
+                    relativePath = filePath.replace(dirName, '')
+                    # Add file to zip	
+                    Tar.add(filePath, relativePath)	
+                    	
+    for folderName, subfolders, filenames in os.walk(dirName):	
+        if os.path.basename(folderName) in ToKeepSub:
+            for filename in filenames:	
+                #create complete filepath of file in directory	
+                filePath = os.path.join(folderName, filename)	
+                relativePath = filePath.replace(dirName, '')	
+                # Add file to tar	
+                Tar.add(filePath, relativePath)	
+
 
     start_time = time.localtime()
     date_string = time.strftime("%d/%m/%Y", start_time)
@@ -159,13 +217,32 @@ def main(time_string, server):
     <p><embed src= "mapping_{aligner}/repeats_{counter}/Heatmap_samples_TE.pdf" type="application/pdf" width= "700" height= "700"><br></p>
     """
             f.write(message)
-            
+    
+    if mapping =='yes' and reference == "transcriptome":
+        message=f"""
+    <h2 id="quantification">Transcript quantification</h2>
+    <p> Transcript quantification was done using Salmon. </p>
+    <p>Quanfication quality is assessed in <a href="Salmon/report_quantify.html">Salmon/report_quantify.html</a>. </p>
+    <p>Raw quantifications are available in <a href="Salmon/quantification/">Salmon/quantification/</a>.<br></p>
+    <h2 id="exploratory-analysis-of-all-the-samples">Exploratory analysis of all the samples</h2>
+    <p>To assess the quality of the experiment and the reproducibility of the replicates, please use the interactive 
+    <a href="Salmon/Glimma/MDSPlot.html">MDS plot</a>. 
+    <p> <embed type="text/html" src="Salmon/Glimma/MDSPlot.html" width="1000" height="900"> </p>
+    <p>A static <a href="Salmon/PCA.pdf">principal component analysis</a> 
+    for all the samples is also available,  
+    as well as a <a href="Salmon/Heatmap_samples.pdf">heatmap with sample clustering</a>.  </p>
+    <p><embed src= "Salmon/Heatmap_samples.pdf" type="application/pdf" width= "700" height= "700"><br></p>
+    """
+        f.write(message)
+        
 
-    if dea=='yes' and reference == "genome":
+    if dea=='yes' :
+        if reference == "genome":
+            outpath = f"""mapping_{aligner}/counting_{counter}"""
+        elif reference == "transcriptome":
+            outpath = "Salmon"
         if fromcounts != "no" and fromcounts != False: 
             outpath = "fromExternalCounts"
-        else:
-            outpath = f"""mapping_{aligner}/counting_{counter}"""
         if mapping != 'yes':
             message=f"""
     <h2 id="exploratory-analysis-of-all-the-samples">Exploratory analysis of all the samples</h2>
@@ -192,75 +269,62 @@ def main(time_string, server):
             """
 
         f.write(message)
-
+        
+        def export_comparison(out_path, controlGroup, treatGroup, analysis):
+            message=f"""
+            <p><br></p>
+            <h3 id="Comparison-between-{controlGroup}-and-{treatGroup}">Comparison between {controlGroup} and {treatGroup} for {analysis}</h3>
+            <p>The <a href="{out_path}/Report/regionReport/{controlGroup}_{treatGroup}/exploration.html">regionReport exploratory report</a> 
+            is a good start to get an idea of the results.</p> 
+            <p>Glimma interactive <a href="{out_path}/Report/Glimma/MDSPlot_{controlGroup}_{treatGroup}.html">MDS plot</a> 
+            can help you to identify problematic samples.</p>
+            <p> <embed type="text/html" src="{out_path}/Report/Glimma/MDSPlot_{controlGroup}_{treatGroup}.html" width="1000" height="900"> </p>
+            <p>To be easily shared and reused the <a href="{out_path}/Report/plots/PCA_{controlGroup}_{treatGroup}.pdf">PCA</a> 
+            and the 
+            <a href="{out_path}/Report/plots/SampleDistances_{controlGroup}_{treatGroup}.pdf">heatmap with sample clustering </a>
+            are also available as PDF files.  </p> 
+            <p>
+            <embed src= "{out_path}/Report/plots/PCA_{controlGroup}_{treatGroup}.pdf" type="application/pdf" width= "700" height= "700">
+            <embed src= "{out_path}/Report/plots/SampleDistances_{controlGroup}_{treatGroup}.pdf" width= "700" height= "700">
+            </p>
+            <p>DEA result tables (all {analysis} or significantly differentially expressed {analysis}) are stored in 
+            <a href="{out_path}/Tables">{out_path}/Tables</a> [not available in the online report].</p>
+            <p>Importantly, the results can be deeply explored thanks to <b>interactive</b>
+            <a href="{out_path}/Report/Glimma/MDPlot_{controlGroup}_{treatGroup}.html">MD</a>
+            and 
+            <a href="{out_path}/Report/Glimma/Volcano_{controlGroup}_{treatGroup}.html">Volcano</a> 
+            plots.</p>
+            <p> <embed type="text/html" src="{out_path}/Report/Glimma/Volcano_{controlGroup}_{treatGroup}.html" width="1050" height="1000"> </p>
+            <p>A static <a href="{out_path}/Report/plots/volcano_plot_{controlGroup}_{treatGroup}.pdf">Volcano plot</a> 
+            is also available, as well as a 
+            <a href="{out_path}/Report/plots/heatmapTop_{controlGroup}_{treatGroup}.pdf">heatmap of the 30 top-regulated {analysis}</a>. </p>
+            <p>
+            <embed src= "{out_path}/Report/plots/volcano_plot_{controlGroup}_{treatGroup}.pdf" type="application/pdf" width= "700" height= "700">
+            <embed src= "{out_path}/Report/plots/heatmapTop_{controlGroup}_{treatGroup}.pdf" width= "700" height= "700">
+            </p> 
+                """ 
+            f.write(message)
+            
         for compa in zip(control,treat):
             print("Exporting comparison "+str(compa)+"...")
             controlGroup = compa[0]
-            treatGroup = compa[1]
-            message=f"""
-        <p><br></p>
-        <h3 id="Comparison-between-{controlGroup}-and-{treatGroup}">Comparison between {controlGroup} and {treatGroup} for genes</h3>
-        <p>The <a href="{outpath}/DEA_{deatool}/Report/regionReport/{controlGroup}_{treatGroup}/exploration.html">regionReport exploratory report</a> 
-        is a good start to get an idea of the results.</p> 
-        <p>Glimma interactive <a href="{outpath}/DEA_{deatool}/Report/Glimma/MDSPlot_{controlGroup}_{treatGroup}.html">MDS plot</a> 
-        can help you to identify problematic samples.</p>
-        <p> <embed type="text/html" src="{outpath}/DEA_{deatool}/Report/Glimma/MDSPlot_{controlGroup}_{treatGroup}.html" width="1000" height="900"> </p>
-        <p>To be easily shared and reused the <a href="{outpath}/DEA_{deatool}/Report/plots/PCA_{controlGroup}_{treatGroup}.pdf">PCA</a> 
-        and the 
-        <a href="{outpath}/DEA_{deatool}/Report/plots/SampleDistances_{controlGroup}_{treatGroup}.pdf">heatmap with sample clustering </a>
-        are also available as PDF files.  </p> 
-        <p>
-        <embed src= "{outpath}/DEA_{deatool}/Report/plots/PCA_{controlGroup}_{treatGroup}.pdf" type="application/pdf" width= "700" height= "700">
-        <embed src= "{outpath}/DEA_{deatool}/Report/plots/SampleDistances_{controlGroup}_{treatGroup}.pdf" width= "700" height= "700">
-        </p>
-        <p>DEA result tables (all genes or significantly differentially expressed genes) are stored in 
-        <a href="{outpath}/DEA_{deatool}/Tables">{outpath}/DEA_{deatool}/Tables</a> [not available in the online report].</p>
-        <p>Importantly, the results can be deeply explored thanks to <b>interactive</b>
-        <a href="{outpath}/DEA_{deatool}/Report/Glimma/MDPlot_{controlGroup}_{treatGroup}.html">MD</a>
-        and 
-        <a href="{outpath}/DEA_{deatool}/Report/Glimma/Volcano_{controlGroup}_{treatGroup}.html">Volcano</a> 
-        plots.</p>
-        <p> <embed type="text/html" src="{outpath}/DEA_{deatool}/Report/Glimma/Volcano_{controlGroup}_{treatGroup}.html" width="1050" height="1000"> </p>
-        <p>A static <a href="{outpath}/DEA_{deatool}/Report/plots/volcano_plot_{controlGroup}_{treatGroup}.pdf">Volcano plot</a> 
-        is also available, as well as a 
-        <a href="{outpath}/DEA_{deatool}/Report/plots/heatmapTop_{controlGroup}_{treatGroup}.pdf">heatmap of the 30 top-regulated genes</a>. </p>
-        <p>
-        <embed src= "{outpath}/DEA_{deatool}/Report/plots/volcano_plot_{controlGroup}_{treatGroup}.pdf" type="application/pdf" width= "700" height= "700">
-        <embed src= "{outpath}/DEA_{deatool}/Report/plots/heatmapTop_{controlGroup}_{treatGroup}.pdf" width= "700" height= "700">
-        </p> 
-            """ 
-            f.write(message)
-            
-            if repeats == 'yes':
-                message=f"""
-        <h3 id="Comparison-between-{controlGroup}-and-{treatGroup}">Comparison between {controlGroup} and {treatGroup} for repeats</h3>
-        <p>Similar outputs are available for repeat analysis: </p> 
-        <ul>
-        <li><a href="mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Report/regionReport/{controlGroup}_{treatGroup}/exploration.html">regionReport exploratory report</a> </li> 
-        <li><a href="mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Report/plots/PCA_{controlGroup}_{treatGroup}.pdf">PCA</a> </li>
-        <li> <a href="mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Report/plots/SampleDistances_{controlGroup}_{treatGroup}.pdf">Heatmap with sample clustering </a></li> 
-        <p>
-        <embed src= "mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Report/plots/PCA_{controlGroup}_{treatGroup}.pdf" type="application/pdf" width= "700" height= "700">
-        <embed src= "mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Report/plots/SampleDistances_{controlGroup}_{treatGroup}.pdf" width= "700" height= "700">
-        </p>
-        <li>Glimma interactive <a href="mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Report/Glimma/MDSPlot_{controlGroup}_{treatGroup}.html">MDS plot</a> </li>
-        <p> <embed type="text/html" src="mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Report/Glimma/MDSPlot_{controlGroup}_{treatGroup}.html" width="1000" height="900"> </p>
-        <li>DEA result tables (all repeats or significantly differentially expressed repeats), stored in 
-        <a href="mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Tables">mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Tables</a> [not available in the online report]</li>
-        <li>Interactive <a href="mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Report/Glimma/MDPlot_{controlGroup}_{treatGroup}.html">MD plot</a> </li>
-        <li> Interactive <a href="mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Report/Glimma/Volcano_{controlGroup}_{treatGroup}.html">Volcano plot</a> </li>
-        <p> <embed type="text/html" src="mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Report/Glimma/Volcano_{controlGroup}_{treatGroup}.html" width="1050" height="1000"> </p>
-        <li>Static <a href="mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Report/plots/volcano_plot_{controlGroup}_{treatGroup}.pdf">Volcano plot</a> </li>
-        <li><a href="mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Report/plots/heatmapTop_{controlGroup}_{treatGroup}.pdf">Heatmap of the 30 top-regulated repeats</a> </li>
-        </ul>
-        <p>
-        <embed src= "mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Report/plots/volcano_plot_{controlGroup}_{treatGroup}.pdf" type="application/pdf" width= "700" height= "700">
-        <embed src= "mapping_{aligner}/repeats_{counter}/DEA_{deatool}/Report/plots/heatmapTop_{controlGroup}_{treatGroup}.pdf" width= "700" height= "700">
-        </p> 
+            treatGroup = compa[1]    
         
-        """        
-                f.write(message)
-
+            if reference == "transcriptome":
+                if genelevel == True or genelevel == "yes" or genelevel == "TRUE": 
+                    out_path = f"{outpath}/DEA_{deatool}/DEA_gene-level"
+                    export_comparison(out_path, controlGroup, treatGroup, "genes")
+                out_path = f"{outpath}/DEA_{deatool}/DEA_transcript-level"
+                export_comparison(out_path, controlGroup, treatGroup, "transcripts")
+                
+            else: 
+                out_path = f'{outpath}/DEA_{deatool}'
+                export_comparison(out_path, controlGroup, treatGroup, "genes")
+                
+            if repeats == 'yes':
+                out_path = f"mapping_{aligner}/repeats_{counter}/DEA_{deatool}"
+                export_comparison(out_path, controlGroup, treatGroup, "repeats")
+                
     message = """
     </body> 
     </html>
@@ -269,41 +333,6 @@ def main(time_string, server):
 
     f.close()
     
-    dirName = resultpath+'/'+project
-    Tar = tarfile.open(dirName+'/'+time_string+'_report.tar.bz2', 'w:bz2')
-    
-    
+    ## add this report to the tar. 
     Tar.add(dirName+'/'+time_string+'_report.html', time_string+'_report.html')
-    # Define the folders that you want in the tar.bz2.
-    ToKeep = ["fastqc","fastqc_after_trimming", "logs", "report_align_count_"+counter+"_data","Glimma","plots","regionReport"]	
-    ExtraFiles= ["report_quality_control_after_trimming.html","report_align_count_"+counter+".html", "Heatmap_samples.pdf", "PCA.pdf" ]	
-    if repeats == 'yes':
-        ExtraFiles= ExtraFiles + ["Heatmap_samples_TE.pdf","PCA_TE.pdf"]
-    ToKeepSub = []
-    for folderName, subfolders, filenames in os.walk(dirName):
-        if os.path.basename(folderName) in ToKeep:
-            ToKeepSub += subfolders	
-            for filename in filenames:	
-                #create complete filepath of file in directory
-                filePath = os.path.join(folderName, filename)
-                relativePath = filePath.replace(dirName, '')
-                # Add file to tar	
-                Tar.add(filePath, relativePath)	
-        else:	
-            for filename in filenames: 	
-                if filename in ExtraFiles:	
-                    filePath = os.path.join(folderName, filename)	
-                    relativePath = filePath.replace(dirName, '')
-                    # Add file to zip	
-                    Tar.add(filePath, relativePath)	
-                    	
-    for folderName, subfolders, filenames in os.walk(dirName):	
-        if os.path.basename(folderName) in ToKeepSub:
-            for filename in filenames:	
-                #create complete filepath of file in directory	
-                filePath = os.path.join(folderName, filename)	
-                relativePath = filePath.replace(dirName, '')	
-                # Add file to tar	
-                Tar.add(filePath, relativePath)	
-	
     Tar.close()

@@ -59,7 +59,7 @@ def exit_all(exit_code, step, file_main_time, rt, freedisk, LogPath, time_string
     freedisk.close()
     print('Exiting...\n########################################')
     print("---- Errors ----")
-    returned_output = subprocess.check_output(["grep -A 5 -B 5 'error message\|error:\|Errno\|MissingInputException\|SyntaxError' "\
+    returned_output = subprocess.check_output(["grep -A 5 -B 5 'error message\|error:\|Errno\|MissingInputException\|SyntaxError\|Error' "\
         +LogPath+time_string+"*;exit 0"], shell=True)
     if returned_output == b'':
         if exit_code == 0 : 

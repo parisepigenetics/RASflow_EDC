@@ -36,7 +36,12 @@ meta.file <- yaml.file$METAFILE
 ENSEMBL <- yaml.file$ENSEMBL
 dataset <- yaml.file$EnsemblDataSet
 tx2gene.file <- yaml.file$TX2GENE
-output.path <- file.path(yaml.file$RESULTPATH, project, "Salmon/DEA")
+
+
+# passing the params from command line
+args <- commandArgs(TRUE)
+output.path <- args[1]
+
 
 num.control <- length(controls)  # number of comparisons that the user wants to do
 num.treat <- length(treats)  # should equals to num.control

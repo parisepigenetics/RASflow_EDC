@@ -42,7 +42,7 @@ DEA <- function(control, treat) {
   group <- relevel(group, ref = control)
 
   # depending  on the tool:   
- 
+  ########### edgeR  ##########
   if (dea.tool == 'edgeR') {  # use edgeR for DEA
       
    # The design matrix
@@ -108,53 +108,37 @@ DEA <- function(control, treat) {
     if (!is.null(deg)) {
       deg <- deg[order(deg$FDR, -abs(deg$logFC), decreasing = FALSE), ]  # sort the table: ascending of FDR then descending of absolute valued of logFC
     }
-  
-    row.name = F  
-      
-    dds <- as.DESeqDataSet(dds)  
+    
+        # to adjust the outputs to edgeR
+    row.name = F # to write the tables
+    
+    # for Glimma
+    dds <- as.DESeqDataSet(dds) # dds formated for Glimma
     
     res.dea$table$dt <- as.numeric(res.dea$table$PValue<0.05)
     res.dea$table$DE <- ifelse(res.dea$table$dt == 0,0, sign(res.dea$table$logFC))  
+    DE <- res.dea$table$DE
       
     annotation <- data.frame(res.dea$table)  
     annotation$GeneID <- rownames(res.dea$table)
     
-      
-    DE <- res.dea$table$DE
-      ## in case there is no DEG or only Up or Down. 
-    if (nlevels(as.factor(DE)) == 3) {
-       DE <- c("downregulated", "notDE", "upregulated")[as.factor(DE)]
-       cols <- c("blue","red", "grey")
-    }
-    if (nlevels(as.factor(DE)) == 1) {
-       DE <- c("notDE")[as.factor(DE)]
-       cols <- c("grey")
-    }
-    if (nlevels(as.factor(DE)) == 2 && -1 %in% levels(as.factor(DE))) {
-       DE <- c("downregulated","notDE")[as.factor(DE)]
-       cols <- c("red", "grey")
-    }
-    if (nlevels(as.factor(DE)) == 2 && 1 %in% levels(as.factor(DE))) {
-       DE <- c("notDE", "upregulated")[as.factor(DE)]
-       cols <- c("blue", "grey")
-    }   
-      
+    # for glMDPlot
     status <- decideTestsDGE(res.dea)
-      
-    LogFC <- res.dea$table$logFC  
-    Pval <- -log10(res.dea$table$PValue)     
-    xlab <- "LogFC"
-    ylab <- "-Log10(PValue)"
+    count.table.noNA <- normalized_counts 
+    transform <- TRUE  
     
-    # for volcano plots  
+    # for glXYPlot (interactive volcano)
+    LogFC <- res.dea$table$logFC 
+    Pval <- -log10(res.dea$table$PValue)  
+    xlab <- "LogFC" 
+    ylab <- "-Log10(PValue)" 
+    
+    # for static volcano plots  
     x.volc <- 'logFC'
     y.volc <- 'FDR'
-      
-    count.table.noNA <- normalized_counts
-    transform <- TRUE
 
   } 
-    
+  ########### DESeq2  ##########  
   else if (dea.tool == "DESeq2") {  # use DESeq2 for DEA
       
     # The design matrix
@@ -172,8 +156,6 @@ DEA <- function(control, treat) {
     dds <- estimateSizeFactors(dds)
     normalized_counts <- counts(dds, normalized=TRUE)
       
-    write.table(normalized_counts, paste(output.path, 'Tables/', control, '_', treat, '_NormCounts.tsv', sep = ''), quote = FALSE, sep = "\t")
-
     ## Filtering
     if (filter.need==TRUE || filter.need=="yes") {
       keep <- rowSums(counts(dds)) >= 10
@@ -205,43 +187,29 @@ DEA <- function(control, treat) {
       deg <- deg[order(deg$padj, -abs(deg$log2FoldChange), decreasing = FALSE), ]  # sort the table: ascending of padj then descending of absolute valued of logFC
     }
     
-    row.name = T
+    # to adjust the outputs to DESeq2
+    row.name = T # to write the tables
+    
+    # for Glimma
+    status <- as.numeric(res.dea$padj<0.05)
+    DE <- ifelse(status == 0,0, sign(res.dea$log2FoldChange))
       
     annotation <- data.frame(res.dea)  
     annotation$GeneID <- rownames(res.dea)
     
-    status <- as.numeric(res.dea$padj<0.05)
-      
-    DE <- ifelse(status == 0,0, sign(res.dea$log2FoldChange))  
-    if (nlevels(as.factor(DE)) == 3) {
-       DE <- c("downregulated", "notDE", "upregulated")[as.factor(DE)]
-       cols <- c("blue","red", "grey")
-    }
-    if (nlevels(as.factor(DE)) == 1) {
-       DE <- c("notDE")[as.factor(DE)]
-       cols <- c("grey")
-    }
-    if (nlevels(as.factor(DE)) == 2 && -1 %in% levels(as.factor(DE))) {
-       DE <- c("downregulated","notDE")[as.factor(DE)]
-       cols <- c("red", "grey")
-    }
-    if (nlevels(as.factor(DE)) == 2 && 1 %in% levels(as.factor(DE))) {
-       DE <- c("notDE", "upregulated")[as.factor(DE)]
-       cols <- c("blue", "grey")
-    }  
-      
+    # for glMDPlot
+    count.table.noNA <- normalized_counts[rownames(res.dea),]     
+    transform <-FALSE  
+    
+    # for glXYPlot (interactive volcano)
     LogFC <- res.dea$log2FoldChange
     Pval <- -log10(res.dea$padj)
     xlab <- "Log2FC"
-    ylab <- "-Log10(padj)"
+    ylab <- "-Log10(padj)" 
     
-    # for volcano plots  
+    # for static volcano plots  
     x.volc <- 'log2FoldChange'
     y.volc <- 'padj'
-      
-    # for MD plots  
-    count.table.noNA <- normalized_counts[rownames(res.dea),]     
-    transform <-FALSE
       
   }            
       
@@ -262,6 +230,25 @@ DEA <- function(control, treat) {
     glMDSPlot(dds, groups=group,path=paste(output.path, "Report/", sep=""), folder="Glimma",html=html, launch=FALSE)
      
     # MD and volcano plots
+    
+    # in case there is no DEG or only Up or Down. 
+    if (nlevels(as.factor(DE)) == 3) {
+       DE <- c("downregulated", "notDE", "upregulated")[as.factor(DE)]
+       cols <- c("blue","red", "grey")
+    }
+    if (nlevels(as.factor(DE)) == 1) {
+       DE <- c("notDE")[as.factor(DE)]
+       cols <- c("grey")
+    }
+    if (nlevels(as.factor(DE)) == 2 && -1 %in% levels(as.factor(DE))) {
+       DE <- c("downregulated","notDE")[as.factor(DE)]
+       cols <- c("red", "grey")
+    }
+    if (nlevels(as.factor(DE)) == 2 && 1 %in% levels(as.factor(DE))) {
+       DE <- c("notDE", "upregulated")[as.factor(DE)]
+       cols <- c("blue", "grey")
+    }   
+    
     # get Symbols 
     
     annotation$GeneID <- sapply(strsplit(as.character(annotation$GeneID), "\\."),  "[", 1)
@@ -310,7 +297,7 @@ DEA <- function(control, treat) {
         }
         annotation$GeneID <- sapply(annotation$GeneID, simplify_names)    
     }
-        
+    
     anno <- as.data.frame(cbind(annotation$GeneID, DE))      
     
     html <- paste('MDPlot_', control, '_', treat, sep = '')  

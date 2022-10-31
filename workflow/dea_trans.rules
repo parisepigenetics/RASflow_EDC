@@ -3,69 +3,68 @@ import numpy as np
 
 configfile: "config_ongoing_run.yaml"
 
-input_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/Salmon/quantification"
-output_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/Salmon/DEA"
+salmon_path = config["RESULTPATH"] + "/" + config["PROJECT"] + "/Salmon"
+input_path = salmon_path + "/quantification"
+output_path = salmon_path + "/DEA_" + config["DEATOOL"]
+output_transcripts = output_path + "/DEA_transcript-level/"
+output_genes = output_path + "/DEA_gene-level/"
 samples = np.array(pd.read_table(config["METAFILE"], header = 0)['sample'])
 groups = np.unique(np.array(pd.read_table(config["METAFILE"], header = 0)['group']))
-gene_level = config["GENE_LEVEL"]
 control = config["CONTROL"][0]
 treat = config["TREAT"][0]
+gene_level = config["GENE_LEVEL"]
 
-if gene_level:
-    rule end:
-        input:
-            degTrans = output_path + "/DEA_transcript-level/" + "deg_" + control + "_" + treat + ".tsv",
-            degGene = output_path + "/DEA_gene-level/" + "deg_" + control + "_" + treat + ".tsv"
-
-    rule combineSamples:
-        input:
-            sampleCount = expand(input_path + "/{sample}/quant.sf", sample = samples),
-            metafile = config["METAFILE"]
-        output:
-            groupCountTrans = expand(output_path + "/countGroup/{group}_trans_norm.tsv", group = groups),
-            groupCountGene = expand(output_path + "/countGroup/{group}_gene_norm.tsv", group = groups)
-        conda:
-            "env.yaml"
-        shell:
-            "Rscript scripts/combine2group_trans.R"
-
-    rule DEA:
-        input:
-            groupCountTrans = expand(output_path + "/countGroup/{group}_trans_norm.tsv", group = groups),
-            groupCountGene = expand(output_path + "/countGroup/{group}_gene_norm.tsv", group = groups)
-        output:
-            deaTrans = output_path + "/DEA_transcript-level/" + "dea_" + control + "_" + treat + ".tsv", 
-            degTrans = output_path + "/DEA_transcript-level/" + "deg_" + control + "_" + treat + ".tsv",
-            deaGene = output_path + "/DEA_gene-level/" + "dea_" + control + "_" + treat + ".tsv", 
-            degGene = output_path + "/DEA_gene-level/" + "deg_" + control + "_" + treat + ".tsv"
-        conda:
-            "env.yaml"
-        shell:
-            "Rscript scripts/dea_trans.R"
-
+if gene_level== "yes" or gene_level==True: 
+    degGene = output_genes + "Tables/deg_" + control + "_" + treat + ".tsv"  # necessary to create the DEA_gene-level folder if gene level analysis
+    volcGene = output_genes + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf"
+    glimmaGene = output_genes + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
 else: 
-    rule end:
-        input:
-            degTrans = output_path + "/DEA_transcript-level/" + "deg_" + control + "_" + treat + ".tsv"
+    degGene = []
+    volcGene = []
+    glimmaGene = []
 
-    rule combineSamples:
-        input:
-            sampleCount = expand(input_path + "/{sample}/quant.sf", sample = samples),
-            metafile = config["METAFILE"]
-        output:
-            groupCountTrans = expand(output_path + "/countGroup/{group}_trans_norm.tsv", group = groups)
-        conda:
-            "env.yaml"
-        shell:
-            "Rscript scripts/combine2group_trans.R"
+rule end:
+    input:
+        pca = salmon_path + "/PCA.pdf",
+        degTrans = output_transcripts + "Tables/deg_" + control + "_" + treat + ".tsv",
+        volcTrans = output_transcripts + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf",
+        glimmaTrans = output_transcripts + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html",
+        degGene = degGene,
+        volcGene = volcGene, 
+        glimmaGene = glimmaGene
+        
+      
+rule PCA:
+    output:
+        pca = salmon_path + "/PCA.pdf"
+    conda:
+        "env.yaml"
+    shell:
+        "Rscript scripts/pca_trans.R {input_path} {salmon_path}"
+        
+        
+rule combineSamples:
+    input:
+        sampleCount = expand(input_path + "/{sample}/quant.sf", sample = samples),
+        metafile = config["METAFILE"]
+    output:
+        groupCountTrans = expand(output_path + "/countGroup/{group}_trans_norm.tsv", group = groups)
+    conda:
+        "env.yaml"
+    shell:
+        "Rscript scripts/combine2group_trans.R {output_path}"
 
-    rule DEA:
-        input:
-            groupCountTrans = expand(output_path + "/countGroup/{group}_trans_norm.tsv", group = groups)
-        output:
-            deaTrans = output_path + "/DEA_transcript-level/" + "dea_" + control + "_" + treat + ".tsv", 
-            degTrans = output_path + "/DEA_transcript-level/" + "deg_" + control + "_" + treat + ".tsv"
-        conda:
-            "env.yaml"
-        shell:
-            "Rscript scripts/dea_trans.R"
+rule DEA:
+    input:
+        groupCountTrans = expand(output_path + "/countGroup/{group}_trans_norm.tsv", group = groups)
+    output:
+        degTrans = output_transcripts + "Tables/deg_" + control + "_" + treat + ".tsv",
+        volcTrans = output_transcripts + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf",
+        glimmaTrans = output_transcripts + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html",
+        degGene = degGene,
+        volcGene = volcGene, 
+        glimmaGene = glimmaGene        
+    conda:
+        "env.yaml"
+    shell:
+        "Rscript scripts/dea_trans.R {output_path}" 

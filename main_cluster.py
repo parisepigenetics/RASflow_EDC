@@ -7,65 +7,17 @@ import sys
 import subprocess
 import scripts.reporting as reporting
 import scripts.check_config as ch
+import scripts.edc_workflows as ew
 import sched
 from datetime import datetime
-from threading import Timer
 import hashlib
 
-class RepeatedTimer(object):   ## to monitore disk usage
-    def __init__(self, interval, function, *args, **kwargs):
-        self._timer     = None
-        self.interval   = interval
-        self.function   = function
-        self.args       = args
-        self.kwargs     = kwargs
-        self.is_running = False
-        self.start()
-
-    def _run(self):
-        self.is_running = False
-        self.start()
-        self.function(*self.args, **self.kwargs)
-
-    def start(self):
-        if not self.is_running:
-            self._timer = Timer(self.interval, self._run)
-            self._timer.start()
-            self.is_running = True
-
-    def stop(self):
-        self._timer.cancel()
-        self.is_running = False
-
-## follow memory usage
-def get_free_disk():
-    quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir+" "+server_command], shell=True)).strip().split()
-    used = quotas[2].split('\\n')[0]
-    unit = used[-1]
-    if unit == 'G' : 
-        remaining=int(total*1024 - float(used[0:-1]))    # modified, /quota and not /limit
-    if unit == 'T': 
-        remaining=int(total*1024 - float(used[0:-1])*1024)
-    time_now= time.localtime()
-    time_now = time.strftime("%Y%m%dT%H%M", time_now)
-    freedisk.write(time_now+'\t'+str(remaining)+'\n')
-    
-
-def spend_time(start_time, end_time):
-    seconds = end_time - start_time
-    hours = seconds // 3600
-    seconds %= 3600
-    minutes = seconds // 60
-    seconds %= 60
-    return "%d:%02d:%02d" % (hours, minutes, seconds)
-        
-        
+      
 # Parameters to control the workflow
 with open('config_ongoing_run.yaml') as yamlfile:
     config = yaml.load(yamlfile,Loader=yaml.BaseLoader)
-    
+# check the configuration file
 config_error = ch.check_configuration('config_ongoing_run.yaml')
-
 if config_error : sys.exit()
     
 project = config["PROJECT"]
@@ -120,17 +72,18 @@ if unit == 'G':
         extra = float(quotas[1].split('G')[0])/1024
         
 freedisk.write("# quota:"+str(total)+"T limit:"+ str(extra)+ "T\ntime\tfree_disk\n")
-rt = RepeatedTimer(60, get_free_disk)        
+rt = ew.RepeatedTimer(60, ew.get_free_disk, total, writting_dir, server_command, freedisk)
 
 # save the configuration
-os.system("(echo && echo \"==========================================\" && echo && echo \"SAMPLE PLAN\") \
-    | cat config_ongoing_run.yaml - "+metadata+" >" + LogPath+time_string+"_configuration.txt")
-os.system("(echo && echo \"==========================================\" && echo && echo \"CONDA ENV\" && echo) \
-    | cat - workflow/env.yaml >>" + LogPath+time_string+"_configuration.txt")
-os.system("(echo && echo \"==========================================\" && echo && echo \"CLUSTER\" && echo) \
-    | cat - cluster.yaml >>" + LogPath+time_string+"_configuration.txt")
-os.system("(echo && echo \"==========================================\" && echo && echo \"VERSION\" && echo) >>" + LogPath+time_string+"_configuration.txt")
-os.system("(git log | head -3) >>" + LogPath+time_string+"_configuration.txt")
+subprocess.call("(echo && echo \"==========================================\" && echo && echo \"SAMPLE PLAN\") \
+    | cat config_ongoing_run.yaml - "+metadata+" >" + LogPath+time_string+"_configuration.txt", shell=True)
+subprocess.call("(echo && echo \"==========================================\" && echo && echo \"CONDA ENV\" && echo) \
+    | cat - workflow/env.yaml >>" + LogPath+time_string+"_configuration.txt", shell=True)
+subprocess.call("(echo && echo \"==========================================\" && echo && echo \"CLUSTER\" && echo) \
+    | cat - cluster.yaml >>" + LogPath+time_string+"_configuration.txt", shell=True)
+subprocess.call("(echo && echo \"==========================================\" && echo && echo \"VERSION\" && echo) \
+    >>" + LogPath+time_string+"_configuration.txt", shell=True)
+subprocess.call("(git log | head -3) >>" + LogPath+time_string+"_configuration.txt", shell=True)
 
 
 # Start the workflow
@@ -171,14 +124,14 @@ if qc!='yes':
     print("Is DEA required? ", dea)
     
     # save the size of the biggest fastq in a txt file using md5 sum to have corresponding samples.
-    os.system("cat "+metadata+" |  awk '{{print $1}}' > "+metadata+".samples.txt")
+    subprocess.call("cat "+metadata+" |  awk '{{print $1}}' > "+metadata+".samples.txt", shell=True)
     with open(metadata+".samples.txt",'rb') as file_to_check:
         data = file_to_check.read()             # read contents of the file
     md5_samples = hashlib.md5(data).hexdigest()      # md5 on file content
     path_file = metadata+"_"+md5_samples+".max_size"
     if not os.path.isfile(path_file):  ## if already there, not touched. So the run can be restarted later without the FASTQ. 
         print("writting "+path_file)
-        os.system("ls -l "+config["READSPATH"]+" | grep -f "+metadata+".samples.txt | awk '{{print $5}}' | sort -nr | head -n1 > "+path_file)
+        subprocess.call("ls -l "+config["READSPATH"]+" | grep -f "+metadata+".samples.txt | awk '{{print $5}}' | sort -nr | head -n1 > "+path_file, shell=True)
 
 else:
     print("The workflow will stop after FASTQ quality control.")
@@ -188,10 +141,14 @@ print("-------------------------\nWorkflow running....")
 if qc=='yes':
         print("Starting FASTQ Quality Control...")
         start_time = time.time()
-        os.system(snakemake_cmd+"-s workflow/quality_control.rules 2> " + LogPath+time_string+"_quality_control.txt")
+        exit_code = subprocess.call(snakemake_cmd+"-s workflow/quality_control.rules 2> " + LogPath+time_string+"_quality_control.txt", shell=True)
+        if exit_code != 0 : 
+            print("Error during quality control; exit code: ", exit_code)
+            ew.exit_all(exit_code, "quality control", file_main_time, rt, freedisk, LogPath, time_string)
+                        
         end_time = time.time()
-        file_main_time.write("Time of running QC: " + spend_time(start_time, end_time) + "\n")
-        print("FASTQ quality control is done! ("+spend_time(start_time, end_time)+")\n \
+        file_main_time.write("Time of running QC: " + ew.spend_time(start_time, end_time) + "\n")
+        print("FASTQ quality control is done! ("+ew.spend_time(start_time, end_time)+")\n \
               Please check the report and decide whether trimming is needed or not.\n \
               To run the rest of the analysis, please remember to turn off the QC in the configuration file.")
 
@@ -199,51 +156,55 @@ else:
     if trim=='yes':
         print("Starting Trimming...")
         start_time = time.time()
-        os.system(snakemake_cmd+"-s workflow/trim.rules 2> " + LogPath+time_string+"_trim.txt")
+        exit_code = subprocess.call(snakemake_cmd+"-s workflow/trim.rules 2> " + LogPath+time_string+"_trim.txt", shell=True)
+        if exit_code != 0 : 
+            print("Error during trimming; exit code: ", exit_code)
+            ew.exit_all(exit_code, "trimming", file_main_time, rt, freedisk, LogPath, time_string)
         end_time = time.time()
-        file_main_time.write("Time of running trimming: " + spend_time(start_time, end_time) + "\n")
-        print("Trimming is done! ("+spend_time(start_time, end_time)+")")
+        file_main_time.write("Time of running trimming: " + ew.spend_time(start_time, end_time) + "\n")
+        print("Trimming is done! ("+ew.spend_time(start_time, end_time)+")")
 
     if mapping =='yes' and reference == "transcriptome":
         print("Starting mapping using ", reference, " as reference...")
         start_time = time.time()
-        os.system(snakemake_cmd+"-s workflow/quantify_trans.rules 2> " + LogPath+time_string+"_quantify_trans.txt")
+        exit_code = subprocess.call(snakemake_cmd+"-s workflow/quantify_trans.rules 2> " + LogPath+time_string+"_quantify_trans.txt", shell=True)
+        if exit_code != 0 : 
+            print("Error during mapping; exit code: ", exit_code)
+            ew.exit_all(exit_code, "mapping", file_main_time, rt, freedisk, LogPath, time_string)
         end_time = time.time()
-        file_main_time.write("Time of running transcripts quantification: " + spend_time(start_time, end_time) + "\n")
-        print("Mapping is done! ("+spend_time(start_time, end_time)+")")
+        file_main_time.write("Time of running transcripts quantification: " + ew.spend_time(start_time, end_time) + "\n")
+        print("Mapping is done! ("+ew.spend_time(start_time, end_time)+")")
 
     if mapping =='yes' and reference == "genome":
         print("Starting mapping using ", reference, " as reference...")
         start_time = time.time()
-        os.system(snakemake_cmd+"-s workflow/align_count_genome.rules 2> " + LogPath+time_string+"_align_count_genome.txt")
+        exit_code = subprocess.call(snakemake_cmd+"-s workflow/align_count_genome.rules 2> " + LogPath+time_string+"_align_count_genome.txt", shell=True)
+        if exit_code != 0 : 
+            print("Error during mapping; exit code: ", exit_code)
+            ew.exit_all(exit_code, "mapping", file_main_time, rt, freedisk, LogPath, time_string)
         end_time = time.time()
-        file_main_time.write("Time of running genome alignment and counting: " + spend_time(start_time, end_time) + "\n")
-        print("Mapping is done! ("+spend_time(start_time, end_time)+")")
+        file_main_time.write("Time of running genome alignment and counting: " + ew.spend_time(start_time, end_time) + "\n")
+        print("Mapping is done! ("+ew.spend_time(start_time, end_time)+")")
 
     if dea=='yes':
         print("Starting differential expression analysis...")
         if reference == "transcriptome":
             start_time = time.time()
-            os.system(snakemake_cmd+"-s workflow/dea_trans.rules 2> " + LogPath+time_string+"_dea_trans.txt")
+            exit_code = subprocess.call(snakemake_cmd+"-s workflow/dea_trans.rules 2> " + LogPath+time_string+"_dea_trans.txt", shell=True)
+            if exit_code != 0 : 
+                print("Error during DEA; exit code: ", exit_code)
+                ew.exit_all(exit_code, "differential expression analysis", file_main_time, rt, freedisk, LogPath, time_string)
             end_time = time.time()
-            file_main_time.write("Time of running DEA transcriptome based: " + spend_time(start_time, end_time) + "\n")
+            file_main_time.write("Time of running DEA transcriptome based: " + ew.spend_time(start_time, end_time) + "\n")
         elif reference == "genome":
             start_time = time.time()
-            os.system(snakemake_cmd+"-s workflow/dea_genome.rules 2> " + LogPath+time_string+"_dea_genome.txt")
+            exit_code = subprocess.call(snakemake_cmd+"-s workflow/dea_genome.rules 2> " + LogPath+time_string+"_dea_genome.txt", shell=True)
+            if exit_code != 0 : 
+                print("Error during DEA; exit code: ", exit_code)
+                ew.exit_all(exit_code, "differential expression analysis", file_main_time, rt, freedisk, LogPath, time_string)
             end_time = time.time()
-            file_main_time.write("Time of running DEA genome based: " + spend_time(start_time, end_time) + "\n")
-        print("DEA is done! ("+spend_time(start_time, end_time)+")")
-
-        # Visualization can only be done on gene-level
-        #if reference == "genome":
-        #        pass
-        #elif reference == "transcriptome":
-        #        gene_level = config["GENE_LEVEL"]
-        #        if gene_level:
-                #pass
-                #else:
-                 #   print("Sorry! RASflow currently can only visualize on gene-level")
-                  #  os._exit(1)
+            file_main_time.write("Time of running DEA genome based: " + ew.spend_time(start_time, end_time) + "\n")
+        print("DEA is done! ("+ew.spend_time(start_time, end_time)+")")
 
         print("RASflow is done!")
 
@@ -252,22 +213,5 @@ else:
 
 # generate the html report
 reporting.main(time_string, server_name)
-
-file_main_time.write("Finish time: " + time.ctime() + "\n")
-file_main_time.close()
-
-rt.stop()
-freedisk.close()
-
-print("########################################")
-print("---- Errors ----")
-returned_output = subprocess.check_output(["grep -A 5 -B 5 'error message\|error:\|Errno\|MissingInputException\|SyntaxError' "\
-    +LogPath+time_string+"*;exit 0"], shell=True)
-if returned_output == b'' :
-    print("There were no errors ! It's time to look at your results, enjoy!")
-else :
-    decode = returned_output.decode("utf-8")
-    print(decode.replace(".txt",".txt\t"))  # make the output readable
-# Save logs
-os.makedirs("logs", exist_ok=True)
-os.system("cp "+LogPath+time_string+"* logs/")
+exit_code = 0
+ew.exit_all(exit_code, '', file_main_time, rt, freedisk, LogPath, time_string)

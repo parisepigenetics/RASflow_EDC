@@ -1,9 +1,14 @@
 import pandas as pd
+from snakemake.utils import validate
+
 configfile: "config_ongoing_run.yaml"
+validate(config, "config.qc.schema.yaml")
 
 key = config["KEY"]
 input_path = config["READSPATH"]
 samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
+# validate samples?
+
 end = config["END"]
 final_path = config["RESULTPATH"] + "/" + config["PROJECT"]
 
