@@ -6,6 +6,7 @@ input_path = config["READSPATH"]
 samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
 end = config["END"]
 final_path = config["RESULTPATH"] + "/" + config["PROJECT"]
+singularity_folder = config["SINGULARITY"]
 
 if input_path[0] != "/": 
     import os
@@ -21,17 +22,26 @@ rule end:
     input:
         report = final_path + "/fastqc/report_quality_control.html", 
         cat_logs = catlogs
+              
+rule download_singularity_img: 
+    output: 
+        "rasflow_edc.simg"
+    shell:
+        "wget https://zenodo.org/record/7267598/files/rasflow_edc.simg"
+        
         
 if end == "pair":
 
     if config["SRA"] == "yes" or config["SRA"] == True: 
     
         rule fastqDump:
+            input: 
+                "rasflow_edc.simg"
             output:
                 fastq_R1 = input_path + "/{sample}_R1.fastq.gz",
                 fastq_R2 = input_path + "/{sample}_R2.fastq.gz"
-            conda:
-                "env.yaml"
+            singularity:
+                "rasflow_edc.simg"
             params:
                 file_1 = input_path + "/{sample}_1.fastq.gz",
                 file_2 = input_path + "/{sample}_2.fastq.gz"
@@ -52,22 +62,18 @@ if end == "pair":
                 catlogs = final_path + "/fastqc/SRA.log"
             shell:
                 "sed -s -e $'$a\\\n-----' {input_path}/*.log > {output.catlogs}" 
-        
-    else: 
-        rule getReads:
-            output:
-                fastq_R1 = input_path + "/{sample}_R1.fastq.gz",
-                fastq_R2 = input_path + "/{sample}_R2.fastq.gz"
+
             
     rule qualityControl:
         input:
+            sing = "rasflow_edc.simg",
             fw = input_path + "/{sample}_R1.fastq.gz",
             rv = input_path + "/{sample}_R2.fastq.gz"
         output:
             fastqc_fw = final_path + "/fastqc/{sample}_R1_fastqc.html",
             fastqc_rv = final_path + "/fastqc/{sample}_R2_fastqc.html"
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow_edc.simg"
         params:
             outputpath = final_path + "/fastqc"
         shell:
@@ -80,8 +86,8 @@ if end == "pair":
         output:
             report = final_path + "/fastqc/report_quality_control.html",
             folder = directory(final_path + "/fastqc/report_quality_control_data")
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow_edc.simg"
         params:
             path = final_path + "/fastqc"
         shell:
@@ -92,10 +98,12 @@ else:
     if config["SRA"] == "yes" or config["SRA"] == True: 
     
         rule fastqDump:
+            input: 
+                "rasflow_edc.simg"
             output:
-                fastq = input_path + "/{sample}.fastq.gz"
-            conda:
-                "env.yaml"           
+                fastq = input_path + "/{sample}.fastq.gz"         
+            singularity:
+                "rasflow_edc.simg"
             log: 
                 input_path + "/{sample}.log"
             shell:
@@ -112,18 +120,15 @@ else:
             shell:
                 "sed -s -e $'$a\\\n-----' {input_path}/*.log > {output.catlogs}" 
         
-    else: 
-        rule getReads:
-            output:
-                fastq = input_path + "/{sample}.fastq.gz"
             
     rule qualityControl:
         input:
+            sing = "rasflow_edc.simg",
             fastq = input_path + "/{sample}.fastq.gz"
         output:
             fastqc = final_path + "/fastqc/{sample}_fastqc.html"
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow_edc.simg"
         params:
             outputpath = final_path + "/fastqc"
         shell:
@@ -135,8 +140,8 @@ else:
         output:
             report = final_path + "/fastqc/report_quality_control.html",
             folder = directory(final_path + "/fastqc/report_quality_control_data")
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow_edc.simg"
         params:
             path = final_path + "/fastqc"
         shell:

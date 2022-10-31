@@ -97,9 +97,14 @@ if server == "ipop-up":
     server_command = "-g"  # group management is different between ifb and ipop-up
     
 # Snakemake command with all options
+#snakemake_cmd = "snakemake -k --cluster-config cluster.yaml --drmaa  \
+#    \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus} "+option+\
+#    " --use-conda --conda-prefix .snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 "
+
 snakemake_cmd = "snakemake -k --cluster-config cluster.yaml --drmaa  \
     \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus} "+option+\
-    " --use-conda --conda-prefix .snakemake/conda/ --cores 300 --jobs="+njobs+" --latency-wait 40 "
+    " --use-singularity --cores 300 --jobs="+njobs+" --latency-wait 40 "
+
 
 # Monitore disk usage    
 try: writting_dir = resultpath.split('projects')[1].split('/')[1]
