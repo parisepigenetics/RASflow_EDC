@@ -11,7 +11,6 @@ samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
 
 end = config["END"]
 final_path = config["RESULTPATH"] + "/" + config["PROJECT"]
-singularity_folder = config["SINGULARITY"]
 
 if input_path[0] != "/": 
     import os
