@@ -17,7 +17,7 @@
 #SBATCH --partition=ipop-up
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem-per-cpu=10GB
+#SBATCH --mem-per-cpu=1GB
 
 ### Email
 ##SBATCH --mail-user=email@address
@@ -33,7 +33,7 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_EDC version: v0.7.5, on iPOP-UP cluster'
+echo 'RASflow_EDC version: v0.7.6, on iPOP-UP cluster'
 echo '-------------------------'
 echo 'Main module versions:'
 
@@ -44,7 +44,7 @@ start0=`date +%s`
 module purge
 module load snakemake/7.7.0
 
-conda --version
+#conda --version
 python --version
 echo 'snakemake' && snakemake --version
 

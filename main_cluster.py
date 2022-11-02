@@ -5,7 +5,6 @@ import os
 import time
 import sys
 import subprocess
-import scripts.reporting as reporting
 import scripts.check_config as ch
 import scripts.edc_workflows as ew
 import sched
@@ -149,7 +148,7 @@ if qc=='yes':
         exit_code = subprocess.call(snakemake_cmd+"-s workflow/quality_control.rules 2> " + LogPath+time_string+"_quality_control.txt", shell=True)
         if exit_code != 0 : 
             print("Error during quality control; exit code: ", exit_code)
-            ew.exit_all(exit_code, "quality control", file_main_time, rt, freedisk, LogPath, time_string)
+            ew.exit_all(exit_code, "quality control", file_main_time, rt, freedisk, LogPath, time_string, server_name)
                         
         end_time = time.time()
         file_main_time.write("Time of running QC: " + ew.spend_time(start_time, end_time) + "\n")
@@ -164,7 +163,7 @@ else:
         exit_code = subprocess.call(snakemake_cmd+"-s workflow/trim.rules 2> " + LogPath+time_string+"_trim.txt", shell=True)
         if exit_code != 0 : 
             print("Error during trimming; exit code: ", exit_code)
-            ew.exit_all(exit_code, "trimming", file_main_time, rt, freedisk, LogPath, time_string)
+            ew.exit_all(exit_code, "trimming", file_main_time, rt, freedisk, LogPath, time_string, server_name)
         end_time = time.time()
         file_main_time.write("Time of running trimming: " + ew.spend_time(start_time, end_time) + "\n")
         print("Trimming is done! ("+ew.spend_time(start_time, end_time)+")")
@@ -175,7 +174,7 @@ else:
         exit_code = subprocess.call(snakemake_cmd+"-s workflow/quantify_trans.rules 2> " + LogPath+time_string+"_quantify_trans.txt", shell=True)
         if exit_code != 0 : 
             print("Error during mapping; exit code: ", exit_code)
-            ew.exit_all(exit_code, "mapping", file_main_time, rt, freedisk, LogPath, time_string)
+            ew.exit_all(exit_code, "mapping", file_main_time, rt, freedisk, LogPath, time_string, server_name)
         end_time = time.time()
         file_main_time.write("Time of running transcripts quantification: " + ew.spend_time(start_time, end_time) + "\n")
         print("Mapping is done! ("+ew.spend_time(start_time, end_time)+")")
@@ -186,7 +185,7 @@ else:
         exit_code = subprocess.call(snakemake_cmd+"-s workflow/align_count_genome.rules 2> " + LogPath+time_string+"_align_count_genome.txt", shell=True)
         if exit_code != 0 : 
             print("Error during mapping; exit code: ", exit_code)
-            ew.exit_all(exit_code, "mapping", file_main_time, rt, freedisk, LogPath, time_string)
+            ew.exit_all(exit_code, "mapping", file_main_time, rt, freedisk, LogPath, time_string, server_name)
         end_time = time.time()
         file_main_time.write("Time of running genome alignment and counting: " + ew.spend_time(start_time, end_time) + "\n")
         print("Mapping is done! ("+ew.spend_time(start_time, end_time)+")")
@@ -198,7 +197,7 @@ else:
             exit_code = subprocess.call(snakemake_cmd+"-s workflow/dea_trans.rules 2> " + LogPath+time_string+"_dea_trans.txt", shell=True)
             if exit_code != 0 : 
                 print("Error during DEA; exit code: ", exit_code)
-                ew.exit_all(exit_code, "differential expression analysis", file_main_time, rt, freedisk, LogPath, time_string)
+                ew.exit_all(exit_code, "differential expression analysis", file_main_time, rt, freedisk, LogPath, time_string, server_name)
             end_time = time.time()
             file_main_time.write("Time of running DEA transcriptome based: " + ew.spend_time(start_time, end_time) + "\n")
         elif reference == "genome":
@@ -206,7 +205,7 @@ else:
             exit_code = subprocess.call(snakemake_cmd+"-s workflow/dea_genome.rules 2> " + LogPath+time_string+"_dea_genome.txt", shell=True)
             if exit_code != 0 : 
                 print("Error during DEA; exit code: ", exit_code)
-                ew.exit_all(exit_code, "differential expression analysis", file_main_time, rt, freedisk, LogPath, time_string)
+                ew.exit_all(exit_code, "differential expression analysis", file_main_time, rt, freedisk, LogPath, time_string, server_name)
             end_time = time.time()
             file_main_time.write("Time of running DEA genome based: " + ew.spend_time(start_time, end_time) + "\n")
         print("DEA is done! ("+ew.spend_time(start_time, end_time)+")")
@@ -216,7 +215,5 @@ else:
     else:
         print("DEA is not required and RASflow is done!")
 
-# generate the html report
-reporting.main(time_string, server_name)
 exit_code = 0
-ew.exit_all(exit_code, '', file_main_time, rt, freedisk, LogPath, time_string)
+ew.exit_all(exit_code, '', file_main_time, rt, freedisk, LogPath, time_string, server_name)

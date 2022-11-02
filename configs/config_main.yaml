@@ -1,37 +1,39 @@
-# Please check the parameters, and adjust them according to your circumstance
+# Please check the parameters, and adjust them according to your needs
 
 # Project name
 PROJECT: Awesome_experience
+
 # ================== Control of the workflow ==================
 
 ## Do you want to download FASTQ files from public from Sequence Read Archive (SRA) ? 
-SRA: no  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
+SRA: no  # yes or no
+# If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. 
+# In order to run the rest of the workflow, you have to set it to "no".
 
 ## Do you need to do quality control?
-QC: yes  # "yes" or "no". If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. In order to run the rest of the workflow, you have to set it to "no".
+QC: yes  # yes or no
+# If set to "yes", the workflow will stop after the QC to let you decide whether you want to trim your raw data or not. 
+# In order to run the rest of the workflow, you have to set it to "no".
 
 ## Do you need to do trimming?
-TRIMMED: yes  # "yes" or "no"? 
+TRIMMED: yes  # yes or no
 
 ## Do you need to do mapping and feature counting?
-MAPPING: yes # "yes" or "no"
+MAPPING: yes # yes or no
 
 ## Which mapping reference do you want to use? Genome or transcriptome?
-REFERENCE: genome  # "genome" or "transcriptome", I haven't implemented transcriptome yet.
+REFERENCE: genome  # "genome" or "transcriptome"
 
 ## Do you want to study the repeats?
-REPEATS: yes # "yes" or "no"
+REPEATS: yes # yes or no
 
 ## Do you want to do Differential Expression Analysis (DEA)?
-DEA: yes  # "yes" or "no"
+DEA: yes  # yes or no
 
 # ================== Shared parameters for some or all of the sub-workflows ==================
 
 ## key file if the data is stored remotely, otherwise leave it empty
 KEY: 
-
-## place to save singularity/apptainer image (1.5Go) 
-SINGULARITY: TestDataset
 
 ## the path to fastq files
 READSPATH: /shared/projects/YourProjectName/Raw_fastq  # for testing purpose we put here the relative paths, but we recommend to always use full paths such as /shared/projects/YourProjectName/Raw_Fastq
@@ -69,12 +71,12 @@ TRIM3: no # integer or "no", remove N bp from the 3' end of reads AFTER adapter/
 TRANS: /shared/banks/homo_sapiens/hg38/transcriptome/gencode.v41.transcripts.fa # tests on going
 
 ## Do you need to do gene-level differential expression analysis?
-GENE_LEVEL: TRUE  # TRUE or FALSE. If FALSE, ignore the following 3 parameters.
-## If TRUE, specify the corresponding dataset in ENSEMBL for your interested organism or provide your own tx2gene
-ENSEMBL: TRUE  # TRUE or FALSE. Specify whether you're using transcriptome from Ensembl 
-EnsemblDataSet: hsapiens_gene_ensembl  # only if ENSEMBL was set to TRUE. Search for your dataset in the file EnsemblDataSet_look_up_table.csv 
+GENE_LEVEL: yes  # yes or no. If "no", ignore the following 3 parameters.
+## If "yes", specify the corresponding dataset in ENSEMBL for your interested organism or provide your own tx2gene
+ENSEMBL: yes  # yes or no. Specify whether you're using transcriptome from Ensembl 
+EnsemblDataSet: hsapiens_gene_ensembl  # only if ENSEMBL was set to "yes". 
 ## If you're not using ENSEMBL, you have to provide your homemade tx2gene file (two columns, 1st col: transcript ID; 2nd col: gene ID)
-TX2GENE: tx2gene_custom.tsv  # only if ENSEMBL was set to FALSE
+TX2GENE: tx2gene_custom.tsv  # only if ENSEMBL was set to "no"
 
 # ================== Configuration for alignment to genome and feature count ==================
 

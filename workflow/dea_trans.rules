@@ -32,25 +32,34 @@ rule end:
         degGene = degGene,
         volcGene = volcGene, 
         glimmaGene = glimmaGene
-        
+
+# get singularity image
+rule download_singularity_img: 
+    output: 
+        "rasflow_edc.simg"
+    shell:
+        "wget https://zenodo.org/record/7267598/files/rasflow_edc.simg"
       
 rule PCA:
+    input: 
+        sing = "rasflow_edc.simg"
     output:
         pca = salmon_path + "/PCA.pdf"
-    conda:
-        "env.yaml"
+    singularity:
+        "rasflow_edc.simg"
     shell:
         "Rscript scripts/pca_trans.R {input_path} {salmon_path}"
         
         
 rule combineSamples:
     input:
+        sing = "rasflow_edc.simg",
         sampleCount = expand(input_path + "/{sample}/quant.sf", sample = samples),
         metafile = config["METAFILE"]
     output:
         groupCountTrans = expand(output_path + "/countGroup/{group}_trans_norm.tsv", group = groups)
-    conda:
-        "env.yaml"
+    singularity:
+        "rasflow_edc.simg"
     shell:
         "Rscript scripts/combine2group_trans.R {output_path}"
 
@@ -64,7 +73,7 @@ rule DEA:
         degGene = degGene,
         volcGene = volcGene, 
         glimmaGene = glimmaGene        
-    conda:
-        "env.yaml"
+    singularity:
+        "rasflow_edc.simg"
     shell:
         "Rscript scripts/dea_trans.R {output_path}" 

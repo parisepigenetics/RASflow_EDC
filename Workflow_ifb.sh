@@ -17,7 +17,7 @@
 #SBATCH --partition=fast
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem-per-cpu=5GB
+#SBATCH --mem-per-cpu=1GB
 
 ### Email
 ##SBATCH --mail-user=email@address
@@ -33,7 +33,7 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_EDC version: v0.7.5'
+echo 'RASflow_EDC version: v0.7.6'
 echo '-------------------------'
 echo 'Main module versions:'
 
@@ -42,8 +42,8 @@ start0=`date +%s`
 
 # modules loading
 module purge
-module load conda snakemake/6.5.0 slurm-drmaa
-conda --version
+module load snakemake/6.5.0 slurm-drmaa
+#conda --version
 python --version
 echo 'snakemake' && snakemake --version
 

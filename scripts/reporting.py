@@ -21,6 +21,7 @@ def main(time_string, server):
     repeats = config["REPEATS"]
     fromcounts = config["FROMCOUNTS"]
     genelevel = config["GENE_LEVEL"]
+    seq_type = {"single":"Single-end", "pair":"Paired-end"}
     if (fromcounts != "no" and fromcounts != False) or reference == "transcriptome":
         repeats = "no"  # repeat analysis is disable when starting from homemade count tables or doing transcriptome analysis. 
     qc = config["QC"]
@@ -36,7 +37,7 @@ def main(time_string, server):
     
     # Define the folders and files that you want in the tar.bz2.
     ToKeep = ["logs"]	
-    ExtraFiles= ["report_quality_control.html",]
+    ExtraFiles= ["report_quality_control.html","SRA.log"]
     
     # "report_align_count_"+counter+"_data" ?
     # "report_quality_control_data" ?
@@ -147,14 +148,14 @@ def main(time_string, server):
     f.write(message)
     
     if os.path.isfile(resultpath+'/'+project+"/fastqc/SRA.log"):
-        message="""
+        message=f"""
     <h2 id="SRA">FASTQ files from SRA</h2>
-    <p>FASTQ files were downloaded from SRA. Information about the download can be found in <a href="fastqc/SRA.log">fastqc/SRA.log</a>. <br></p>
+    <p> {seq_type[config["END"]]} FASTQ files were downloaded from SRA. Information about the download can be found in <a href="fastqc/SRA.log">fastqc/SRA.log</a>. <br></p>
     """
     else : 
-        message="""
+        message=f"""
     <h2 id="SRA">FASTQ files from personal data</h2>
-    <p> The FASTQ files were not downloaded from SRA, but come from your personal data. <br></p>
+    <p> The FASTQ files were not downloaded from SRA, but come from your personal data. {seq_type[config["END"]]} data were used. <br></p>
     """
     f.write(message)
 
@@ -306,7 +307,6 @@ def main(time_string, server):
             f.write(message)
             
         for compa in zip(control,treat):
-            print("Exporting comparison "+str(compa)+"...")
             controlGroup = compa[0]
             treatGroup = compa[1]    
         

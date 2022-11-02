@@ -5,7 +5,7 @@ samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
 
 key = config["KEY"]
 input_path = config["READSPATH"]
-end = config["END"]
+seqtype = config["END"]
 intermediate_path = config["BIGDATAPATH"] + "/" + config["PROJECT"] + "/trimming"
 final_path = config["RESULTPATH"] + "/" + config["PROJECT"]
 trim3 = config["TRIM3"]
@@ -13,18 +13,18 @@ trim5 = config["TRIM5"]
 
 if trim5 and trim5 != "no" :    # trim 5end
     if trim3 and trim3 != "no" : # trim also 3end
-        if end == "pair":
+        if seqtype == "pair":
             options = "--clip_R1  "+str(trim5)+" --clip_R2 "+str(trim5)+" --three_prime_clip_R1 "+str(trim3)+" --three_prime_clip_R2 "+str(trim3)
         else :
             options = "--clip_R1  "+str(trim5)+" --three_prime_clip_R1 "+str(trim3)
     else: # no 3end, only 5end
-        if end == "pair":
+        if seqtype == "pair":
             options = "--clip_R1  "+str(trim5)+" --clip_R2 "+str(trim5)
         else: 
             options = "--clip_R1  "+str(trim5)
 else:
     if trim3 and trim3 != "no" : # only 3end
-        if end == "pair":
+        if seqtype == "pair":
             options = "--three_prime_clip_R1 "+str(trim3)+" --three_prime_clip_R2 "+str(trim3)
         else :
             options = "--three_prime_clip_R1 "+str(trim3)
@@ -37,7 +37,7 @@ if input_path[0] != "/":
     input_path = os.getcwd()+"/"+input_path
 
 def trimFiles(wildcards):
-    if (end == "pair"):
+    if (seqtype == "pair"):
         forward_trim = expand(intermediate_path + "/{sample}_R1_clean.fastq.gz", sample = samples)
         return forward_trim
     else:
@@ -54,7 +54,7 @@ rule download_singularity_img:
     shell:
         "wget https://zenodo.org/record/7267598/files/rasflow_edc.simg"
         
-if end == "pair":
+if seqtype == "pair":
     rule getReads:
         output:
             fw = temp(intermediate_path + "/reads/{sample}_forward.fastq.gz"),
@@ -79,10 +79,10 @@ if end == "pair":
         shell:
             """
             trim_galore {options} --fastqc --j 4 --paired --basename {wildcards.sample} -o {intermediate_path} {input.fw} {input.rv}
-            #rename 's/\_val_1.fq/\_R1_clean.fastq/' {intermediate_path}/{wildcards.sample}*    # rename 's/\.DAT/\.dat/' *
-            #rename 's/\_val_2.fq/\_R2_clean.fastq/' {intermediate_path}/{wildcards.sample}* 
-            rename _val_2.fq _R2_clean.fastq {intermediate_path}/{wildcards.sample}*
-            rename _val_1.fq _R1_clean.fastq {intermediate_path}/{wildcards.sample}*
+            rename 's/\_val_1.fq/\_R1_clean.fastq/' {intermediate_path}/{wildcards.sample}*    # rename 's/\.DAT/\.dat/' *
+            rename 's/\_val_2.fq/\_R2_clean.fastq/' {intermediate_path}/{wildcards.sample}* 
+            #rename _val_2.fq _R2_clean.fastq {intermediate_path}/{wildcards.sample}*
+            #rename _val_1.fq _R1_clean.fastq {intermediate_path}/{wildcards.sample}*
             """
     
    
@@ -108,8 +108,8 @@ else:
         shell:
             """
             trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {intermediate_path} {input.read}
-            #rename 's/\_val.fq/\_clean.fastq/' {intermediate_path}/{wildcards.sample}*        
-            rename _trimmed.fq _clean.fastq {intermediate_path}/{wildcards.sample}*
+            rename 's/\_trimmed.fq/\_clean.fastq/' {intermediate_path}/{wildcards.sample}*        
+            #rename _trimmed.fq _clean.fastq {intermediate_path}/{wildcards.sample}*
             """
 
 rule summaryReport:

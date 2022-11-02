@@ -21,6 +21,13 @@ rule end:
     input:
         report = final_path + "/report_quantify.html",
         pca = final_path + "/PCA.pdf"
+        
+# get singularity image
+rule download_singularity_img: 
+    output: 
+        "rasflow_edc.simg"
+    shell:
+        "wget https://zenodo.org/record/7267598/files/rasflow_edc.simg"
 
 ### get reads (for now simlink, could be removed / replaced by copy of the files)            
 if seqtype == "pair":
@@ -43,13 +50,14 @@ else:
             
 rule indexTrans:
     input:
+        sing = "rasflow_edc.simg",
         trans = config["TRANS"]
     output:
         index = directory(intermediate_path + "/transcripts_index")
-    conda:
-        "env.yaml"
+    singularity:
+        "rasflow_edc.simg"
     shell:
-        "salmon index -t {input} -i {output} -k 31 -p 8"   # k=length of the kmers (default)
+        "salmon index -t {input.trans} -i {output.index} -k 31 -p 8"   # k=length of the kmers (default)
 
 if seqtype == "pair":
     rule quantify:
@@ -60,8 +68,8 @@ if seqtype == "pair":
         output:
             quant = final_path + "/quantification/{sample}/quant.sf",
             tpm = final_path + "/quantification/{sample}_tpm.tsv"
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow_edc.simg"
         params:
             quant_dir = final_path + "/quantification/{sample}"
         shell:
@@ -77,8 +85,8 @@ else:
         output:            
             quant = final_path + "/quantification/{sample}/quant.sf",
             tpm = final_path + "/quantification/{sample}_tpm.tsv"
-        conda:
-            "env.yaml"
+        singularity:
+            "rasflow_edc.simg"
         params:
             quant_dir = final_path + "/quantification/{sample}" 
         shell:
@@ -92,8 +100,8 @@ rule summaryReport:
         quant = expand(final_path + "/quantification/{sample}/quant.sf", sample = samples)
     output:
         report = final_path + "/report_quantify.html"
-    conda:
-        "env.yaml"
+    singularity:
+        "rasflow_edc.simg"
     params:
         quant_dir = expand(final_path + "/quantification/{sample}", sample = samples)
     shell:
@@ -104,8 +112,8 @@ rule PCA:
         quant = expand(final_path + "/quantification/{sample}/quant.sf", sample = samples)
     output:
         pca = final_path + "/PCA.pdf"
-    conda:
-        "env.yaml"
+    singularity:
+        "rasflow_edc.simg"
     params:
         count_path = final_path + "/quantification/"
     shell:

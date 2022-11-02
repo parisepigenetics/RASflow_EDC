@@ -3,6 +3,8 @@ import subprocess
 import os
 import sys
 import time
+import scripts.reporting as reporting  # relative to main, not to this file
+
 
 
 class RepeatedTimer(object):   ## to monitore disk usage
@@ -52,7 +54,7 @@ def spend_time(start_time, end_time):
     seconds %= 60
     return "%d:%02d:%02d" % (hours, minutes, seconds)
 
-def exit_all(exit_code, step, file_main_time, rt, freedisk, LogPath, time_string):
+def exit_all(exit_code, step, file_main_time, rt, freedisk, LogPath, time_string, server_name):
     file_main_time.write("Finish time: " + time.ctime() + "\n")
     file_main_time.close()
     rt.stop()
@@ -63,6 +65,8 @@ def exit_all(exit_code, step, file_main_time, rt, freedisk, LogPath, time_string
         +LogPath+time_string+"*;exit 0"], shell=True)
     if returned_output == b'':
         if exit_code == 0 : 
+            # generate the html report
+            reporting.main(time_string, server_name)
             print("There were no errors ! It's time to look at your results, enjoy!")
         else: 
             print(f"There was an error during {step}.")
