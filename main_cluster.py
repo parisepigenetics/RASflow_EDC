@@ -6,7 +6,7 @@ import time
 import sys
 import subprocess
 import scripts.check_config as ch
-import scripts.edc_workflows_v2 as ew
+import scripts.edc_workflows as ew
 import sched
 from datetime import datetime
 
