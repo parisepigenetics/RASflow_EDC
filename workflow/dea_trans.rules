@@ -33,16 +33,7 @@ rule end:
         volcGene = volcGene, 
         glimmaGene = glimmaGene
 
-# get singularity image
-rule download_singularity_img: 
-    output: 
-        "rasflow_edc.simg"
-    shell:
-        "wget https://zenodo.org/record/7267598/files/rasflow_edc.simg"
-      
 rule PCA:
-    input: 
-        sing = "rasflow_edc.simg"
     output:
         pca = salmon_path + "/PCA.pdf"
     singularity:
@@ -53,7 +44,6 @@ rule PCA:
         
 rule combineSamples:
     input:
-        sing = "rasflow_edc.simg",
         sampleCount = expand(input_path + "/{sample}/quant.sf", sample = samples),
         metafile = config["METAFILE"]
     output:

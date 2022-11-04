@@ -48,15 +48,8 @@ rule all:
         dea = output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
         glimma = output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
 
-rule download_singularity_img: 
-    output: 
-        "rasflow_edc.simg"
-    shell:
-        "wget https://zenodo.org/record/7267598/files/rasflow_edc.simg"
-       
 rule PCA:
     input:
-        sing = "rasflow_edc.simg",
         countF = expand(count_path +"{sample}_countGenes.tsv", sample=samples)
     output:
         pca = input_path + "/PCA.pdf"
@@ -71,7 +64,6 @@ rule PCA:
         
 rule combineSamples:
     input:
-        sing = "rasflow_edc.simg",
         countF = expand(count_path + "{sample}_countGenes.tsv", sample=samples)
     output:
         groupCount = expand(count_path + "{group}_countsGenes.tsv", group = groups)

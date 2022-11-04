@@ -25,22 +25,13 @@ else:
 rule end:
     input:
         report = final_path + "/fastqc/report_quality_control.html", 
-        cat_logs = catlogs
-              
-rule download_singularity_img: 
-    output: 
-        "rasflow_edc.simg"
-    shell:
-        "wget https://zenodo.org/record/7267598/files/rasflow_edc.simg"
-        
+        cat_logs = catlogs       
         
 if end == "pair":
 
     if config["SRA"] == "yes" or config["SRA"] == True: 
     
         rule fastqDump:
-            input: 
-                "rasflow_edc.simg"
             output:
                 fastq_R1 = input_path + "/{sample}_R1.fastq.gz",
                 fastq_R2 = input_path + "/{sample}_R2.fastq.gz"
@@ -70,7 +61,6 @@ if end == "pair":
             
     rule qualityControl:
         input:
-            sing = "rasflow_edc.simg",
             fw = input_path + "/{sample}_R1.fastq.gz",
             rv = input_path + "/{sample}_R2.fastq.gz"
         output:
@@ -102,8 +92,6 @@ else:
     if config["SRA"] == "yes" or config["SRA"] == True: 
     
         rule fastqDump:
-            input: 
-                "rasflow_edc.simg"
             output:
                 fastq = input_path + "/{sample}.fastq.gz"         
             singularity:
@@ -127,7 +115,6 @@ else:
             
     rule qualityControl:
         input:
-            sing = "rasflow_edc.simg",
             fastq = input_path + "/{sample}.fastq.gz"
         output:
             fastqc = final_path + "/fastqc/{sample}_fastqc.html"

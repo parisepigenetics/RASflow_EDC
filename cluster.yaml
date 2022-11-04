@@ -5,6 +5,7 @@ __default__:
 
 download_singularity_img:
   name: singImage
+  mem: 1000
 
 qualityControl:
   mem: 6000

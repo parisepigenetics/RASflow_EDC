@@ -93,14 +93,9 @@ rule end:
         bw_fw,
         bw_rv,
         pca = final_path + "/counting_"+ counter + "/PCA.pdf"
-        
-rule download_singularity_img: 
-    output: 
-        "rasflow_edc.simg"
-    shell:
-        "wget https://zenodo.org/record/7267598/files/rasflow_edc.simg"
 
-### get reads (for now simlink, could be removed / replaced by copy of the files)            
+
+### get reads (for now simlink, could be removed / replaced by copy of the files)          
 if seqtype == "pair":
     rule getReads:
         output:
@@ -130,8 +125,6 @@ else:
 if mapper == "HISAT2":
 
     rule spliceSites:
-        input: 
-            "rasflow_edc.simg"
         output:
             splicesites = intermediate_path + "/splicesites.txt"
         singularity:
@@ -178,7 +171,6 @@ elif mapper == "STAR":
     if seqtype == "pair":
         rule star:
             input:
-                sing = "rasflow_edc.simg", 
                 fw = intermediate_path + "/reads/{sample}_fw.fastq.gz",
                 rv = intermediate_path + "/reads/{sample}_rv.fastq.gz"
             output:
@@ -197,7 +189,6 @@ elif mapper == "STAR":
     else:
         rule star:
             input:
-                sing = "rasflow_edc.simg",
                 fw = intermediate_path + "/reads/{sample}.fastq.gz"
             output:
                 bam = temp(intermediate_path +"/bam_byName/{sample}.sortByName.bam"),

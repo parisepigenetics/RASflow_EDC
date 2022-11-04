@@ -55,6 +55,9 @@ echo '########################################'
 # remove display to make qualimap run:
 unset DISPLAY
 
+# define singularity image source
+singularity_image="https://zenodo.org/record/7267598/files/rasflow_edc.simg"
+
 # check if the workflow is already running, if not copy the configuration file and start the workflow
 CONFIG_FILE="config_ongoing_run.yaml"
 if test -f "$CONFIG_FILE"; then
@@ -62,7 +65,7 @@ if test -f "$CONFIG_FILE"; then
 else 
     cp configs/config_main.yaml $CONFIG_FILE && chmod 444 $CONFIG_FILE
     # run the workflow
-    python main_cluster.py ifb
+    python main_cluster.py ifb $singularity_image
     # remove configuration file copy
     chmod 777 $CONFIG_FILE && rm $CONFIG_FILE
     

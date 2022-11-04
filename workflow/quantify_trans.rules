@@ -21,15 +21,8 @@ rule end:
     input:
         report = final_path + "/report_quantify.html",
         pca = final_path + "/PCA.pdf"
-        
-# get singularity image
-rule download_singularity_img: 
-    output: 
-        "rasflow_edc.simg"
-    shell:
-        "wget https://zenodo.org/record/7267598/files/rasflow_edc.simg"
-
-### get reads (for now simlink, could be removed / replaced by copy of the files)            
+   
+### get reads (for now simlink, could be removed / replaced by copy of the files)         
 if seqtype == "pair":
     rule getReads:
         output:
@@ -46,11 +39,8 @@ else:
             read = intermediate_path + "/reads/{sample}.fastq.gz"
         run:
             shell("ln -s {input_path}/{wildcards.sample}_*.f*q.gz {output.read}")            
-            
-            
 rule indexTrans:
     input:
-        sing = "rasflow_edc.simg",
         trans = config["TRANS"]
     output:
         index = directory(intermediate_path + "/transcripts_index")
