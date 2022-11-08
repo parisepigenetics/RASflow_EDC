@@ -25,13 +25,27 @@ else:
 rule end:
     input:
         report = final_path + "/fastqc/report_quality_control.html", 
-        cat_logs = catlogs       
+        cat_logs = catlogs      
+        
+if config["SRA"] == "yes" or config["SRA"] == True: 
+        
+        rule configFastqDump:
+            output:
+                ncbi_config = ".ncbi/user-settings.mkfg"
+            singularity:
+                "rasflow_edc.simg"
+            shell:
+                """
+                cp /ncbi/user-settings.mkfg .ncbi
+                """
         
 if end == "pair":
 
     if config["SRA"] == "yes" or config["SRA"] == True: 
-    
+
         rule fastqDump:
+            input: 
+                ncbi_config = ".ncbi/user-settings.mkfg"
             output:
                 fastq_R1 = input_path + "/{sample}_R1.fastq.gz",
                 fastq_R2 = input_path + "/{sample}_R2.fastq.gz"
@@ -92,6 +106,8 @@ else:
     if config["SRA"] == "yes" or config["SRA"] == True: 
     
         rule fastqDump:
+            input: 
+                ncbi_config = ".ncbi/user-settings.mkfg"
             output:
                 fastq = input_path + "/{sample}.fastq.gz"         
             singularity:

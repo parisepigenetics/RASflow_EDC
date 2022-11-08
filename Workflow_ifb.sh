@@ -33,7 +33,7 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_EDC version: v0.7.6'
+echo 'RASflow_EDC version: v0.7.7'
 echo '-------------------------'
 echo 'Main module versions:'
 
@@ -56,7 +56,7 @@ echo '########################################'
 unset DISPLAY
 
 # define singularity image source
-singularity_image="https://zenodo.org/record/7267598/files/rasflow_edc.simg"
+singularity_image="https://zenodo.org/record/7303435/files/rasflow_edc.simg"
 
 # check if the workflow is already running, if not copy the configuration file and start the workflow
 CONFIG_FILE="config_ongoing_run.yaml"
