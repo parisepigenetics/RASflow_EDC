@@ -44,7 +44,6 @@ start0=`date +%s`
 module purge
 module load snakemake/7.7.0
 
-#conda --version
 python --version
 echo 'snakemake' && snakemake --version
 
