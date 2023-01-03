@@ -22,7 +22,7 @@ slurm_output/
 .Rhistory
 
 # singularity images
-.simg
+*.simg
 
 # sample size check
-.max_size
+*.max_size
