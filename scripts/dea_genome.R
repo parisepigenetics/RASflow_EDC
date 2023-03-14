@@ -216,11 +216,11 @@ DEA <- function(control, treat) {
 ## common part: 
     
     # save the normalized count table  
-    write.table(normalized_counts, paste(output.path, 'Tables/', control, '_', treat, '_NormCounts.tsv', sep = ''), quote = FALSE, sep = "\t")   
+    write.table(normalized_counts, paste(output.path, 'Tables/', control, '_', treat, '_NormCounts.tsv', sep = ''), quote = FALSE, sep = "\t", col.names = NA)   
     
     # save the DEA result and DEGs to files
-    write.table(dea.sorted, paste(output.path, 'Tables/dea_', control, '_', treat, '.tsv', sep = ''), row.names = row.name, quote = FALSE, sep = '\t')
-    write.table(deg, paste(output.path, 'Tables/deg_', control, '_', treat, '.tsv', sep = ''), row.names = row.name, quote = FALSE, sep = '\t') 
+    write.table(dea.sorted, paste(output.path, 'Tables/dea_', control, '_', treat, '.tsv', sep = ''), row.names = row.name, quote = FALSE, sep = '\t', col.names = NA)
+    write.table(deg, paste(output.path, 'Tables/deg_', control, '_', treat, '.tsv', sep = ''), row.names = row.name, quote = FALSE, sep = '\t', col.names = NA) 
     message(paste("---------------","Tables for DEA between", control, "and",  treat, "exported ---------------", sep=" "))
       
     ## Export Glimma interactive plots
