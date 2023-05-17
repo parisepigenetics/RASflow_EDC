@@ -1,0 +1,28 @@
+ 
+# Byte-compiled
+__pycache__/
+
+# Results
+results/
+data/
+logs/
+slurm_output/
+
+# Slurm outputs
+*.out
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# hidden folders
+.snakemake/
+.cache/
+.java/
+.ncbi/
+.Rhistory
+
+# singularity images
+*.simg
+
+# sample size check
+*.max_size

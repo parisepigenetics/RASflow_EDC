@@ -302,7 +302,6 @@ if split :
     table_G =  temp("{sample}_0{i}_gene_count.tsv")
     htseq_tmp = temp(final_path + "/counting_"+ counter + "/countTables/{sample}_0{i}_count.tmp")
 
-
 else:
     fc_bam = intermediate_path + "/bam_byName/{sample}.sortByName.bam"
     if TEanalysis == "yes" or TEanalysis==True:
