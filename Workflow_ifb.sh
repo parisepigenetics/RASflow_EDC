@@ -42,7 +42,7 @@ start0=`date +%s`
 
 # modules loading
 module purge
-module load snakemake/6.5.0 slurm-drmaa
+module load snakemake/7.25.0 slurm-drmaa
 #conda --version
 python --version
 echo 'snakemake' && snakemake --version
