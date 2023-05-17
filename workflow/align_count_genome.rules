@@ -278,7 +278,7 @@ if split :
         input: 
             sort_name = intermediate_path + "/bam_byName/{sample}.sortByName.bam",
         output:
-            temp(directory(intermediate_path + "/{sample}_split"))
+            directory(intermediate_path + "/{sample}_split")
         singularity:
             "rasflow_edc.simg"
         params:
@@ -325,7 +325,7 @@ if counter == "featureCounts":
             input:
                 GTFgene = gene_gtf
             output: 
-                mergeGTF = temp(final_path +"/repeats_"+counter+"/merge_genes_te.gtf"),
+                mergeGTF = final_path +"/repeats_"+counter+"/merge_genes_te.gtf",
                 Ngenes = final_path +"/repeats_"+counter+"/Ngenes.txt"
             params:
                 folder_TE = final_path +"/repeats_"+counter
