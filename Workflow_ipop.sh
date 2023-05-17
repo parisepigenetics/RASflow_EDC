@@ -42,7 +42,8 @@ start0=`date +%s`
 
 # modules loading
 module purge
-module load snakemake/7.7.0
+#module load snakemake/7.7.0
+module load snakemake/7.25.0
 
 python --version
 echo 'snakemake' && snakemake --version

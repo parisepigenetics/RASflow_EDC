@@ -81,5 +81,4 @@ else
     cp "RASflow-$SLURM_JOB_ID.out" logs
     mkdir -p slurm_output
     mv *.out slurm_output
-    
 fi
