@@ -453,6 +453,8 @@ if split :
             aggregate_summaries
         output: 
             count_sum_sample = final_path + "/counting_"+ counter + "/countTables/{sample}_table.tsv.summary"
+        singularity:
+            "rasflow_edc.simg"
         shell:
             "python scripts/mergeSummaries.py {counter} {output.count_sum_sample} {input}"
             
@@ -468,6 +470,8 @@ if split :
                 count_TE = aggregate_count_TE
             output:
                 mergetableTE = mergetableTE
+            singularity:
+                "rasflow_edc.simg"
             shell:
                 """
                 python scripts/mergeCounts.py {output.mergetableTE} {input.count_TE} 
@@ -483,6 +487,8 @@ if split :
             count_genes = aggregate_count_genes
         output:
             mergetable_genes = final_path + "/counting_"+counter+"/countTables/{sample}_countGenes.tsv"
+        singularity:
+            "rasflow_edc.simg"
         shell:
             """
             python scripts/mergeCounts.py {output.mergetable_genes} {input.count_genes}
