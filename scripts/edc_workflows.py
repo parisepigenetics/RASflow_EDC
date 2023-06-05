@@ -13,7 +13,7 @@ def saveconf(metadata, log_path, time_string):
     subprocess.call("(echo && echo \"==========================================\" && echo && echo \"SINGULARITY IMAGE - yaml file \" && echo) \
         | singularity exec rasflow_edc.simg cat - /setupfile/parentyml/rasflow.yaml >>" + log_path+time_string+"_configuration.txt", shell=True)
     subprocess.call("(echo && echo \"==========================================\" && echo && echo \"CLUSTER\" && echo) \
-        | cat - cluster.yaml >>" + log_path+time_string+"_configuration.txt", shell=True)
+        | cat - workflow/resources.yaml >>" + log_path+time_string+"_configuration.txt", shell=True)
     subprocess.call("(echo && echo \"==========================================\" && echo && echo \"VERSION\" && echo) \
         >>" + log_path+time_string+"_configuration.txt", shell=True)
     subprocess.call("(git log | head -3) >>" + log_path+time_string+"_configuration.txt", shell=True)

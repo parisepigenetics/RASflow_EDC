@@ -1,0 +1,7 @@
+name: IFB
+
+partition: fast
+
+modules: "module load snakemake/7.25.0 slurm-drmaa"
+
+server_command: "-p"
