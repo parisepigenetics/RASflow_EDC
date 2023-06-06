@@ -8,16 +8,6 @@
 ### Limit run time "days-hours:minutes:seconds"
 #SBATCH --time=24:00:00
 
-### Requirements
-#SBATCH --partition=fast
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-##SBATCH --mem-per-cpu=8GB
-
-### Email
-##SBATCH --mail-user=email@address
-##SBATCH --mail-type=ALL
-
 ### Output
 #SBATCH --output=Unlock-%j.out
 
@@ -33,7 +23,7 @@ echo 'Directory:' $(pwd)
 echo '########################################'
 
 # modules loading
-module load snakemake/5.7.4 python slurm-drmaa
+module load snakemake/5.19.2
 
 # unlock 
 rm -fr config_ongoing_run.yaml
