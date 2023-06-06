@@ -1,11 +1,7 @@
 __default__:
   mem: 500
-  name: snakejob
+  name: rnaseq
   cpus: 1
-
-download_singularity_img:
-  name: singImage
-  mem: 1000
 
 qualityControl:
   mem: 6000

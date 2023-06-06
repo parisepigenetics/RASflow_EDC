@@ -14,7 +14,6 @@
 #SBATCH --time=24:00:00
 
 ### Requirements
-#SBATCH --partition=fast
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem-per-cpu=1GB
@@ -33,16 +32,23 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_EDC version: v1.1'
+echo 'RASflow_EDC version: v1.2'
 echo '-------------------------'
 echo 'Main module versions:'
 
 
 start0=`date +%s`
 
+
+# include parse_yaml function
+. scripts/parse_yaml.sh
+# read yaml file
+eval $(parse_yaml configs/cluster_config.yaml "config_")
+
 # modules loading
 module purge
-module load snakemake/7.25.0 slurm-drmaa
+module load $config_modules # access yaml content
+echo "Loaded modules : $config_modules"
 python --version
 echo 'snakemake' && snakemake --version
 
@@ -64,7 +70,7 @@ if test -f "$CONFIG_FILE"; then
 else 
     cp configs/config_main.yaml $CONFIG_FILE && chmod 444 $CONFIG_FILE
     # run the workflow
-    python main_cluster.py ifb $singularity_image
+    python main_cluster.py $singularity_image
     # remove configuration file copy
     chmod 777 $CONFIG_FILE && rm $CONFIG_FILE
     

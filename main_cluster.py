@@ -32,22 +32,19 @@ os.makedirs(log_path, exist_ok=True)
 file_main_time = open(log_path+time_string+"_running_time.txt", "a+")
 file_main_time.write("Project name: " + project + "\nStart time: " + time.ctime() + "\n")
 
-## differences between clusters
-server = sys.argv[1]
-if server == "ifb" :
-    account = os.getcwd().split('projects')[1].split('/')[1]
-    option = "-A "+account   # + -x cpu-node-25 # to remove slow nodes
-    server_name = "IFB"
-    server_command = "-p"  # group management is different between ifb and ipop-up
-if server == "ipop-up":
-    option = "-p ipop-up"
-    server_name = "iPOP-UP"
-    server_command = "-g"  # group management is different between ifb and ipop-up
+
+## cluster specific part
+account = os.getcwd().split('projects')[1].split('/')[1]
+with open('configs/cluster_config.yaml') as yamlfile:
+    cluster = yaml.load(yamlfile,Loader=yaml.BaseLoader)
+partition = cluster["partition"]
+server_command = cluster["server_command"]
+server_name = cluster["name"]
 
 ## main Snakemake command
-snakemake_cmd = "snakemake -k --cluster-config cluster.yaml --drmaa  \
-    \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus} "+option+\
-    "\" --use-singularity --cores 300 --jobs="+njobs+" --latency-wait 40 "
+snakemake_cmd = "snakemake -k --cluster-config workflow/resources.yaml --drmaa  \
+    \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus} -p "+partition+\
+    " -A "+account+"\" --use-singularity --cores 300 --jobs="+njobs+" --latency-wait 40 "
 
 # Monitore disk usage (every minute)   
 try: writting_dir = resultpath.split('projects')[1].split('/')[1]
@@ -61,7 +58,7 @@ rt = ew.RepeatedTimer(60, ew.get_free_disk, total, writting_dir, server_command,
 print("-------------------------\n| RUN ID : "+time_string+ " |\n-------------------------")
 
 # Download singularity image if necessary 
-singularity_image =  sys.argv[2]
+singularity_image =  sys.argv[1]
 print("Singularity image source: ", singularity_image)
 if not os.path.exists("rasflow_edc.simg"): 
     print("Download Singularity image\n")

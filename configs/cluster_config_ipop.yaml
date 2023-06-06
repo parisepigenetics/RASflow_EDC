@@ -1,0 +1,4 @@
+name: "iPOP-UP"
+partition: "ipop-up"
+modules: "snakemake/7.25.0"
+server_command: "-g"
