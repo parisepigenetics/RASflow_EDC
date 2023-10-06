@@ -70,7 +70,7 @@ if test -f "$CONFIG_FILE"; then
 else 
     cp configs/config_main.yaml $CONFIG_FILE && chmod 444 $CONFIG_FILE
     # run the workflow
-    python main_cluster.py $singularity_image
+    python scripts/main_cluster.py $singularity_image
     # remove configuration file copy
     chmod 777 $CONFIG_FILE && rm $CONFIG_FILE
     

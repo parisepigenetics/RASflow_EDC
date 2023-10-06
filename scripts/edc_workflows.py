@@ -3,7 +3,7 @@ import subprocess
 import os
 import sys
 import time
-import scripts.reporting as reporting  # relative to main, not to this file
+import reporting  # relative to main
 import hashlib
 
 
@@ -18,7 +18,9 @@ def saveconf(metadata, log_path, time_string):
         >>" + log_path+time_string+"_configuration.txt", shell=True)
     subprocess.call("(git log | head -3) >>" + log_path+time_string+"_configuration.txt", shell=True)
 
+
 class RepeatedTimer(object):   ## to monitore disk usage
+    
     def __init__(self, interval, function, *args, **kwargs):
         self._timer     = None
         self.interval   = interval
@@ -43,6 +45,7 @@ class RepeatedTimer(object):   ## to monitore disk usage
         self._timer.cancel()
         self.is_running = False
 
+
 ## follow memory usage
 def get_quotas(writting_dir, server_command): 
     quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir +" "+server_command], shell=True)).strip().split() \
@@ -59,6 +62,7 @@ def get_quotas(writting_dir, server_command):
         if unit_extra == 'G' : 
             extra = float(quotas[1].split('G')[0])/1024
     return total, extra
+
 
 def get_free_disk(total, writting_dir, server_command, freedisk):
     quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir+" "+server_command], shell=True)).strip().split()
@@ -81,6 +85,7 @@ def spend_time(start_time, end_time):
     seconds %= 60
     return "%d:%02d:%02d" % (hours, minutes, seconds)
 
+
 def save_fastq_size(metadata, readpath): 
     subprocess.call("cat "+metadata+" |  awk '{{print $1}}' > "+metadata+".samples.txt", shell=True)
     with open(metadata+".samples.txt",'rb') as file_to_check:
@@ -90,6 +95,7 @@ def save_fastq_size(metadata, readpath):
     if not os.path.isfile(path_file):  ## if already there, not touched. So the run can be restarted later without the FASTQ. 
         print("writting "+path_file)
         subprocess.call("ls -l "+readpath+" | grep -f "+metadata+".samples.txt | awk '{{print $5}}' | sort -nr | head -n1 > "+path_file, shell=True)
+
 
 def exit_all(exit_code, step, file_main_time, rt, freedisk, log_path, time_string, server_name):
     file_main_time.write("Finish time: " + time.ctime() + "\n")
@@ -128,10 +134,24 @@ def execute_step(start, snakemake_cmd, step, step_lit, file_main_time, rt, freed
     returned_output = subprocess.check_output("grep Nothing "\
     +log_path+time_string+"_"+step+".txt;exit 0", shell=True)
     if returned_output == b'':
-        print(end+"("+spend_time(start_time, end_time)+")\n"+end2)
+        print(end+" ("+spend_time(start_time, end_time)+")\n"+end2)
     else :
         print(returned_output.decode("utf-8"))
 
 
-
+def execute_report(snakemake_cmd, step , file_main_time, rt, freedisk, log_path, time_string, server_name):
+    print("Starting " + step +  " report...")
+    start_time = time.time()
+    exit_code = subprocess.call(snakemake_cmd+" --config time_string="+time_string+" step="+step+" -s workflow/report.rules 2> " + log_path+time_string+"_"+step+"_report.txt", shell=True)
+    if exit_code != 0 : 
+        print("Error during " + step + " report ; exit code: ", exit_code)
+        exit_all(exit_code, step, file_main_time, rt, freedisk, log_path, time_string) 
+    end_time = time.time()
+    file_main_time.write("Time of running "+step+" report : " + spend_time(start_time, end_time) + "\n")
+    returned_output = subprocess.check_output("grep Nothing "\
+    +log_path+time_string+"_"+step+"_report.txt;exit 0", shell=True)
+    if returned_output == b'':
+        print(step+" Report is done!"+"("+spend_time(start_time, end_time)+")\n")
+    else :
+        print(returned_output.decode("utf-8"))
 
