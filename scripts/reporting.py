@@ -20,7 +20,6 @@ def main(time_string, server):
     resultpath = config["RESULTPATH"]
     repeats = config["REPEATS"]
     fromcounts = config["FROMCOUNTS"]
-    genelevel = config["GENE_LEVEL"]
     seq_type = {"single":"Single-end", "pair":"Paired-end"}
     if (fromcounts != "no" and fromcounts != False) or reference == "transcriptome":
         repeats = "no"  # repeat analysis is disable when starting from homemade count tables or doing transcriptome analysis. 
@@ -311,6 +310,7 @@ def main(time_string, server):
             treatGroup = compa[1]    
         
             if reference == "transcriptome":
+                genelevel = config["GENE_LEVEL"]
                 if genelevel == True or genelevel == "yes" or genelevel == "TRUE": 
                     out_path = f"{outpath}/DEA_{deatool}/DEA_gene-level"
                     export_comparison(out_path, controlGroup, treatGroup, "genes")
