@@ -36,15 +36,11 @@ file_main_time.write("Project name: " + project + "\nStart time: " + time.ctime(
 account = os.getcwd().split('projects')[1].split('/')[1]
 with open('configs/cluster_config.yaml') as yamlfile:
     cluster = yaml.load(yamlfile,Loader=yaml.BaseLoader)
-partition = cluster["partition"]
 server_command = cluster["server_command"]
 server_name = cluster["name"]
-njobs = cluster["max_njobs"]
 
-## main Snakemake command
-snakemake_cmd = "snakemake -k --cluster-config workflow/resources.yaml --drmaa  \
-    \" --mem={cluster.mem} -J {cluster.name} -c {cluster.cpus} -p "+partition+\
-    " -A "+account+"\" --use-singularity --cores 300 --jobs="+njobs+" --latency-wait 40 "
+## main Snakemake command - using cluster profile 
+snakemake_cmd = "snakemake --profile=configs/ "
 
 # Monitore disk usage (every minute)   
 try: writting_dir = resultpath.split('projects')[1].split('/')[1]

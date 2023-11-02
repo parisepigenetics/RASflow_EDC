@@ -48,7 +48,7 @@ class RepeatedTimer(object):   ## to monitore disk usage
 
 ## follow memory usage
 def get_quotas(writting_dir, server_command): 
-    quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir +" "+server_command], shell=True)).strip().split() \
+    quotas = str(subprocess.check_output(["bash scripts/getquota2.sh "+writting_dir +" "+server_command], shell=True)).strip().split()
     # format: quotas = ["b'2T", '3T', "1.645T\\n'"]
     unit = quotas[0][-1]
     if unit == 'T': 
@@ -125,7 +125,7 @@ def exit_all(exit_code, step, file_main_time, rt, freedisk, log_path, time_strin
 def execute_step(start, snakemake_cmd, step, step_lit, file_main_time, rt, freedisk, log_path, time_string, server_name, end, end2):
     print(start)
     start_time = time.time()
-    exit_code = subprocess.call(snakemake_cmd+"-s workflow/"+step+".rules 2> " + log_path+time_string+"_"+step+".txt", shell=True)
+    exit_code = subprocess.call(snakemake_cmd+" -s workflow/"+step+".rules 2> " + log_path+time_string+"_"+step+".txt", shell=True)
     if exit_code != 0 : 
         print("Error during "+step+"; exit code: ", exit_code)
         exit_all(exit_code, step, file_main_time, rt, freedisk, log_path, time_string, server_name) 

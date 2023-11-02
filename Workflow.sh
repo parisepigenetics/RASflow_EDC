@@ -32,7 +32,7 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_EDC version: v1.2'
+echo 'RASflow_EDC version: v1.3'
 echo '-------------------------'
 echo 'Main module versions:'
 
@@ -44,6 +44,10 @@ start0=`date +%s`
 . scripts/parse_yaml.sh
 # read yaml file
 eval $(parse_yaml configs/cluster_config.yaml "config_")
+
+# make config.yaml for snakemake to work on the cluster without DRMAA
+cat configs/.config_template.yaml > configs/config.yaml
+echo "  - partition=$config_partition" >> configs/config.yaml
 
 # modules loading
 module purge
@@ -83,7 +87,5 @@ else
 
     # move logs
     mkdir -p logs
-    cp "RASflow-$SLURM_JOB_ID.out" logs
-    mkdir -p slurm_output
-    mv *.out slurm_output
+    mv "RASflow-$SLURM_JOB_ID.out" logs
 fi

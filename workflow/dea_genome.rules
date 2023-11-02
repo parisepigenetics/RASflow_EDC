@@ -55,6 +55,8 @@ rule PCA:
         pca = input_path + "/PCA.pdf"
     singularity:
         "rasflow_edc.simg"
+    resources:
+        mem_mb=2000
     params:
         count_path = count_path,
         output = input_path
@@ -69,6 +71,8 @@ rule combineSamples:
         groupCount = expand(count_path + "{group}_countsGenes.tsv", group = groups)
     singularity:
         "rasflow_edc.simg"
+    resources:
+        mem_mb=5000
     params:
         count_path = count_path
     shell:
@@ -84,6 +88,8 @@ rule DEA:
         glimma = output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
     singularity:
         "rasflow_edc.simg"
+    resources:
+        mem_mb=2000
     params:
         output_path = output_path,
         counts_path = count_path + ""
@@ -99,6 +105,8 @@ if TEanalysis == "yes" or TEanalysis==True:
             pca_repeats = repeats_path +"/PCA_TE.pdf"
         singularity:
             "rasflow_edc.simg"
+        resources:
+           mem_mb=2000
         params:
             count_path = repeats_path + "/countTables/",
             output = repeats_path
@@ -112,6 +120,8 @@ if TEanalysis == "yes" or TEanalysis==True:
             groupCount = expand(repeats_path + "/countTables/{group}_countsTE.tsv", group = groups)
         singularity:
             "rasflow_edc.simg"
+        resources:
+            mem_mb=5000
         params:
             count_path = repeats_path +"/countTables/"
         shell:
@@ -127,6 +137,8 @@ if TEanalysis == "yes" or TEanalysis==True:
             glimma = repeats_output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
         singularity:
             "rasflow_edc.simg"
+        resources:
+            mem_mb=2000
         params:
             output_path = repeats_output_path ,
             counts_path = repeats_path + "/countTables/"

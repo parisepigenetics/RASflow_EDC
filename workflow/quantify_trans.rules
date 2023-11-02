@@ -46,6 +46,9 @@ rule indexTrans:
         index = directory(intermediate_path + "/transcripts_index")
     singularity:
         "rasflow_edc.simg"
+    resources:
+           mem_mb=10000, 
+           cpus=8
     shell:
         "salmon index -t {input.trans} -i {output.index} -k 31 -p 8"   # k=length of the kmers (default)
 
@@ -60,6 +63,9 @@ if seqtype == "pair":
             tpm = final_path + "/quantification/{sample}_tpm.tsv"
         singularity:
             "rasflow_edc.simg"
+        resources:
+           mem_mb=10000, 
+           cpus=8
         params:
             quant_dir = final_path + "/quantification/{sample}"
         shell:
@@ -77,6 +83,9 @@ else:
             tpm = final_path + "/quantification/{sample}_tpm.tsv"
         singularity:
             "rasflow_edc.simg"
+        resources:
+           mem_mb=10000, 
+           cpus=8
         params:
             quant_dir = final_path + "/quantification/{sample}" 
         shell:
@@ -92,6 +101,8 @@ rule summaryReport:
         report = final_path + "/report_quantify.html"
     singularity:
         "rasflow_edc.simg"
+    resources:
+        mem_mb=1000
     params:
         quant_dir = expand(final_path + "/quantification/{sample}", sample = samples)
     shell:
@@ -104,6 +115,8 @@ rule PCA:
         pca = final_path + "/PCA.pdf"
     singularity:
         "rasflow_edc.simg"
+    resources:
+        mem_mb=2000
     params:
         count_path = final_path + "/quantification/"
     shell:

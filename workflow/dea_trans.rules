@@ -38,6 +38,8 @@ rule PCA:
         pca = salmon_path + "/PCA.pdf"
     singularity:
         "rasflow_edc.simg"
+    resources:
+        mem_mb=2000
     shell:
         "Rscript scripts/pca_trans.R {input_path} {salmon_path}"
         
@@ -50,6 +52,8 @@ rule combineSamples:
         groupCountTrans = expand(output_path + "/countGroup/{group}_trans_norm.tsv", group = groups)
     singularity:
         "rasflow_edc.simg"
+    resources:
+        mem_mb=5000
     shell:
         "Rscript scripts/combine2group_trans.R {output_path}"
 
@@ -65,5 +69,7 @@ rule DEA:
         glimmaGene = glimmaGene        
     singularity:
         "rasflow_edc.simg"
+    resources:
+           mem_mb=2000
     shell:
         "Rscript scripts/dea_trans.R {output_path}" 

@@ -69,6 +69,9 @@ if seqtype == "pair":
             shreverse = intermediate_path + "/{sample}_R2_clean.fastq.gz"
         singularity:
             "rasflow_edc.simg"
+        resources:
+           mem_mb=6000, 
+           cpus=8
         shell:
             """
             trim_galore {options} --fastqc --j 4 --paired --basename {wildcards.sample} -o {intermediate_path} {input.fw} {input.rv}
@@ -96,7 +99,10 @@ else:
         output:
             read_trim = intermediate_path + "/{sample}_clean.fastq.gz"
         singularity:
-            "rasflow_edc.simg"        
+            "rasflow_edc.simg"     
+        resources:
+           mem_mb=6000, 
+           cpus=4
         shell:
             """
             trim_galore {options} --fastqc -j 4 --basename {wildcards.sample} -o {intermediate_path} {input.read}
@@ -111,6 +117,8 @@ rule summaryReport:
         report = final_path + "/fastqc_after_trimming/report_quality_control_after_trimming.html"
     singularity:
         "rasflow_edc.simg"
+    resources:
+           mem_mb=1000
     params:
         path = final_path + "/fastqc_after_trimming"
     shell:
