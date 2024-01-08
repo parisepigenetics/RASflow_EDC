@@ -71,6 +71,10 @@ TEPCA:
   name: TEPCA
   mem: 2000
 
+TE_PCA:
+  name: TE_PCA
+  mem: 2000
+  
 summaryReport:
   name: multiQC
   mem: 1000
