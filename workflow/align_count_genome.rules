@@ -129,6 +129,8 @@ if mapper == "HISAT2":
             splicesites = intermediate_path + "/splicesites.txt"
         singularity:
             "rasflow_edc.simg"
+        resources:
+            mem_mb=1000
         shell:
             "hisat2_extract_splice_sites.py {gene_gtf} > {output.splicesites}"
 
@@ -143,6 +145,9 @@ if mapper == "HISAT2":
                 bam = temp(intermediate_path + "/bam_byName/{sample}.sortByName.bam")
             singularity:
                 "rasflow_edc.simg"
+            resources:
+                mem_mb=7000, 
+                cpus=32
             params:
                 index = index_path +"/" + index_base
             benchmark:
@@ -159,6 +164,9 @@ if mapper == "HISAT2":
                 bam = temp(intermediate_path + "/bam_byName/{sample}.sortByName.bam")
             singularity:
                 "rasflow_edc.simg"
+            resources:
+                mem_mb=7000, 
+                cpus=32
             params:
                 index = index_path +"/" + index_base,
             benchmark:
@@ -178,6 +186,9 @@ elif mapper == "STAR":
                 counts = intermediate_path + "/bam_byName/{sample}.ReadsPerGene.out.tab"
             singularity:
                 "rasflow_edc.simg"
+            resources:
+                mem_mb=40000, 
+                cpus=4
             params:
                 index = index_path,
                 basename = intermediate_path + "/bam_byName/{sample}."
@@ -195,6 +206,9 @@ elif mapper == "STAR":
                 counts = intermediate_path + "/bam_byName/{sample}.ReadsPerGene.out.tab"
             singularity:
                 "rasflow_edc.simg"
+            resources:
+                mem_mb=40000, 
+                cpus=4
             params:
                 index = index_path,
                 basename = intermediate_path + "/bam_byName/{sample}."
@@ -211,6 +225,9 @@ rule sortBam :
         sort = intermediate_path +"/Sorted_bam/{sample}.sort.bam"
     singularity:
         "rasflow_edc.simg"
+    resources:
+        mem_mb=10000, 
+        cpus=8
     params:
         tmp_folder = "/tmp/RASflow_Hennion_{sample}/"
     shell:
@@ -235,6 +252,9 @@ if bw_stranded == "yes" or bw_stranded == "both" or bw_stranded==True:
             bw_fw = final_path + "/bw_str/{sample}_fw.bw"
         singularity:
             "rasflow_edc.simg"
+        resources:
+            mem_mb=5000, 
+            cpus=8
         shell:
             "bamCoverage -b {input.sort} --filterRNAstrand forward -o {output.bw_fw} -p max"
             
@@ -246,6 +266,9 @@ if bw_stranded == "yes" or bw_stranded == "both" or bw_stranded==True:
             bw_rv = final_path + "/bw_str/{sample}_rv.bw"
         singularity:
             "rasflow_edc.simg"
+        resources:
+            mem_mb=5000, 
+            cpus=8
         shell:
             "bamCoverage -b {input.sort} --filterRNAstrand reverse -o {output.bw_rv} -p max"
             
@@ -259,6 +282,9 @@ if bw_stranded == "no" or bw_stranded == "both" or bw_stranded==False:
             bw = final_path + "/bw/{sample}.bw"
         singularity:
             "rasflow_edc.simg"
+        resources:
+            mem_mb=5000, 
+            cpus=8
         shell:
             "bamCoverage -b {input.sort} -o {output.bw} -p max"
 
@@ -270,6 +296,9 @@ rule alignmentQC:
         bamqc = directory(final_path + "/alignmentQC/{sample}_BAMqc")
     singularity:
         "rasflow_edc.simg"
+    resources:
+        mem_mb=10000, 
+        cpus=8
     shell:
         "qualimap bamqc -bam {input.sort} -nt {config[NCORE]} --java-mem-size=6G -outdir {output.bamqc}"
 
@@ -281,6 +310,8 @@ if split :
             directory(intermediate_path + "/{sample}_split")
         singularity:
             "rasflow_edc.simg"
+        resources:
+            mem_mb=1000
         params:
             prefix = "sortByName"   #-> output: {sample}_split/sortByName_0{i}.bam 
         shell:
@@ -326,6 +357,8 @@ if counter == "featureCounts":
             output: 
                 mergeGTF = final_path +"/repeats_"+counter+"/merge_genes_te.gtf",
                 Ngenes = final_path +"/repeats_"+counter+"/Ngenes.txt"
+            resources:
+                mem_mb=10000
             params:
                 folder_TE = final_path +"/repeats_"+counter
             shell:
@@ -349,6 +382,9 @@ if counter == "featureCounts":
                 count_summary = count_summary
             singularity:
                 "rasflow_edc.simg"
+            resources:
+                mem_mb=10000, 
+                cpus=4
             params:
                 options = seqtype_dict[seqtype] + " -s " +strand_dict[strand] + " " + count_options,
             shell:
@@ -367,6 +403,8 @@ if counter == "htseq-count":
             tmp = htseq_tmp
         singularity:
             "rasflow_edc.simg"
+        resources:
+            mem_mb=100000
         params:
             options = count_options  #### j'ai pas encore testé l'utilisation d'options pour htseq
         shell:
@@ -389,6 +427,8 @@ if TEanalysis == "yes" or TEanalysis==True :
                 TE_index = final_path +"/repeats_"+counter+"/TE.ind"
             singularity:
                 "rasflow_edc.simg"
+            resources:
+                mem_mb=10000
             shell:
                 "python scripts/TEtranscripts_indexer.py --afile {input.TE_gtf} --itype TE --output {output.TE_index}"
                 
@@ -399,6 +439,8 @@ if TEanalysis == "yes" or TEanalysis==True :
                 G_index = final_path +"/repeats_"+counter+"/genes.ind"
             singularity:
                 "rasflow_edc.simg"
+            resources:
+                mem_mb=1000
             shell:
                 "python scripts/TEtranscripts_indexer.py --afile {input.gene_gtf} --itype gene --output {output.G_index}"    
     
@@ -412,6 +454,9 @@ if TEanalysis == "yes" or TEanalysis==True :
                 countG = count_genes
             singularity:
                 "rasflow_edc.simg"
+            resources:
+                mem_mb=30000, 
+                cpus=24
             params:
                 ID = ID,
                 table_T =  table_T,
@@ -531,6 +576,8 @@ rule PCA:
         pca = final_path + "/counting_"+ counter + "/PCA.pdf"
     singularity:
         "rasflow_edc.simg"
+    resources:
+        mem_mb=2000
     params:
         count_path = final_path + "/counting_"+ counter + "/countTables/",
         output = final_path + "/counting_"+ counter + "/"
@@ -545,6 +592,8 @@ if TEanalysis == "yes" or TEanalysis==True:
             pca_repeats = final_path +"/repeats_"+counter+ "/PCA_TE.pdf"
         singularity:
             "rasflow_edc.simg"
+        resources:
+            mem_mb=2000
         params:
             count_path = final_path + "/repeats_"+counter+"/countTables/",
             output = final_path + "/repeats_"+counter+"/"
@@ -560,6 +609,8 @@ if counter == "htseq-count" or counter == "featureCounts":
             report = final_path + "/report_align_count_"+counter+".html"
         singularity:
             "rasflow_edc.simg"
+        resources:
+            mem_mb=1000
         shell:
             "multiqc {input.bamqc} {input.countF} --filename {output.report}"
 
@@ -572,6 +623,8 @@ if counter =="STARcount":
             report = final_path + "/report_align_count_"+counter+".html"
         singularity:
             "rasflow_edc.simg"
+        resources:
+            mem_mb=1000
         params:
             mapping = intermediate_path + "/bam_byName/",
         shell:

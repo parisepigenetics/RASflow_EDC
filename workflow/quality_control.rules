@@ -51,6 +51,9 @@ if end == "pair":
                 fastq_R2 = input_path + "/{sample}_R2.fastq.gz"
             singularity:
                 "rasflow_edc.simg"
+            resources:
+                mem_mb=10000, 
+                cpus=4
             params:
                 file_1 = input_path + "/{sample}_1.fastq.gz",
                 file_2 = input_path + "/{sample}_2.fastq.gz"
@@ -82,12 +85,15 @@ if end == "pair":
             fastqc_rv = final_path + "/fastqc/{sample}_R2_fastqc.html"
         singularity:
             "rasflow_edc.simg"
+        resources:
+           mem_mb=6000, 
+           cpus=2
         params:
             outputpath = final_path + "/fastqc"
         shell:
             "fastqc -t 2 -o {params.outputpath} {input.fw} {input.rv}"
             
-    rule summaryReport:
+    rule MultiQC:
         input:
             fastqc_fw = expand(final_path + "/fastqc/{sample}_R1_fastqc.html", sample = samples),
             fastqc_rv = expand(final_path + "/fastqc/{sample}_R2_fastqc.html", sample = samples)
@@ -96,6 +102,8 @@ if end == "pair":
             folder = directory(final_path + "/fastqc/report_quality_control_data")
         singularity:
             "rasflow_edc.simg"
+        resources:
+           mem_mb=1000
         params:
             path = final_path + "/fastqc"
         shell:
@@ -112,6 +120,9 @@ else:
                 fastq = input_path + "/{sample}.fastq.gz"         
             singularity:
                 "rasflow_edc.simg"
+            resources:
+                mem_mb=10000, 
+                cpus=4
             log: 
                 input_path + "/{sample}.log"
             shell:
@@ -136,12 +147,14 @@ else:
             fastqc = final_path + "/fastqc/{sample}_fastqc.html"
         singularity:
             "rasflow_edc.simg"
+        resources:
+           mem_mb=6000
         params:
             outputpath = final_path + "/fastqc"
         shell:
             "fastqc -o {params.outputpath} {input.fastq}"
             
-    rule summaryReport:
+    rule MultiQC:
         input:
             fastqc = expand(final_path + "/fastqc/{sample}_fastqc.html", sample = samples)
         output:
@@ -149,6 +162,8 @@ else:
             folder = directory(final_path + "/fastqc/report_quality_control_data")
         singularity:
             "rasflow_edc.simg"
+        resources:
+           mem_mb=1000
         params:
             path = final_path + "/fastqc"
         shell:
