@@ -7,13 +7,27 @@ import reporting  # relative to main
 import hashlib
 
 
-def saveconf(metadata, log_path, time_string): 
+def saveconf(metadata, log_path, time_string, data_type): 
+    # configs files
     subprocess.call("(echo && echo \"==========================================\" && echo && echo \"SAMPLE PLAN\") \
         | cat config_ongoing_run.yaml - "+metadata+" >" + log_path+time_string+"_configuration.txt", shell=True)
-    subprocess.call("(echo && echo \"==========================================\" && echo && echo \"SINGULARITY IMAGE - yaml file \" && echo) \
+    
+    # yaml for singularity image
+    if data_type == "RNA":
+        subprocess.call("(echo && echo \"==========================================\" && echo && echo \"SINGULARITY IMAGE - yaml file \" && echo) \
         | singularity exec rasflow_edc.simg cat - /setupfile/parentyml/rasflow.yaml >>" + log_path+time_string+"_configuration.txt", shell=True)
-    subprocess.call("(echo && echo \"==========================================\" && echo && echo \"CLUSTER\" && echo) \
-        | cat - workflow/resources.yaml >>" + log_path+time_string+"_configuration.txt", shell=True)
+    elif data_type == "WGBS" or data_type == "RRBS": 
+        subprocess.call("(echo && echo \"==========================================\" && echo && echo \"SINGULARITY IMAGE - yaml file \" && echo) \
+        | singularity exec wgbsflow.simg cat - /setupfile/parentyml/wgbsflow.yaml >>" + log_path+time_string+"_configuration.txt", shell=True)
+    elif data_type == "NANOPORE":
+        subprocess.call("(echo && echo \"==========================================\" && echo && echo \"SINGULARITY IMAGE - yaml file \" && echo) \
+        | singularity exec nanopore.simg cat - /setupfile/parentyml/nanopore.yaml >>" + log_path+time_string+"_configuration.txt", shell=True)
+    
+    # cluster resources - not necessary if resources are defined in the rules
+    #subprocess.call("(echo && echo \"==========================================\" && echo && echo \"CLUSTER\" && echo) \
+    #    | cat - workflow/resources.yaml >>" + log_path+time_string+"_configuration.txt", shell=True)
+    
+    # git version
     subprocess.call("(echo && echo \"==========================================\" && echo && echo \"VERSION\" && echo) \
         >>" + log_path+time_string+"_configuration.txt", shell=True)
     subprocess.call("(git log | head -3) >>" + log_path+time_string+"_configuration.txt", shell=True)
@@ -145,7 +159,7 @@ def execute_report(snakemake_cmd, step , file_main_time, rt, freedisk, log_path,
     exit_code = subprocess.call(snakemake_cmd+" --config time_string="+time_string+" step="+step+" -s workflow/report.rules 2> " + log_path+time_string+"_"+step+"_report.txt", shell=True)
     if exit_code != 0 : 
         print("Error during " + step + " report ; exit code: ", exit_code)
-        exit_all(exit_code, step, file_main_time, rt, freedisk, log_path, time_string) 
+        exit_all(exit_code, step, file_main_time, rt, freedisk, log_path, time_string, server_name) 
     end_time = time.time()
     file_main_time.write("Time of running "+step+" report : " + spend_time(start_time, end_time) + "\n")
     returned_output = subprocess.check_output("grep Nothing "\
@@ -154,4 +168,3 @@ def execute_report(snakemake_cmd, step , file_main_time, rt, freedisk, log_path,
         print(step+" Report is done!"+"("+spend_time(start_time, end_time)+")\n")
     else :
         print(returned_output.decode("utf-8"))
-

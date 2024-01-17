@@ -62,7 +62,7 @@ if not os.path.exists("rasflow_edc.simg"):
     print(output.decode("utf-8"))
     
 # save the configuration (after getting sing image)
-ew.saveconf(metadata, log_path, time_string)
+ew.saveconf(metadata, log_path, time_string, "RNA")
           
 print("Starting RASflow on project: " + project)
 print("Free disk is measured for the cluster project (folder): "+writting_dir+"\n-------------------------\nWorkflow summary")
