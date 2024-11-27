@@ -1,81 +1,132 @@
 import pandas as pd
 from snakemake.utils import validate
 
+# Load the configuration file and validate it
 configfile: "config_ongoing_run.yaml"
 validate(config, "config.qc.schema.yaml")
 
+# Extract parameters from the config file
 key = config["KEY"]
 input_path = config["READSPATH"]
-samples = pd.read_csv(config["METAFILE"], sep = '\t', header = 0)['sample']
-# validate samples?
-
+samples = pd.read_csv(config["METAFILE"], sep='\t', header=0)['sample']
 end = config["END"]
 final_path = config["RESULTPATH"] + "/" + config["PROJECT"]
 
+# Make input_path an absolute path
 if input_path[0] != "/": 
     import os
-    input_path = os.getcwd()+"/"+input_path
+    input_path = os.getcwd() + "/" + input_path
 
-    
+# Add SRA log to final rule to download fastq from SRA
 if config["SRA"] == "yes" or config["SRA"] == True:
     catlogs = final_path + "/fastqc/SRA.log"
 else: 
     catlogs = []
 
+# Final rule
 rule end:
     input:
-        report = final_path + "/fastqc/report_quality_control.html", 
-        cat_logs = catlogs      
-        
-if config["SRA"] == "yes" or config["SRA"] == True: 
-        
-        rule configFastqDump:
+        report = final_path + "/fastqc/report_quality_control.html",
+        cat_logs = catlogs
+
+# If SRA data is used
+if config["SRA"] == "yes" or config["SRA"] == True:
+    # Copy NCBI parameters from the image
+    rule configFastqDump:
+        output:
+            ncbi_config = ".ncbi/user-settings.mkfg"
+        singularity:
+            "rasflow_edc.simg"
+        shell:
+            """
+            cp /ncbi/user-settings.mkfg .ncbi
+            """
+
+    # If SRX IDs are given, combine all SRR from this SRX
+    if samples[0].startswith("SRX"):
+        # List SRR from the SRX ID
+        rule SRX2SRR: 
             output:
-                ncbi_config = ".ncbi/user-settings.mkfg"
+                input_path + "/{sample}_SRR_list.txt"
             singularity:
-                "rasflow_edc.simg"
-            shell:
+                "chipflow.sif"  # Temporary, as pysradb is not in the image
+            shell: 
                 """
-                cp /ncbi/user-settings.mkfg .ncbi
+                pysradb srx-to-srr {wildcards.sample} | awk '{{print $2}}' | tail -n+2 > {output}
                 """
-        
+
+# Paired-end reads processing
 if end == "pair":
 
-    if config["SRA"] == "yes" or config["SRA"] == True: 
+    # If SRA data is used
+    if config["SRA"] == "yes" or config["SRA"] == True:
 
-        rule fastqDump:
-            input: 
-                ncbi_config = ".ncbi/user-settings.mkfg"
-            output:
-                fastq_R1 = input_path + "/{sample}_R1.fastq.gz",
-                fastq_R2 = input_path + "/{sample}_R2.fastq.gz"
-            singularity:
-                "rasflow_edc.simg"
-            resources:
-                mem_mb=10000, 
-                cpus=4
-            params:
-                file_1 = input_path + "/{sample}_1.fastq.gz",
-                file_2 = input_path + "/{sample}_2.fastq.gz"
-            log: 
-                input_path + "/{sample}.log"
-            shell:
-                """
-                parallel-fastq-dump --sra-id {wildcards.sample} --threads 4 --outdir {input_path} --split-files \
-                --gzip --tmpdir {input_path} &> {log}
-                mv {params.file_1} {output.fastq_R1}
-                mv {params.file_2} {output.fastq_R2}
-                """
-                
-        rule catLogs:
-            input: 
-                logs = expand(input_path + "/{sample}.log", sample=samples)
-            output: 
-                catlogs = final_path + "/fastqc/SRA.log"
-            shell:
-                "sed -s -e $'$a\\\n-----' {input_path}/*.log > {output.catlogs}" 
+        # If SRX IDs are given, combine all SRR from this SRX
+        if samples[0].startswith("SRX"):
+            # Download FASTQs for each SRR
+            rule fastqDump:
+                input:
+                    srr_list = input_path + "/{sample}_SRR_list.txt",
+                    ncbi_config = ".ncbi/user-settings.mkfg"
+                output:
+                    temp(directory(input_path + "/{sample}_fastq"))
+                singularity:
+                    "rasflow_edc.simg"
+                resources:
+                    mem_mb=10000,
+                    cpus=4
+                log: 
+                    input_path + "/{sample}.log"
+                shell:
+                    """
+                    mkdir -p {output}
+                    for srr in $(cat {input.srr_list}); do \
+                        parallel-fastq-dump --sra-id $srr --threads 4 --outdir {output} --split-files \
+                        --gzip --tmpdir {input_path} &>> {log}; done
+                    """
 
-            
+            # Combine individual FASTQ files into one
+            rule combineFastq:
+                input:
+                    input_path + "/{sample}_fastq"
+                output: 
+                    fastq_R1 = input_path + "/{sample}_R1.fastq.gz",
+                    fastq_R2 = input_path + "/{sample}_R2.fastq.gz"
+                resources:
+                    mem_mb=4000
+                shell: 
+                    """
+                    cat {input}/*1.fastq.gz > {output.fastq_R1}
+                    cat {input}/*2.fastq.gz > {output.fastq_R2}
+                    """
+
+        # If SRR IDs are given
+        else:
+            rule fastqDump:
+                input: 
+                    ncbi_config = ".ncbi/user-settings.mkfg"
+                output:
+                    fastq_R1 = input_path + "/{sample}_R1.fastq.gz",
+                    fastq_R2 = input_path + "/{sample}_R2.fastq.gz"
+                singularity:
+                    "rasflow_edc.simg"
+                resources:
+                    mem_mb=10000,
+                    cpus=4
+                params:
+                    file_1 = input_path + "/{sample}_1.fastq.gz",
+                    file_2 = input_path + "/{sample}_2.fastq.gz"
+                log: 
+                    input_path + "/{sample}.log"
+                shell:
+                    """
+                    parallel-fastq-dump --sra-id {wildcards.sample} --threads 4 --outdir {input_path} --split-files \
+                    --gzip --tmpdir {input_path} &> {log}
+                    mv {params.file_1} {output.fastq_R1}
+                    mv {params.file_2} {output.fastq_R2}
+                    """
+
+    # Quality control and multiQC for paired-end reads
     rule qualityControl:
         input:
             fw = input_path + "/{sample}_R1.fastq.gz",
@@ -92,11 +143,11 @@ if end == "pair":
             outputpath = final_path + "/fastqc"
         shell:
             "fastqc -t 2 -o {params.outputpath} {input.fw} {input.rv}"
-            
+
     rule MultiQC:
         input:
-            fastqc_fw = expand(final_path + "/fastqc/{sample}_R1_fastqc.html", sample = samples),
-            fastqc_rv = expand(final_path + "/fastqc/{sample}_R2_fastqc.html", sample = samples)
+            fastqc_fw = expand(final_path + "/fastqc/{sample}_R1_fastqc.html", sample=samples),
+            fastqc_rv = expand(final_path + "/fastqc/{sample}_R2_fastqc.html", sample=samples)
         output:
             report = final_path + "/fastqc/report_quality_control.html",
             folder = directory(final_path + "/fastqc/report_quality_control_data")
@@ -108,38 +159,72 @@ if end == "pair":
             path = final_path + "/fastqc"
         shell:
             "rm -fr {output.report} {output.folder} && multiqc {params.path} --filename {output.report}"
-            
-else:  
-    
-    if config["SRA"] == "yes" or config["SRA"] == True: 
-    
-        rule fastqDump:
-            input: 
-                ncbi_config = ".ncbi/user-settings.mkfg"
-            output:
-                fastq = input_path + "/{sample}.fastq.gz"         
-            singularity:
-                "rasflow_edc.simg"
-            resources:
-                mem_mb=10000, 
-                cpus=4
-            log: 
-                input_path + "/{sample}.log"
-            shell:
-                """
-                parallel-fastq-dump --sra-id {wildcards.sample} --threads 4 --outdir {input_path} \
-                --gzip --tmpdir {input_path} &> {log}
-                """
-                
-        rule catLogs:
-            input: 
-                logs = expand(input_path + "/{sample}.log", sample=samples)
-            output: 
-                catlogs = final_path + "/fastqc/SRA.log"
-            shell:
-                "sed -s -e $'$a\\\n-----' {input_path}/*.log > {output.catlogs}" 
+
+# Single-end reads processing
+else:
+
+    # If SRA data is used
+    if config["SRA"] == "yes" or config["SRA"] == True:
+
+        # If SRX IDs are given, combine all SRR from this SRX
+        if samples[0].startswith("SRX"):
         
-            
+            # Download FASTQs for each SRR
+            rule fastqDump:
+                input:
+                    srr_list = input_path + "/{sample}_SRR_list.txt", 
+                    ncbi_config = ".ncbi/user-settings.mkfg"
+                output:
+                    temp(directory(input_path + "/{sample}_fastq"))
+                singularity:
+                    "rasflow_edc.sif"
+                resources:
+                    mem_mb=10000,
+                    cpus=4
+                log: 
+                    input_path + "/{sample}.log"
+                shell:
+                    """
+                    mkdir -p {output}
+                    for srr in $(cat {input.srr_list}); do \
+                        parallel-fastq-dump --sra-id $srr --threads 4 --outdir {output} \
+                        --gzip --tmpdir {input_path} &>> {log}; done
+                    """
+
+            # Combine individual FASTQ files into one
+            rule combineFastq:
+                input:
+                    input_path + "/{sample}_fastq"
+                output: 
+                    fastq = input_path + "/{sample}.fastq.gz"
+                resources:
+                    mem_mb=4000
+                shell: 
+                    """
+                    cat {input}/*.fastq.gz > {output.fastq}
+                    """
+
+        # If SRR IDs are given
+        else:
+            rule fastqDump:
+                input: 
+                    ncbi_config = ".ncbi/user-settings.mkfg"
+                output:
+                    fastq = input_path + "/{sample}.fastq.gz"
+                singularity:
+                    "rasflow_edc.simg"
+                resources:
+                    mem_mb=10000,
+                    cpus=4
+                log: 
+                    input_path + "/{sample}.log"
+                shell:
+                    """
+                    parallel-fastq-dump --sra-id {wildcards.sample} --threads 4 --outdir {input_path} \
+                    --gzip --tmpdir {input_path} &> {log}
+                    """
+
+    # Quality control and multiQC for single-end reads
     rule qualityControl:
         input:
             fastq = input_path + "/{sample}.fastq.gz"
@@ -148,24 +233,33 @@ else:
         singularity:
             "rasflow_edc.simg"
         resources:
-           mem_mb=6000
+            mem_mb=6000, 
+            cpus=2
         params:
             outputpath = final_path + "/fastqc"
         shell:
-            "fastqc -o {params.outputpath} {input.fastq}"
-            
+            "fastqc -t 2 -o {params.outputpath} {input.fastq}"
+
     rule MultiQC:
         input:
-            fastqc = expand(final_path + "/fastqc/{sample}_fastqc.html", sample = samples)
+            fastqc = expand(final_path + "/fastqc/{sample}_fastqc.html", sample=samples)
         output:
             report = final_path + "/fastqc/report_quality_control.html",
             folder = directory(final_path + "/fastqc/report_quality_control_data")
         singularity:
             "rasflow_edc.simg"
         resources:
-           mem_mb=1000
+            mem_mb=1000
         params:
             path = final_path + "/fastqc"
         shell:
             "rm -fr {output.report} {output.folder} && multiqc {params.path} --filename {output.report}"
-    
+
+# Save logs into a single file
+rule catLogs:
+    input: 
+        logs = expand(input_path + "/{sample}.log", sample=samples)
+    output: 
+        catlogs = final_path + "/fastqc/SRA.log"
+    shell:
+        "sed -s -e $'$a\\\n-----' {input_path}/*.log > {output.catlogs}" 
