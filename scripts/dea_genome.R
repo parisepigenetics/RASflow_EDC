@@ -222,6 +222,64 @@ DEA <- function(control, treat) {
     write.table(dea.sorted, paste(output.path, 'Tables/dea_', control, '_', treat, '.tsv', sep = ''), row.names = row.name, quote = FALSE, sep = '\t', col.names = NA)
     write.table(deg, paste(output.path, 'Tables/deg_', control, '_', treat, '.tsv', sep = ''), row.names = row.name, quote = FALSE, sep = '\t', col.names = NA) 
     message(paste("---------------","Tables for DEA between", control, "and",  treat, "exported ---------------", sep=" "))
+    
+    # save DEA and DEG to files with SYMBOLS, chr, start, end, when possible. 
+    if (suffix == '_countsGenes.tsv') {
+      identifiers <- rownames(dea.sorted)
+      # remove .01 from ENSG00000100029.01
+      identifiers <- sapply(strsplit(as.character(identifiers), "\\."),  "[", 1)
+      # query gene symbol and localisation
+      gene_info <- queryMany(identifiers, scopes="ensembl.gene", fields=c("symbol", "genomic_pos"))
+      if (nrow(gene_info) > 10) {  # in case no results from queryMany
+        # convert to dataframe
+        gene_info_df <- as.data.frame(gene_info)
+        gene_info_df$chromosome <- sapply(gene_info_df$genomic_pos, function(x) x$chr)
+        gene_info_df$start_position <- sapply(gene_info_df$genomic_pos, function(x) x$start)
+        gene_info_df$end_position <- sapply(gene_info_df$genomic_pos, function(x) x$end)
+        # filter and rename cols
+        gene_info_df <- gene_info_df[, c("query", "symbol", "chromosome", "start_position", "end_position")]
+        colnames(gene_info_df) <- c("ensembl_gene_id", "gene_symbol", "chromosome", "start_position", "end_position")
+        # merge original table with gene_info
+        dea.sorted$ensembl_gene_id <- identifiers
+        result <- merge(dea.sorted, gene_info_df, by = "ensembl_gene_id", all.x = TRUE)
+        # Convert list-type cols as characters with ; 
+        result$start_position <- sapply(result$start_position, function(y) paste(y, collapse = ";"))
+        result$end_position <- sapply(result$end_position, function(y) paste(y, collapse = ";"))
+        result$gene_symbol <- sapply(result$gene_symbol, function(y) paste(y, collapse = ";"))
+        result$chromosome <- sapply(result$chromosome, function(y) paste(y, collapse = ";"))
+        # export the new table
+        write.table(result, paste(output.path, 'Tables/dea_', control, '_', treat, '_symb_loc.tsv', sep = ''), row.names = row.name, quote = FALSE, sep = '\t', col.names = NA)
+        
+        # same thing for deg
+        identifiers <- rownames(deg)
+        # remove .01 from ENSG00000100029.01
+        identifiers <- sapply(strsplit(as.character(identifiers), "\\."),  "[", 1)
+        # query gene symbol and localisation
+        gene_info <- queryMany(identifiers, scopes="ensembl.gene", fields=c("symbol", "genomic_pos"))
+        if (nrow(gene_info) > 10) {
+          # convert to dataframe
+          gene_info_df <- as.data.frame(gene_info)
+          gene_info_df$chromosome <- sapply(gene_info_df$genomic_pos, function(x) x$chr)
+          gene_info_df$start_position <- sapply(gene_info_df$genomic_pos, function(x) x$start)
+          gene_info_df$end_position <- sapply(gene_info_df$genomic_pos, function(x) x$end)
+          # filter and rename cols
+          gene_info_df <- gene_info_df[, c("query", "symbol", "chromosome", "start_position", "end_position")]
+          colnames(gene_info_df) <- c("ensembl_gene_id", "gene_symbol", "chromosome", "start_position", "end_position")
+          # merge original table with gene_info
+          deg$ensembl_gene_id <- identifiers
+          result <- merge(deg, gene_info_df, by = "ensembl_gene_id", all.x = TRUE)
+          # Convert list-type cols as characters with ; 
+          result$start_position <- sapply(result$start_position, function(y) paste(y, collapse = ";"))
+          result$end_position <- sapply(result$end_position, function(y) paste(y, collapse = ";"))
+          result$gene_symbol <- sapply(result$gene_symbol, function(y) paste(y, collapse = ";"))
+          result$chromosome <- sapply(result$chromosome, function(y) paste(y, collapse = ";"))
+          # export the new table
+          write.table(result, paste(output.path, 'Tables/deg_', control, '_', treat, '_symb_loc.tsv', sep = ''), row.names = row.name, quote = FALSE, sep = '\t', col.names = NA)
+          }
+      }
+      
+      
+    }
       
     ## Export Glimma interactive plots
       
