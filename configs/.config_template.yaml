@@ -6,6 +6,7 @@ printshellcmds: True
 max-jobs-per-second: 10
 max-status-checks-per-second: 1
 latency-wait: 40
+retries: 1
 
 cluster:
   mkdir -p slurm_output/ &&
