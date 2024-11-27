@@ -1,5 +1,5 @@
 name: "IFB"
 partition: "fast"
-modules: "snakemake/7.25.0 slurm-drmaa"
+modules: "snakemake/7.25.0"
 server_command: "-p"
 max_njobs: 100

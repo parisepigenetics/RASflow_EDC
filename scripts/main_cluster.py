@@ -33,7 +33,6 @@ file_main_time.write("Project name: " + project + "\nStart time: " + time.ctime(
 
 
 ## cluster specific part
-account = os.getcwd().split('projects')[1].split('/')[1]
 with open('configs/cluster_config.yaml') as yamlfile:
     cluster = yaml.load(yamlfile,Loader=yaml.BaseLoader)
 server_command = cluster["server_command"]
