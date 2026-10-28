@@ -1,478 +1,521 @@
-library(yaml)
+
+# load the libraries
 library(edgeR)
 library(DESeq2)
-library(regionReport)
-library(mygene)
-library(Glimma)
-library(limma)
-library(hash)
+library(rtracklayer)
 library(EnhancedVolcano)
+library(Glimma)
+library(regionReport)
 library(gplots)
 library(RColorBrewer)
 library(pheatmap)
-library(DEFormats)
+library(yaml)
 
 # ====================== define the function of DEA ======================
 
-DEA <- function(control, treat) {
-  message("###############################################################################################")
-  message(paste("---------------","Comparing groups", control, "and",  treat, "---------------", sep=" "))  
-  count.control <- read.table(paste(counts_path, control, suffix, sep = ''), header = TRUE, row.names = 1)
-  count.treat <- read.table(paste(counts_path, treat, suffix, sep = ''), header = TRUE, row.names = 1)
-  count.table <- cbind(count.control, count.treat)  # merge the control and treat tables together
-  
-  # number of samples in control and treat groups (should be the same if it's a pair test)
-  num.sample <- ncol(count.table)
-  num.sample.control <- ncol(count.control)
-  num.sample.treat <- ncol(count.treat)
 
-  # samples of two groups
-  sample.control <- colnames(count.control)
-  sample.treat <- colnames(count.treat)
-  
-  # save gene list in gene.list for extracting gene names later
-  gene.list <- rownames(count.table)
-  
-  # get the sample id
-  samples <- colnames(count.table)
+DEA <- function(control, treat, dea.tool) {
 
-  # define the group
-  subject <- factor(subject.all[c(which(group.all == control), which(group.all == treat))])
-  group <- factor(group.all[c(which(group.all == control), which(group.all == treat))])
+  message("====================================================")
+  message(paste("DEA:", treat, "vs", control))
+  message("====================================================")
+
+  # ----------------------------
+  # 1. LOAD DATA
+  # ----------------------------
+  count.control <- read.table(
+    file.path(counts_path, paste0(control, suffix)),
+    header = TRUE,
+    row.names = 1
+  )
+
+  count.treat <- read.table(
+    file.path(counts_path, paste0(treat, suffix)),
+    header = TRUE,
+    row.names = 1
+  )
+
+  count.table <- cbind(count.control, count.treat)
+  gene_ids <- sub("\\..*", "", rownames(count.table))
+
+  # ----------------------------
+  # 2. METADATA
+  # ----------------------------
+  subject <- factor(subject.all[c(
+    which(group.all == control),
+    which(group.all == treat)
+  )])
+
+  group <- factor(group.all[c(
+    which(group.all == control),
+    which(group.all == treat)
+  )])
+
   group <- relevel(group, ref = control)
 
-  # depending  on the tool:   
-  ########### edgeR  ##########
-  if (dea.tool == 'edgeR') {  # use edgeR for DEA
-      
-   # The design matrix
-    if (pair.test) {
-      design <- model.matrix(~subject+group)
-    } else {
-      design <- model.matrix(~group)
-    }
-      
-    # Put the data into a DGEList object
-    y <- DGEList(counts = count.table, genes = gene.list)
-    
-    # do DEA
+  # ----------------------------
+  # 3. RUN DEA (EDGE R OR DESEQ2)
+  # ----------------------------
+  if (dea.tool == "edgeR") {
 
-    # Filtering
-    if (filter.need==TRUE || filter.need=="yes") {
-      countsPerMillion <- cpm(y)
-      countCheck <- countsPerMillion > 1
-      keep <- which(rowSums(countCheck) > 1)
+    y <- edgeR::DGEList(counts = count.table)
+
+    if (filter.need) {
+      keep <- rowSums(edgeR::cpm(y) > 1) > 1
       y <- y[keep, ]
     }
-    
-    # Normalization
-    y <- calcNormFactors(y, method="TMM")
-    
+
+    y <- edgeR::calcNormFactors(y, method="TMM")
     normalized_counts <- cpm(y)  # counts-per-million (TMM normalized) 
-      
-    y$samples$subject <- subject
-    y$samples$group <- group
-    
-    rownames(design) <- colnames(y)  
-      
-    # Estimating the dispersion
-    
-    # estimate the NB dispersion for the dataset
-    dds <- estimateDisp(y, design, robust = TRUE)
-    
-    # Differential expression
-    
-    # determine differentially expressed genes
-    # fit genewise glms
-    fit <- glmFit(dds, design)
-    
-    # conduct likelihood ratio tests for treated vs control conditions and show the top genes
-    res.dea <- glmLRT(fit)
-    
-    #Report
-    report <- edgeReport(dds, res.dea ,"edgeR Report",intgroup = "group", outdir = paste(output.path,'Report/regionReport/', control, '_', treat, sep = ''), output = "exploration")
-    message(paste("---------------","Report for DEA between", control, "and",  treat, "exported ---------------", sep=" "))
 
-    # the DEA result for all the genes
-
-    toptag <- topTags(res.dea, n = nrow(dds$genes), p.value = 1)
-    dea <- toptag$table  # just to add one more column of FDR
-    dea.sorted <- dea[order(dea$FDR, -abs(dea$logFC), decreasing = FALSE), ]  # sort the table: ascending of FDR then descending of absolute valued of logFC
-  
-    dea <- data.frame(res.dea$table) #unsorted table for Volcano plots
-    dea$FDR <- p.adjust(dea$PValue,"BH")
-
-    # differentially expressed genes
-    toptag <- topTags(res.dea, n = nrow(dds$genes), p.value = 0.05)
-    deg <- toptag$table
-    if (!is.null(deg)) {
-      deg <- deg[order(deg$FDR, -abs(deg$logFC), decreasing = FALSE), ]  # sort the table: ascending of FDR then descending of absolute valued of logFC
-    }
-    
-        # to adjust the outputs to edgeR
-    row.name = F # to write the tables
-    
-    # for Glimma
-    dds <- as.DESeqDataSet(dds) # dds formated for Glimma
-    
-    res.dea$table$dt <- as.numeric(res.dea$table$PValue<0.05)
-    res.dea$table$DE <- ifelse(res.dea$table$dt == 0,0, sign(res.dea$table$logFC))  
-    DE <- res.dea$table$DE
-      
-    annotation <- data.frame(res.dea$table)  
-    annotation$GeneID <- rownames(res.dea$table)
-    
-    # for glMDPlot
-    status <- decideTestsDGE(res.dea)
-    count.table.noNA <- normalized_counts 
-    transform <- TRUE  
-    
-    # for glXYPlot (interactive volcano)
-    LogFC <- res.dea$table$logFC 
-    Pval <- -log10(res.dea$table$PValue)  
-    xlab <- "LogFC" 
-    ylab <- "-Log10(PValue)" 
-    
-    # for static volcano plots  
-    x.volc <- 'logFC'
-    y.volc <- 'FDR'
-
-  } 
-  ########### DESeq2  ##########  
-  else if (dea.tool == "DESeq2") {  # use DESeq2 for DEA
-      
-    # The design matrix
-    if (pair.test) {
-      design <- ~subject+group
+    design <- if (pair.test) {
+      model.matrix(~subject+group)
     } else {
-      design <- ~group
+      model.matrix(~group)
+    }
+    
+    y$samples$subject <- subject
+    y$samples$group <- group  
+    rownames(design) <- colnames(y) 
+      
+    dds <- edgeR::estimateDisp(y, design, robust = TRUE)
+    fit <- edgeR::glmFit(dds, design)
+    lrt <- edgeR::glmLRT(fit)
+      
+    df <- as.data.frame(lrt$table)
+    df$log2FoldChange <- df$logFC
+    df$pvalue <- df$PValue
+    df$padj <- p.adjust(df$PValue, method = "BH")
+
+    plot_counts <- edgeR::cpm(
+        y,
+        log = TRUE,
+        prior.count = 1
+        )
+
+  } else if (dea.tool == "DESeq2") {
+
+    colData <- data.frame(
+      row.names = colnames(count.table),
+      subject = subject,
+      group = group
+    )
+    
+    design <- if (pair.test) {
+      ~subject+group
+    } else {
+      ~group
     }
 
-    ## create the DESeqDataSet
-    colData = data.frame(samples, subject, group)
-    dds <- DESeqDataSetFromMatrix(count.table, colData = colData, design = design)
-
+    dds <- DESeq2::DESeqDataSetFromMatrix(
+      countData = count.table,
+      colData = colData,
+      design = design
+    )
+      
+    if (filter.need) {
+      keep <- rowSums(DESeq2::counts(dds)) >= 10
+      dds <- dds[keep, ]
+    }
+    
     # generate normalized counts
     dds <- estimateSizeFactors(dds)
     normalized_counts <- counts(dds, normalized=TRUE)
-      
-    ## Filtering
-    if (filter.need==TRUE || filter.need=="yes") {
-      keep <- rowSums(counts(dds)) >= 10
-      dds <- dds[keep,]
-    }
-    
-    ## perform DEA
-    dds <- DESeq(dds)
-      
-    ## export dds as Rds:
-    ## saveRDS(object = dds, file = paste(output.path, '/DEA_DESeq2/dds_', control, '_', treat, '.rds', sep = ''))      
 
-    ## make a report
-    gc()  # I added this command because I add an error "reached elapsed time limit" for some datasets
-    report <- DESeq2Report(dds, "DESeq2-report", outdir = paste(output.path,'Report/regionReport/', control, '_', treat, sep = ''),intgroup = c("group"),output = "exploration")
-    message(paste("---------------","Report for DEA between ", control, "and",  treat, "exported ---------------", sep=" "))
-    #message(paste("---------------","skipping Report for DEA between ", control, "and",  treat, " ---------------", sep=" "))
+    dds <- DESeq2::DESeq(dds)
+    res <- DESeq2::results(dds, contrast = c("group", treat, control))
+    df <- as.data.frame(res)
+      
+    ### For the sample dist and PCA 
+    rld <- DESeq2::rlog(dds, blind = TRUE)  ## à remplacer par vst? 
+    plot_counts <- SummarizedExperiment::assay(rld)
+  }
 
-    ## export the results
-    contrast <- c("group",treat,control)
-    res.dea <- results(dds, contrast=contrast)
-    res.dea <- res.dea[complete.cases(res.dea), ]  # remove any rows with NA
+  # ----------------------------
+  # 4. STANDARDISE OUTPUT
+  # ----------------------------
+  
+  df$gene_id <- gene_ids[match(rownames(df), rownames(count.table))]
 
-    dea <- as.data.frame(res.dea)
-    dea.sorted <- dea[order(dea$padj, -abs(dea$log2FoldChange), decreasing = FALSE), ]  # sort the table: ascending of padj then descending of absolute valued of logFC
-    
-    deg <- dea[dea$padj < 0.05, ]
-    if (nrow(deg) > 1) {
-      deg <- deg[order(deg$padj, -abs(deg$log2FoldChange), decreasing = FALSE), ]  # sort the table: ascending of padj then descending of absolute valued of logFC
-    }
-    
-    # to adjust the outputs to DESeq2
-    row.name = T # to write the tables
-    
-    # for Glimma
-    status <- as.numeric(res.dea$padj<0.05)
-    DE <- ifelse(status == 0,0, sign(res.dea$log2FoldChange))
-      
-    annotation <- data.frame(res.dea)  
-    annotation$GeneID <- rownames(res.dea)
-    
-    # for glMDPlot
-    count.table.noNA <- normalized_counts[rownames(res.dea),]     
-    transform <-FALSE  
-    
-    # for glXYPlot (interactive volcano)
-    LogFC <- res.dea$log2FoldChange
-    Pval <- -log10(res.dea$padj)
-    xlab <- "Log2FC"
-    ylab <- "-Log10(padj)" 
-    
-    # for static volcano plots  
-    x.volc <- 'log2FoldChange'
-    y.volc <- 'padj'
-      
-  }            
-      
-## common part: 
-    
-    # save the normalized count table  
-    write.table(normalized_counts, paste(output.path, 'Tables/', control, '_', treat, '_NormCounts.tsv', sep = ''), quote = FALSE, sep = "\t", col.names = NA)   
-    
-    # save the DEA result and DEGs to files
-    write.table(dea.sorted, paste(output.path, 'Tables/dea_', control, '_', treat, '.tsv', sep = ''), row.names = row.name, quote = FALSE, sep = '\t', col.names = NA)
-    write.table(deg, paste(output.path, 'Tables/deg_', control, '_', treat, '.tsv', sep = ''), row.names = row.name, quote = FALSE, sep = '\t', col.names = NA) 
-    message(paste("---------------","Tables for DEA between", control, "and",  treat, "exported ---------------", sep=" "))
-    
-    # save DEA and DEG to files with SYMBOLS, chr, start, end, when possible. 
-    if (suffix == '_countsGenes.tsv') {
-      identifiers <- rownames(dea.sorted)
-      # remove .01 from ENSG00000100029.01
-      identifiers <- sapply(strsplit(as.character(identifiers), "\\."),  "[", 1)
-      # query gene symbol and localisation
-      gene_info <- queryMany(identifiers, scopes="ensembl.gene", fields=c("symbol", "genomic_pos"))
-      if (nrow(gene_info) > 10) {  # in case no results from queryMany
-        # convert to dataframe
-        gene_info_df <- as.data.frame(gene_info)
-        gene_info_df$chromosome <- sapply(gene_info_df$genomic_pos, function(x) x$chr)
-        gene_info_df$start_position <- sapply(gene_info_df$genomic_pos, function(x) x$start)
-        gene_info_df$end_position <- sapply(gene_info_df$genomic_pos, function(x) x$end)
-        # filter and rename cols
-        gene_info_df <- gene_info_df[, c("query", "symbol", "chromosome", "start_position", "end_position")]
-        colnames(gene_info_df) <- c("ensembl_gene_id", "gene_symbol", "chromosome", "start_position", "end_position")
-        # merge original table with gene_info
-        dea.sorted$ensembl_gene_id <- identifiers
-        result <- merge(dea.sorted, gene_info_df, by = "ensembl_gene_id", all.x = TRUE)
-        # Convert list-type cols as characters with ; 
-        result$start_position <- sapply(result$start_position, function(y) paste(y, collapse = ";"))
-        result$end_position <- sapply(result$end_position, function(y) paste(y, collapse = ";"))
-        result$gene_symbol <- sapply(result$gene_symbol, function(y) paste(y, collapse = ";"))
-        result$chromosome <- sapply(result$chromosome, function(y) paste(y, collapse = ";"))
-        # export the new table
-        write.table(result, paste(output.path, 'Tables/dea_', control, '_', treat, '_symb_loc.tsv', sep = ''), row.names = row.name, quote = FALSE, sep = '\t', col.names = NA)
-        
-        # same thing for deg
-        identifiers <- rownames(deg)
-        # remove .01 from ENSG00000100029.01
-        identifiers <- sapply(strsplit(as.character(identifiers), "\\."),  "[", 1)
-        # query gene symbol and localisation
-        gene_info <- queryMany(identifiers, scopes="ensembl.gene", fields=c("symbol", "genomic_pos"))
-        if (nrow(gene_info) > 10) {
-          # convert to dataframe
-          gene_info_df <- as.data.frame(gene_info)
-          gene_info_df$chromosome <- sapply(gene_info_df$genomic_pos, function(x) x$chr)
-          gene_info_df$start_position <- sapply(gene_info_df$genomic_pos, function(x) x$start)
-          gene_info_df$end_position <- sapply(gene_info_df$genomic_pos, function(x) x$end)
-          # filter and rename cols
-          gene_info_df <- gene_info_df[, c("query", "symbol", "chromosome", "start_position", "end_position")]
-          colnames(gene_info_df) <- c("ensembl_gene_id", "gene_symbol", "chromosome", "start_position", "end_position")
-          # merge original table with gene_info
-          deg$ensembl_gene_id <- identifiers
-          result <- merge(deg, gene_info_df, by = "ensembl_gene_id", all.x = TRUE)
-          # Convert list-type cols as characters with ; 
-          result$start_position <- sapply(result$start_position, function(y) paste(y, collapse = ";"))
-          result$end_position <- sapply(result$end_position, function(y) paste(y, collapse = ";"))
-          result$gene_symbol <- sapply(result$gene_symbol, function(y) paste(y, collapse = ";"))
-          result$chromosome <- sapply(result$chromosome, function(y) paste(y, collapse = ";"))
-          # export the new table
-          write.table(result, paste(output.path, 'Tables/deg_', control, '_', treat, '_symb_loc.tsv', sep = ''), row.names = row.name, quote = FALSE, sep = '\t', col.names = NA)
-          }
-      }
-      
-      
-    }
-      
-    ## Export Glimma interactive plots
-      
-    # MDS plots
-    html <- paste('MDSPlot_', control, '_', treat, sep = '')
-    glMDSPlot(dds, groups=group,path=paste(output.path, "Report/", sep=""), folder="Glimma",html=html, launch=FALSE)
-     
-    # MD and volcano plots
-    
-    # in case there is no DEG or only Up or Down. 
-    if (nlevels(as.factor(DE)) == 3) {
-       DE <- c("downregulated", "notDE", "upregulated")[as.factor(DE)]
-       cols <- c("blue","red", "grey")
-    }
-    if (nlevels(as.factor(DE)) == 1) {
-       DE <- c("notDE")[as.factor(DE)]
-       cols <- c("grey")
-    }
-    if (nlevels(as.factor(DE)) == 2 && -1 %in% levels(as.factor(DE))) {
-       DE <- c("downregulated","notDE")[as.factor(DE)]
-       cols <- c("red", "grey")
-    }
-    if (nlevels(as.factor(DE)) == 2 && 1 %in% levels(as.factor(DE))) {
-       DE <- c("notDE", "upregulated")[as.factor(DE)]
-       cols <- c("blue", "grey")
-    }   
-    
-    # get Symbols 
-    
-    annotation$GeneID <- sapply(strsplit(as.character(annotation$GeneID), "\\."),  "[", 1)
-    
-    if (suffix == '_countsGenes.tsv') {
-       gene.id.dea <- annotation$GeneID
-       gene.symbol.dea.all <- queryMany(gene.id.dea, scopes = 'ensembl.gene', fields = 'symbol')
-       if (nrow(gene.symbol.dea.all) > 10) {
-            h <- hash()
-            for (i in 1:nrow(gene.symbol.dea.all)) {
-                query <- gene.symbol.dea.all$query[i]
-                symbol <- gene.symbol.dea.all$symbol[i]
-                if (has.key(query, h)) {  # if there's duplicate for the same query
-                    h[[query]] <- paste(hash::values(h, keys = query), symbol, sep = ', ')
-                }
-                else {
-                    if (is.null(symbol) || is.na(symbol)) {  # if there's no hit for the query, keep the original id
-                    h[[query]] <- query
-                    } 
-                    else {
-                    h[[query]] <- symbol
-                    }
-                }
-            }
-            gene.dea <- gene.id.dea
-            for (i in c(1:length(gene.dea))) {
-                gene.dea[i] <- h[[gene.id.dea[i]]]
-                }
-            annotation$GeneID <- gene.dea
-        }
-        else {
-        message("queryMany gave no results, keeping previous IDs")
-        }
-    }
-    
-    else {
-       simplify_names <- function(string) {
-          if (startsWith(string, '(')){
-             rep <-  unlist(strsplit(string,'\\('))[2]
-          }
-          else {
-             rep <- string
-          }
-          rep <- unlist(strsplit(rep, ":"))[1]
-          rep <- unlist(strsplit(rep, ")n"))[1]
-        }
-        annotation$GeneID <- sapply(annotation$GeneID, simplify_names)    
-    }
-    
-    anno <- as.data.frame(cbind(annotation$GeneID, DE))      
-    
-    html <- paste('MDPlot_', control, '_', treat, sep = '')  
-    glMDPlot(res.dea, status=status, counts=count.table.noNA, transform=transform, groups=group, samples=samples,anno=annotation, path=paste(output.path, "Report/", sep=""), folder="Glimma",html=html, launch=FALSE) 
-    
-    sample.cols <- c("darkgreen", "purple")[group]
-          
-    html <- paste('Volcano_', control, '_', treat, sep = '')
-    message()
-    glXYPlot(x=LogFC, y=Pval, xlab=xlab, ylab=ylab,anno=annotation,path=paste(output.path, "Report/", sep=""), folder="Glimma",html=html,status=anno$DE, cols=cols, side.main="GeneID",counts=count.table.noNA, groups=group, sample.cols=sample.cols, launch=FALSE)
-    message(paste("---------------","Glimma interactive plots for DEA between", control, "and",  treat, "exported ---------------", sep=" "))
+  df$DE <- ifelse(
+    !is.na(df$padj) & df$padj < 0.05 & df$log2FoldChange > 0, "up",
+    ifelse(!is.na(df$padj) & df$padj < 0.05 & df$log2FoldChange < 0, "down", "ns")
+  )
 
-    # add PDFs of important figures
-    # volcano
-    fig.volcano <- EnhancedVolcano(dea, lab = annotation$GeneID, xlab = bquote(~Log[2]~ "fold change"), x = x.volc, y = y.volc, pCutoff = 0.05, col = c("grey30", "orange2", "royalblue", "red2"),
-                                 FCcutoff = 1, title = dea.tool, subtitle = paste(control, 'vs', treat, sep = ' '))
-    pdf(file = file.path(output.path, paste('Report/plots/volcano_plot_', control, '_', treat, '.pdf', sep = '')), width = 9, height = 7)
+  results <- df
+
+  # ----------------------------
+  # 5. ANNOTATION (FROM GTF ONLY)
+  # ----------------------------
+  idx <- match(results$gene_id, annotations$gene_id_clean)
+  results$gene_name <- annotations$gene_name[idx]
+  results$gene_type <- annotations$gene_type[idx]
+  results$chr <- annotations$chr[idx]
+  results$start <- annotations$start[idx]
+  results$end <- annotations$end[idx]
+  results$strand <- annotations$strand[idx]
+
+  results$GeneID <- ifelse(
+    is.na(results$gene_name),
+    results$gene_id,
+    results$gene_name
+  )
+
+  # ----------------------------
+  # 6. EXPORT TABLES
+  # ----------------------------
+  dir.create(file.path(output.path, "Tables"), showWarnings = FALSE, recursive = TRUE)
+
+  write.table(
+    results,
+    file.path(output.path, "Tables", paste0("dea_",  treat, '_', control, ".tsv")),
+    sep = "\t",
+    quote = FALSE,
+    row.names = FALSE
+  )
+
+  deg <- subset(results, DE != "ns")
+  # sort according to pvalue then FC
+  deg <- deg[order(deg$padj, -abs(deg$log2FoldChange)), ]
+
+  write.table(
+    deg,
+    file.path(output.path, "Tables", paste0("deg_",  treat, '_', control, ".tsv")),
+    sep = "\t",
+    quote = FALSE,
+    row.names = FALSE
+  )
+  # save the normalized count table   
+  write.table(
+    normalized_counts,
+    file.path(output.path, "Tables", paste0(treat, '_', control, "_NormCounts.tsv")),
+    sep = "\t",
+    quote = FALSE,
+    col.names = NA
+  )
+  message(glue::glue("DEA tables exported - {treat} vs {control}"))
+
+    
+    
+  # ----------------------------
+  # 7. Region Report
+  # ----------------------------
+    
+  report.dir <- file.path(
+  output.path,
+  "Report",
+  "regionReport",
+  paste0(treat, "_", control)
+  )
+  dir.create(report.dir, recursive = TRUE, showWarnings = FALSE)  
+  
+  if (dea.tool == "edgeR") {
+
+      tryCatch({
+
+        regionReport::edgeReport(
+          dds, 
+          lrt, 
+          "edgeR Report",
+          intgroup = "group",
+          outdir = report.dir,
+          output = "exploration", 
+        )
+
+        message(glue::glue(
+          "--------------- edgeR report exported : {treat} vs {control} ---------------"
+        ))
+
+      }, error = function(e) {
+
+        message("edgeReport failed:")
+        message(e$message)
+
+      })
+
+  } else if (dea.tool == "DESeq2") {
+
+      tryCatch({
+
+        regionReport::DESeq2Report(
+          dds = dds,
+          res = res,
+          intgroup = "group",
+          project = "DESeq2 Report",
+          outdir = report.dir,
+          output = "exploration"
+        )
+
+        message(glue::glue(
+          "--------------- DESeq2 report exported : {treat} vs {control} ---------------"
+        ))
+
+      }, error = function(e) {
+
+        message("DESeq2Report failed:")
+        message(e$message)
+
+      })
+  }
+  
+    
+  # ----------------------------
+  # 8. BASIC OUTPUT OBJECT
+  # ----------------------------
+  return(list(
+    tool = dea.tool,
+    model = if (dea.tool == "edgeR") lrt else dds,
+    results = results,
+    deg = deg,
+    normalized_counts = normalized_counts,
+    plot_counts = plot_counts,
+    dge = if (dea.tool == "edgeR") y else NULL,
+    annotation = data.frame(
+        GeneID = results$GeneID,
+        row.names = rownames(df)),
+    metadata = list(
+        control = control,
+        treat = treat,
+        group = group,
+        samples = colnames(count.table)
+        )
+    ))
+}
+
+
+# ====================== Glimma interactive plots ======================
+
+
+
+run_glimma <- function(res, output.path) {
+
+    tool <- res$tool
+    model <- res$model
+    group <- res$metadata$group
+    samples <- res$metadata$samples
+    control <- res$metadata$control
+    treat <- res$metadata$treat
+    annotation <- res$annotation
+    normcounts <- res$normalized_counts
+
+    html_base <- paste0(treat, "_", control)
+    path <- file.path(
+          output.path,
+          "Report")
+    
+    dir.create(path, recursive = TRUE, showWarnings = FALSE)
+
+    if (tool == "edgeR") {
+
+        status <- ifelse(
+            model$table$PValue < 0.05,
+            sign(model$table$logFC),
+            0
+        )
+
+        glMDSPlot(
+            res$dge,
+            groups = group,
+            path = path,
+            folder = "Glimma",
+            html = paste0("MDSPlot_", html_base),
+            launch = FALSE
+        )
+    }
+
+    if (tool == "DESeq2") {
+
+        status <- ifelse(
+            !is.na(res$results$padj) &
+            res$results$padj < 0.05,
+            sign(res$results$log2FoldChange),
+            0
+        )
+
+
+        glMDSPlot(
+            model,
+            groups = group,
+            path = path,
+            folder = "Glimma",
+            html = paste0("MDSPlot_", html_base),
+            launch = FALSE
+        )
+    }
+    
+    glMDPlot(
+    model,
+    status = status,
+    counts = normcounts,
+    groups = group,
+    samples = samples,
+    anno = annotation,
+    path = path,
+    folder = "Glimma",
+    html = paste0("MDPlot_", html_base),
+    launch = FALSE
+    )
+    
+    
+    glXYPlot(
+    x = res$results$log2FoldChange,
+    y = pmin(100, -log10(res$results$padj)),  # max 100 for visualisation
+    xlab = "log2FC",
+    ylab = "-log10(adj p-value)",   
+    anno = annotation,
+    status = status,
+    counts = normcounts,
+    groups = group,
+    samples = samples,
+    path = path,
+    folder = "Glimma",
+    html = paste0("Volcano_", html_base),
+    side.main = "GeneID",
+    cols = c("red", "grey", "blue"),
+    sample.cols = c("darkgreen", "purple")[group],
+    launch = FALSE
+)
+    
+}
+
+
+# ====================== Static plots ======================
+
+run_plots <- function(res, output.path) {
+    
+    path <- file.path(output.path, "Report/plots")
+    dir.create(path, recursive = TRUE, showWarnings = FALSE)
+    ## Volcano plot  
+    tool <- res$tool
+    fig.volcano <- EnhancedVolcano(
+        res$results,
+        lab = res$results$GeneID, 
+        x = "log2FoldChange",
+        y = "padj", 
+        xlab = bquote(~Log[2]~ "fold change"), 
+        pCutoff = 0.05, 
+        col = c("grey30", "orange2", "royalblue", "red2"),
+        FCcutoff = 1, 
+        title = paste(tool, "using", repeats.genes, "counts"), 
+        subtitle = paste(treat, 'vs', control, sep = ' ')
+        )
+    pdf(file = file.path(output.path, paste('Report/plots/volcano_plot_', treat, '_', control, '.pdf', sep = '')), width = 9, height = 7)
     print(fig.volcano)
-    dev.off()  
-    message(paste("---------------","Volcano plot for DEA between", control, "and",  treat, "exported ---------------", sep=" "))
+    dev.off() 
     
-    # draw heatmap of the Top30 regulated genes
-    groups <- c(control, treat)  
-    splan.control <- meta.data[meta.data$group %in% c(control), ]
-    splan.treat <- meta.data[meta.data$group %in% c(treat), ]
-    num.control <- nrow(splan.control) 
-    num.treat <- nrow(splan.treat)  
-
-    # select the top 30 genes in dea.table
-    id2 <- row.names(dea.sorted)
-    normalized_counts_df <- as.data.frame(normalized_counts)
-    normalized_counts_df$ID <- row.names(normalized_counts_df)  ## add an ID col to merge with index_df
-    index_df <- as.data.frame(id2[1:30],ncol=1)
-    colnames(index_df)=c('ID')
-    index_df$keep.order  <- 1:nrow(index_df)  ## add extra col to keep the order of the genes (pvalue)
-    norm.table.deg <- merge(index_df,normalized_counts_df,by = 'ID',all.x= TRUE)  ## merge the 2 dataframes
-    norm.table.deg <- norm.table.deg[order(norm.table.deg$keep.order), ]  ## sort according to pvalue order
-    norm.table.deg$keep.order <- NULL ## remove the ordering col
-    rownames(norm.table.deg) <- norm.table.deg$ID  ## convert row names 
-    norm.table.deg$ID <- NULL   ## remove ID col to have a numeric df
-    gene.id.norm.table <- rownames(norm.table.deg)
-    gene.id.norm.table <- sapply(strsplit(as.character(gene.id.norm.table), "\\."),  "[", 1)
-    
-    if (suffix == '_countsGenes.tsv') {
-        gene.symbol.norm.table <- tryCatch(
-            {   
-                queryMany(gene.id.norm.table, scopes = 'ensembl.gene', fields = 'symbol')$symbol
-            },
-            error=function(cond) {
-                message("queryMany gave no results, keeping previous IDs")
-                # Choose a return value in case of error
-                return(gene.id.norm.table)
-            }
-            )     
-        # if can't find a symbol for the id, then keep the id as it is
-        gene.norm.table <- gene.symbol.norm.table
-        for (i in c(1:length(gene.norm.table))) {
-          if (is.na(gene.norm.table[i])) {
-            gene.norm.table[i] <- gene.id.norm.table[i]
-          }
-        }        
-    
-    }
-    if (suffix == '_countsTE.tsv') {
-        gene.norm.table <- sapply(strsplit(as.character(gene.id.norm.table), ":"),  "[", 1)
-    }
-
+    ## Heatmap Top 30 genes
+    groups <- res$metadata$group
     palette <- c("#000000ac", "#9d9d9dff")
-    palette.group <- c(rep(palette[1], num.control), rep(palette[2], num.treat)) # number of cotr/treat samples -> need metadata
-
-    pdf(file = file.path(output.path, paste('Report/plots/heatmapTop_', control, '_', treat, '.pdf', sep = '')), width = 20, height = 20, title = 'Heatmap using the top features')
-    par(oma=c(4,4,4,4))
-    heatmap.2(as.matrix(norm.table.deg), col=rev(brewer.pal(11,"RdBu")),scale="row", trace="none", ColSideColors = palette.group, margins = c(30,18), 
-            labRow = gene.norm.table, cexCol = 2.5, cexRow = 2.5, dendrogram="column",   #  size of the labels, clustering by cols
-            yaxt="n", key.par = list(cex=1.2, cex.lab=1), keysize=1)  ## control the heatmap legend
-    legend("topright", title = 'Group', legend=groups, text.font = 15,
-         col = palette, fill = palette, cex=1.8)
-
+    palette.group <- palette[as.numeric(groups == treat) + 1]
+    
+    
+    top30 <- res$results[order(res$results$padj), ][1:30, ]
+    
+    norm <- res$normalized_counts[rownames(top30), , drop = FALSE]
+    
+    # labels
+    lab <- top30$GeneID
+    
+    pdf(file.path(output.path, paste0("Report/plots/heatmapTop_", treat, '_', control, ".pdf")),
+        width = 20, height = 20, title = 'Heatmap using the top features')
+    
+    heatmap.2(
+        as.matrix(norm),
+        col = rev(brewer.pal(11, "RdBu")),
+        scale = "row",
+        trace = "none",
+        ColSideColors = palette.group,
+        margins = c(30, 18),
+        labRow = lab,
+        cexCol = 2.5,
+        cexRow = 2.5,
+        dendrogram = "column",
+        yaxt = "n", 
+        key.par = list(cex=1.2, cex.lab=1), 
+        keysize=1
+    )
+    
+    legend(
+        "topright",
+        legend = unique(groups),
+        fill = unique(palette.group), 
+        title = 'Group', 
+        text.font = 15,
+        col = palette, 
+        cex=1.8
+    )
     dev.off()
-    message(paste("---------------","heatmap for Top30 genes for DEA between", control, "and",  treat, "exported ---------------", sep=" "))
-      
-    ## Sample distances
-    ## Run the rlog normalization
-    rld <-rlog(dds, blind=TRUE)
+
+    ## sample distance heatmap
+    mat <- res$plot_counts
+
+    sampleDists <- dist(t(mat))
+    dist_matrix <- as.matrix(sampleDists)
     
-    ## Obtain the sample euclidean distances
-    sampleDists <- dist(t(assay(rld)))
-    sampleDistMatrix <- as.matrix(sampleDists)
-    colnames(sampleDistMatrix) <- rownames(colData(rld))
+    colnames(dist_matrix) <- colnames(mat)
+    rownames(dist_matrix) <- paste(colnames(mat), groups, sep=":")
     
-    ## Add names including intgroup
-    rownames(sampleDistMatrix) <- paste(rownames(colData(rld)), colData(rld)[, c("group")],sep=":") 
-    colnames(sampleDistMatrix) <- rownames(colData(rld))
-    colors <- colorRampPalette(rev(brewer.pal(9,"Blues")))(255)
-    if (suffix == "_countsGenes.tsv") {
-        title <- "Sample distances for genes"
-        titlepca <- 'PCA using gene counts'
-    } 
-    if (suffix == "_countsTE.tsv") {
-        title <- "Sample distances for repeats"
-        titlepca <- 'PCA using repeat counts'
-    } 
-    pheatmap(sampleDistMatrix, clustering_distance_cols = sampleDists, clustering_distance_rows = sampleDists, color = colors, main=title, filename=file.path(output.path, paste('Report/plots/SampleDistances_', control, '_', treat, '.pdf', sep = '')))        
-    message(paste("---------------","Sample distances between", control, "and",  treat, "exported ---------------", sep=" "))
+    colors <- colorRampPalette(rev(brewer.pal(9, "Blues")))(255)
+    
+    title <- paste("Sample distances using", repeats.genes, "counts")
+    
+    pdf(file.path(output.path, paste0("Report/plots/SampleDistances_",  treat, '_', control, ".pdf")))
+    
+    pheatmap(
+        dist_matrix,
+        clustering_distance_rows = sampleDists,
+        clustering_distance_cols = sampleDists,
+        color = colors,
+        main = title
+    )
+    dev.off()
 
     ## PCA
-    pdf(file = file.path(output.path, paste('Report/plots/PCA_', control, '_', treat, '.pdf', sep = '')), width = 15, height = 15, title = 'PCA')
-    par(mfrow = c(2,1))
-    # run PCA
-    pca = DESeq2::plotPCA(rld, intgroup=c("group"), returnData=TRUE, ntop=1000)
-    pca_plot <- ggplot(data=pca, aes_string(x="PC1", y="PC2", color="group")) + geom_point(size=3) + 
-    labs(title=titlepca, x =paste0("PC1: ",round(attr(pca, 'percentVar')[1] * 100),"% variance"), 
-         y = paste0("PC2: ",round(attr(pca, 'percentVar')[2] * 100),"% variance")) + coord_fixed()
-    print(pca_plot)
-    dev.off()
-    message(paste("---------------","PCA between", control, "and",  treat, "exported ---------------", sep=" "))
-} 
+    
+    pca <- prcomp(
+      t(res$plot_counts),
+      scale. = FALSE
+    )
+    
+    percentVar <- pca$sdev^2 / sum(pca$sdev^2)
+    
+    pca_df <- data.frame(
+      sample = rownames(pca$x),
+      PC1 = pca$x[, 1],
+      PC2 = pca$x[, 2],
+      group = res$metadata$group
+    )
+    
+    pca_plot <- ggplot2::ggplot(
+      pca_df,
+      ggplot2::aes(x = PC1, y = PC2, color = group)
+    ) +
+      ggplot2::geom_point(size = 3) +
+      ggplot2::labs(
+        title = paste("PCA using", repeats.genes, "counts"),
+        x = paste0("PC1: ", round(percentVar[1] * 100), "% variance"),
+        y = paste0("PC2: ", round(percentVar[2] * 100), "% variance")
+      ) +
+      ggplot2::coord_fixed()
+    
+    ggplot2::ggsave(
+      file.path(
+        output.path,
+        "Report",
+        "plots",
+        paste0("PCA_",  treat, '_', control, ".pdf")
+      ),
+      pca_plot,
+      width = 8,
+      height = 8
+    )
+            
+    }
+
+
+    
+# ====================== Main ======================
+
 
 
 # load the config file
@@ -482,12 +525,12 @@ yaml.file <- yaml.load_file('config_ongoing_run.yaml')
 project <- yaml.file$PROJECT  # project name of this analysis
 dea.tool <- yaml.file$DEATOOL  # tool used for DEA
 controls <- yaml.file$CONTROL  # all groups used as control
-treats <- yaml.file$TREAT  # all groups used as treat, should correspond to control
-filter.need <- yaml.file$FILTER
+treats <- yaml.file$TREAT  # all groups used as treat, should be as long as ctrl list
+filter.need <- as.logical(yaml.file$FILTER)
 pair.test <- yaml.file$PAIR
 meta.file <- yaml.file$METAFILE
-counter <- yaml.file$COUNTER
-mapper <- yaml.file$ALIGNER
+gtf_file <- yaml.file$ANNOTATION
+
 
 # passing the params from command line
 args <- commandArgs(TRUE)
@@ -495,17 +538,47 @@ counts_path <- args[1]
 output.path <- args[2]
 suffix <- args[3]
 
+# for proper figure labeling
+repeats.genes <- if (suffix == "_countsTE.tsv") {
+  "repeat"
+} else if (suffix == "_countsGenes.tsv") {
+  "gene"
+} else {
+  stop("Unknown suffix: ", suffix)
+}
+
 # extract the metadata
 meta.data <- read.csv(meta.file, header = TRUE, sep = '\t')
 group.all <- meta.data$group
 subject.all <- meta.data$subject
+
+# load the GTF 
+gtf <- rtracklayer::import(gtf_file)
+genes <- gtf[gtf$type == "gene"]
+annotations <- data.frame(
+    gene_id = genes$gene_id,
+    gene_name = genes$gene_name,
+    gene_type = genes$gene_type,
+    chr = as.character(seqnames(genes)),
+    start = start(genes),
+    end = end(genes),
+    strand = as.character(strand(genes))
+)
+annotations$gene_id_clean <- sub(
+    "\\..*",
+    "",
+    annotations$gene_id
+)
+
+
+## Run all the comparisons
 
 num.control <- length(controls)  # number of comparisons that the user wants to do
 num.treat <- length(treats)  # should equals to num.control
 
 if (num.control != num.treat) {
   message("Error: Control groups don't match with treat groups!")
-  message("Please check config_dea.yaml")
+  message("Please check your configuration file.")
   quit(save = 'no')
 }
 
@@ -517,6 +590,7 @@ num.comparison <- num.control
 for (ith.comparison in c(1:num.comparison)) {
   control <- controls[ith.comparison]
   treat <- treats[ith.comparison]
-  DEA(control, treat)
+  dea <- DEA(control, treat, dea.tool)
+  run_plots(dea, output.path) 
+  run_glimma(dea, output.path)
 }
-

@@ -52,14 +52,6 @@ rt = ew.RepeatedTimer(60, ew.get_free_disk, total, writting_dir, server_command,
 # Save run ID
 print("-------------------------\n| RUN ID : "+time_string+ " |\n-------------------------")
 
-# Download singularity image if necessary 
-singularity_image =  sys.argv[1]
-print("Singularity image source: ", singularity_image)
-if not os.path.exists("rasflow_edc.simg"): 
-    print("Download Singularity image\n")
-    output = subprocess.check_output("wget --no-verbose "+singularity_image, stderr=subprocess.STDOUT, shell=True)
-    print(output.decode("utf-8"))
-    
 # save the configuration (after getting sing image)
 ew.saveconf(metadata, log_path, time_string, "RNA")
           

@@ -103,44 +103,146 @@ def main(time_string, server):
     <meta charset="utf-8"/>
     <title> RNAseq report </title>
     <style>
+    
+    
+    body {{
+        margin: 0;
+        background-color: #f4f7fa;
+        font-family: Verdana, sans-serif;
+        color: #263746;
+        line-height: 1.6;
+    }}
+
+    /* sidebar */
+    #sidebar {{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 250px;
+        height: 100vh;
+        box-sizing: border-box;
+        overflow-y: auto;
+        padding: 25px 16px;
+        background-color: #ffffff;
+        border-right: 1px solid #d9e3ec;
+        z-index: 100;
+    }}
+
+    #sidebar h3 {{
+        margin: 0 0 20px;
+        padding: 0 8px;
+        font-size: 1.05em;
+        color: #073965;
+    }}
+
+    #toc a {{
+        display: block;
+        padding: 8px 10px;
+        margin: 3px 0;
+        border-radius: 5px;
+        color: #385e72;
+        text-decoration: none;
+        font-size: 0.85em;
+        overflow-wrap: anywhere;
+    }}
+
+    #toc a.subsection {{
+        padding-left: 22px;
+        font-size: 0.8em;
+    }}
+
+    #toc a:hover,
+    #toc a.active {{
+        background-color: #e7f0f7;
+        color: #073965;
+    }}
+
+    /* Contenu principal */
+    #main-content {{
+        margin-left: 250px;
+        padding: 25px 35px;
+        max-width: 1500px;
+    }}
+
     h1 {{
-    font-size: 2.5em;
-    color: #385e72;
-    text-align:center;
+        font-size: 2.2em;
+        color: #073965;
+        text-align: center;
     }}
 
     h2 {{
-    font-size: 1.4em;
-    color: #6aabd2;
-    background-color: white;
-    margin-right: 50px;
-    margin-left: 50px;
-    padding: 5px 30px;
+        font-size: 1.5em;
+        color: #074276;
+        background-color: transparent;
+        margin: 40px 20px 15px;
+        padding: 8px 15px;
+        border-bottom: 2px solid #d5e0e9;
+        scroll-margin-top: 20px;
+        overflow-wrap: anywhere;
     }}
 
     h3 {{
-    font-size: 1.2em;
-    color: #b7cfdc;
-    background-color: #385e72;
-    margin-right: 50px;
-    margin-left: 50px;
-    padding: 5px 30px;
+        font-size: 1.15em;
+        color: #155790;
+        margin: 25px 30px 10px;
+        padding: 5px 15px;
+        border-left: 3px solid #6aabd2;
+        scroll-margin-top: 20px;
+        overflow-wrap: anywhere;
     }}
 
     p {{
-    font-size: 1.2em;
-    margin-right: 50px;
-    margin-left: 50px;
-    padding: 5px 30px;
+        font-size: 1em;
+        margin: 10px 20px;
+        padding: 5px 15px;
+        overflow-wrap: anywhere;
     }}
+
+    a {{
+        color: #1769aa;
+    }}
+
+    html {{
+        scroll-behavior: smooth;
+    }}
+
+    /* Petits écrans */
+    @media (max-width: 800px) {{
+        #sidebar {{
+            position: relative;
+            width: 100%;
+            height: auto;
+            max-height: 280px;
+            border-right: none;
+            border-bottom: 1px solid #d9e3ec;
+        }}
+
+        #main-content {{
+            margin-left: 0;
+            padding: 10px;
+        }}
+
+        h2, h3, p {{
+            margin-left: 5px;
+            margin-right: 5px;
+        }}
+    }}
+        
     </style>
     </head>
-    <body style="background-color:#d9e4ec;font-family:verdana;">
+    <body>
+
+    <nav id="sidebar">
+        <h3>Table of Contents</h3>
+        <div id="toc"></div>
+    </nav>
+
+    <main id="main-content">
+    
     <p><br></p>
     <h1 >RNA-seq analysis report</h1>
-    <p style="text-align:center;">This report was generated on {date_string} by RASflow_EDC on {server} cluster.<br><br></p>
-    <h2 id="project-name-projectname">  Project {project}</h2>
-    <p><br></p>
+    <h1 >{project}</h1>
+    <p style="text-align:center;">This report was generated on {date_string} by R<a href="https://parisepigenetics.github.io/bibs/edctools/workflows/rasflow_edc/">RASflow_EDC</a> on {server} cluster. Don’t forget to acknowledge <a href="https://parisepigenetics.github.io/bibs/">BiBs</a> in your communications.<br><br></p>
     <h2 id="project-settings">  Analysis settings</h2>
     <p>The settings used for the analysis can be found in the <a href="logs/{time_string}_configuration.txt">logs/{time_string}_configuration.txt</a>.<br></p>
     """
@@ -273,34 +375,34 @@ def main(time_string, server):
         def export_comparison(out_path, controlGroup, treatGroup, analysis):
             message=f"""
             <p><br></p>
-            <h3 id="Comparison-between-{controlGroup}-and-{treatGroup}">Comparison between {controlGroup} and {treatGroup} for {analysis}</h3>
-            <p>The <a href="{out_path}/Report/regionReport/{controlGroup}_{treatGroup}/exploration.html">regionReport exploratory report</a> 
+            <h3 id="Comparison-between-{treatGroup}-and-{controlGroup}">Comparison between {treatGroup} and {controlGroup} for {analysis}</h3>
+            <p>The <a href="{out_path}/Report/regionReport/{treatGroup}_{controlGroup}/exploration.html">regionReport exploratory report</a> 
             is a good start to get an idea of the results.</p> 
-            <p>Glimma interactive <a href="{out_path}/Report/Glimma/MDSPlot_{controlGroup}_{treatGroup}.html">MDS plot</a> 
+            <p>Glimma interactive <a href="{out_path}/Report/Glimma/MDSPlot_{treatGroup}_{controlGroup}.html">MDS plot</a> 
             can help you to identify problematic samples.</p>
-            <p> <embed type="text/html" src="{out_path}/Report/Glimma/MDSPlot_{controlGroup}_{treatGroup}.html" width="1000" height="900"> </p>
-            <p>To be easily shared and reused the <a href="{out_path}/Report/plots/PCA_{controlGroup}_{treatGroup}.pdf">PCA</a> 
+            <p> <embed type="text/html" src="{out_path}/Report/Glimma/MDSPlot_{treatGroup}_{controlGroup}.html" width="1000" height="900"> </p>
+            <p>To be easily shared and reused the <a href="{out_path}/Report/plots/PCA_{treatGroup}_{controlGroup}.pdf">PCA</a> 
             and the 
-            <a href="{out_path}/Report/plots/SampleDistances_{controlGroup}_{treatGroup}.pdf">heatmap with sample clustering </a>
+            <a href="{out_path}/Report/plots/SampleDistances_{treatGroup}_{controlGroup}.pdf">heatmap with sample clustering </a>
             are also available as PDF files.  </p> 
             <p>
-            <embed src= "{out_path}/Report/plots/PCA_{controlGroup}_{treatGroup}.pdf" type="application/pdf" width= "700" height= "700">
-            <embed src= "{out_path}/Report/plots/SampleDistances_{controlGroup}_{treatGroup}.pdf" width= "700" height= "700">
+            <embed src= "{out_path}/Report/plots/PCA_{treatGroup}_{controlGroup}.pdf" type="application/pdf" width= "700" height= "700">
+            <embed src= "{out_path}/Report/plots/SampleDistances_{treatGroup}_{controlGroup}.pdf" width= "700" height= "700">
             </p>
             <p>DEA result tables (all {analysis} or significantly differentially expressed {analysis}) are stored in 
             <a href="{out_path}/Tables">{out_path}/Tables</a> [not available in the online report].</p>
             <p>Importantly, the results can be deeply explored thanks to <b>interactive</b>
-            <a href="{out_path}/Report/Glimma/MDPlot_{controlGroup}_{treatGroup}.html">MD</a>
+            <a href="{out_path}/Report/Glimma/MDPlot_{treatGroup}_{controlGroup}.html">MD</a>
             and 
-            <a href="{out_path}/Report/Glimma/Volcano_{controlGroup}_{treatGroup}.html">Volcano</a> 
+            <a href="{out_path}/Report/Glimma/Volcano_{treatGroup}_{controlGroup}.html">Volcano</a> 
             plots.</p>
-            <p> <embed type="text/html" src="{out_path}/Report/Glimma/Volcano_{controlGroup}_{treatGroup}.html" width="1050" height="1000"> </p>
-            <p>A static <a href="{out_path}/Report/plots/volcano_plot_{controlGroup}_{treatGroup}.pdf">Volcano plot</a> 
+            <p> <embed type="text/html" src="{out_path}/Report/Glimma/Volcano_{treatGroup}_{controlGroup}.html" width="1050" height="1000"> </p>
+            <p>A static <a href="{out_path}/Report/plots/volcano_plot_{treatGroup}_{controlGroup}.pdf">Volcano plot</a> 
             is also available, as well as a 
-            <a href="{out_path}/Report/plots/heatmapTop_{controlGroup}_{treatGroup}.pdf">heatmap of the 30 top-regulated {analysis}</a>. </p>
+            <a href="{out_path}/Report/plots/heatmapTop_{treatGroup}_{controlGroup}.pdf">heatmap of the 30 top-regulated {analysis}</a>. </p>
             <p>
-            <embed src= "{out_path}/Report/plots/volcano_plot_{controlGroup}_{treatGroup}.pdf" type="application/pdf" width= "700" height= "700">
-            <embed src= "{out_path}/Report/plots/heatmapTop_{controlGroup}_{treatGroup}.pdf" width= "700" height= "700">
+            <embed src= "{out_path}/Report/plots/volcano_plot_{treatGroup}_{controlGroup}.pdf" type="application/pdf" width= "700" height= "700">
+            <embed src= "{out_path}/Report/plots/heatmapTop_{treatGroup}_{controlGroup}.pdf" width= "700" height= "700">
             </p> 
                 """ 
             f.write(message)
@@ -325,10 +427,82 @@ def main(time_string, server):
                 out_path = f"mapping_{aligner}/repeats_{counter}/DEA_{deatool}"
                 export_comparison(out_path, controlGroup, treatGroup, "repeats")
                 
+    
     message = """
-    </body> 
+    </main>
+
+    <script>
+    (function () {
+        const toc = document.getElementById("toc");
+        const headings = document.querySelectorAll(
+            "#main-content h2, #main-content h3"
+        );
+        const usedIds = new Set();
+
+        headings.forEach(function (heading) {
+            // uniq ID for each section
+            let id = heading.id || heading.textContent
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-|-$/g, "");
+
+            if (!id) {
+                id = "section";
+            }
+
+            const baseId = id;
+            let suffix = 2;
+
+            while (usedIds.has(id)) {
+                id = baseId + "-" + suffix++;
+            }
+
+            usedIds.add(id);
+            heading.id = id;
+
+            // link to table
+            const link = document.createElement("a");
+            link.href = "#" + id;
+            link.textContent = heading.textContent.trim();
+
+            if (heading.tagName === "H3") {
+                link.classList.add("subsection");
+            }
+
+            toc.appendChild(link);
+        });
+
+        // highlighting section
+        const links = toc.querySelectorAll("a");
+
+        function updateActiveLink() {
+            let current = headings[0];
+
+            headings.forEach(function (heading) {
+                if (heading.getBoundingClientRect().top <= 100) {
+                    current = heading;
+                }
+            });
+
+            links.forEach(function (link) {
+                link.classList.toggle(
+                    "active",
+                    current && link.hash === "#" + current.id
+                );
+            });
+        }
+
+        window.addEventListener("scroll", updateActiveLink);
+        updateActiveLink();
+    })();
+    </script>
+
+    </body>
     </html>
     """
+
+
     f.write(message)
 
     f.close()

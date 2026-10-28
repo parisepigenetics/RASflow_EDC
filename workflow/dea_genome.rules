@@ -28,9 +28,9 @@ output_path = input_path + "/DEA_"+tool+"/"
 
 if TEanalysis == "yes" or TEanalysis==True: 
     pca_repeats = repeats_path +"/PCA_TE.pdf"
-    volcano_repeats = repeats_output_path + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf"
-    dea_repeats = repeats_output_path + "Tables/dea_" + control + "_" + treat + ".tsv"
-    glimma_repeats = repeats_output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
+    volcano_repeats = repeats_output_path + "Report/plots/volcano_plot_" + treat + "_" + control + ".pdf"
+    dea_repeats = repeats_output_path + "Tables/dea_" + treat + "_" + control + ".tsv"
+    glimma_repeats = repeats_output_path + "Report/Glimma/MDPlot_"+ treat + "_" + control + ".html"
 else :
     pca_repeats = []
     volcano_repeats = []
@@ -44,9 +44,9 @@ rule all:
         dea_repeats,
         glimma_repeats,
         pca = input_path + "/PCA.pdf",
-        volcano = output_path + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf",
-        dea = output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
-        glimma = output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
+        volcano = output_path + "Report/plots/volcano_plot_" + treat + "_" + control + ".pdf",
+        dea = output_path + "Tables/dea_" + treat + "_" + control + ".tsv",
+        glimma = output_path + "Report/Glimma/MDPlot_"+ treat + "_" + control + ".html"
 
 rule PCA:
     input:
@@ -83,9 +83,9 @@ rule DEA:
     input:
         groupCount = expand(count_path + "{group}_countsGenes.tsv", group = groups)
     output:
-        volcano = output_path + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf",
-        dea = output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
-        glimma = output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
+        volcano = output_path + "Report/plots/volcano_plot_" + treat + "_" + control + ".pdf",
+        dea = output_path + "Tables/dea_" + treat + "_" + control + ".tsv",
+        glimma = output_path + "Report/Glimma/MDPlot_"+ treat + "_" + control + ".html"
     singularity:
         "rasflow_edc.simg"
     resources:
@@ -132,9 +132,9 @@ if TEanalysis == "yes" or TEanalysis==True:
         input:
             groupCount = expand(repeats_path + "/countTables/{group}_countsTE.tsv", group = groups)
         output:
-            volcano = repeats_output_path + "Report/plots/volcano_plot_" + control + "_" + treat + ".pdf",
-            dea = repeats_output_path + "Tables/dea_" + control + "_" + treat + ".tsv",
-            glimma = repeats_output_path + "Report/Glimma/MDPlot_"+ control + "_" + treat + ".html"
+            volcano = repeats_output_path + "Report/plots/volcano_plot_" + treat + "_" + control + ".pdf",
+            dea = repeats_output_path + "Tables/dea_" + treat + "_" + control + ".tsv",
+            glimma = repeats_output_path + "Report/Glimma/MDPlot_"+ treat + "_" + control + ".html"
         singularity:
             "rasflow_edc.simg"
         resources:

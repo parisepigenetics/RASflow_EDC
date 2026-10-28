@@ -32,7 +32,7 @@ echo 'Job Name:' $SLURM_JOB_NAME
 echo 'Job Id:' $SLURM_JOB_ID
 echo 'Directory:' $(pwd)
 echo '########################################'
-echo 'RASflow_EDC version: v1.3'
+echo 'RASflow_EDC version: v2.1'
 echo '-------------------------'
 echo 'Main module versions:'
 
@@ -65,7 +65,42 @@ echo '########################################'
 unset DISPLAY
 
 # define singularity image source
-singularity_image="https://zenodo.org/record/7303435/files/rasflow_edc.simg"
+#singularity_image="https://zenodo.org/record/7303435/files/rasflow_edc.simg"
+image_version="v2.1"
+echo "rasflow_edc_$image_version.sif"
+
+# Check md5sum and download if not OK, or not present
+if [ -f "rasflow_edc_$image_version.sif" ]; then
+    echo "rasflow_edc_$image_version.sif exists. Checking md5sum..."
+    
+    if md5sum -c configs/.md5sum.txt ; then
+        echo "md5sum check succeeded."
+    else
+        echo "Old or corrupted singularity image. Download $image_version from $singularity_image ..."
+        wget --no-verbose -O rasflow_edc_$image_version.sif $singularity_image
+        if md5sum -c configs/.md5sum.txt; then 
+            echo "Image downloaded, md5sum check succeeded."
+        else # if it doesn't work, then quit. 
+            echo "Error checking the singularity image after the download."
+            exit 1
+        fi
+    fi
+else 
+    echo "rasflow_edc.sif does not exist. Download $image_version from $singularity_image ..."
+    wget --no-verbose -O rasflow_edc_$image_version.sif $singularity_image
+    if md5sum -c configs/.md5sum.txt; then 
+            echo "Image downloaded, md5sum check succeeded."
+    else # if it doesn't work, then quit. 
+        echo "Error checking the singularity image after the download."
+        exit 1
+    fi        
+fi
+echo "Singularity image $image_version ready!"
+
+# make a sim link to keep rasflow_edc.sif in the rules
+rm -f rasflow_edc.sif
+ln -s rasflow_edc_$image_version.sif rasflow_edc.sif
+
 
 # check if the workflow is already running, if not copy the configuration file and start the workflow
 CONFIG_FILE="config_ongoing_run.yaml"
