@@ -242,7 +242,7 @@ def main(time_string, server):
     <p><br></p>
     <h1 >RNA-seq analysis report</h1>
     <h1 >{project}</h1>
-    <p style="text-align:center;">This report was generated on {date_string} by R<a href="https://parisepigenetics.github.io/bibs/edctools/workflows/rasflow_edc/">RASflow_EDC</a> on {server} cluster. Don’t forget to acknowledge <a href="https://parisepigenetics.github.io/bibs/">BiBs</a> in your communications.<br><br></p>
+    <p style="text-align:center;">This report was generated on {date_string} by <a href="https://parisepigenetics.github.io/bibs/edctools/workflows/rasflow_edc/">RASflow_EDC</a> on {server} cluster. Don’t forget to acknowledge <a href="https://parisepigenetics.github.io/bibs/">BiBs</a> in your communications.<br><br></p>
     <h2 id="project-settings">  Analysis settings</h2>
     <p>The settings used for the analysis can be found in the <a href="logs/{time_string}_configuration.txt">logs/{time_string}_configuration.txt</a>.<br></p>
     """
